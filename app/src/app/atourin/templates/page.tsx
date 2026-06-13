@@ -1,3 +1,5 @@
+export const metadata = { title: "Templates" };
+
 import Link from "next/link";
 import { LayoutTemplate, Plus } from "lucide-react";
 import { listTemplates } from "@/server/queries/projects";

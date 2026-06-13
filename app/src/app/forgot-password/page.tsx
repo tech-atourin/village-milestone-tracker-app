@@ -1,3 +1,5 @@
+export const metadata = { title: "Lupa Password" };
+
 import Link from "next/link";
 import Image from "next/image";
 import { ArrowLeft } from "lucide-react";

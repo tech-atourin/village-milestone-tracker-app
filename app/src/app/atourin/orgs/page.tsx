@@ -1,3 +1,5 @@
+export const metadata = { title: "Organisasi" };
+
 import { Building2, Plus } from "lucide-react";
 import { listOrgsDetailed } from "@/server/queries/orgs";
 import { OrgCard } from "./org-card";

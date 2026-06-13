@@ -1,3 +1,5 @@
+export const metadata = { title: "Project Saya" };
+
 import { Folder } from "lucide-react";
 import { listProjects } from "@/server/queries/projects";
 import { ProjectsTable } from "@/app/atourin/projects/projects-table";

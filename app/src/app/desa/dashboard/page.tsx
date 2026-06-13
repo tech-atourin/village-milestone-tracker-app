@@ -1,3 +1,5 @@
+export const metadata = { title: "Dashboard Desa" };
+
 import Link from "next/link";
 import { ClipboardCheck, MapPin, TrendingUp, Sparkles } from "lucide-react";
 import { getCurrentUser } from "@/lib/auth/rbac";

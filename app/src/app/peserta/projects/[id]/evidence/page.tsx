@@ -1,3 +1,5 @@
+export const metadata = { title: "Evidence" };
+
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { listEvidenceLibrary } from "@/server/queries/evidence";

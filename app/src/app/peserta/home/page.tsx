@@ -1,3 +1,5 @@
+export const metadata = { title: "Beranda" };
+
 import Link from "next/link";
 import { ChevronRight, MapPin, ClipboardList } from "lucide-react";
 import { getCurrentUser } from "@/lib/auth/rbac";

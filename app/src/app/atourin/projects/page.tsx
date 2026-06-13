@@ -1,3 +1,5 @@
+export const metadata = { title: "Projects" };
+
 import Link from "next/link";
 import { Plus, Folder } from "lucide-react";
 import { listProjects } from "@/server/queries/projects";

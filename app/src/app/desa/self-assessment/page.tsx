@@ -1,3 +1,5 @@
+export const metadata = { title: "Self-Assessment" };
+
 import { getCurrentUser } from "@/lib/auth/rbac";
 import {
   getActiveMaster,

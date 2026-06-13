@@ -1,3 +1,5 @@
+export const metadata = { title: "Masuk" };
+
 import { Suspense } from "react";
 import Image from "next/image";
 import {

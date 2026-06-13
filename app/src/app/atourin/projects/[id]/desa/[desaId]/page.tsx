@@ -1,3 +1,5 @@
+export const metadata = { title: "Detail Desa" };
+
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, MapPin, CheckCircle2, Clock } from "lucide-react";

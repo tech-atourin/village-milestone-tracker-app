@@ -1,3 +1,5 @@
+export const metadata = { title: "Diskusi Project" };
+
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { listProjectForum } from "@/server/queries/forum";

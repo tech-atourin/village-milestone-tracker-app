@@ -1,3 +1,5 @@
+export const metadata = { title: "Project Baru" };
+
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import {

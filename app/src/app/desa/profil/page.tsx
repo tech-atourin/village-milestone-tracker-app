@@ -1,3 +1,5 @@
+export const metadata = { title: "Profil Desa" };
+
 import { getCurrentUser } from "@/lib/auth/rbac";
 import { getRepresentingDesa } from "@/server/queries/self-assessment";
 import { MapPin } from "lucide-react";

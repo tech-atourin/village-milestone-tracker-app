@@ -1,3 +1,5 @@
+export const metadata = { title: "Rapor Peserta" };
+
 import { notFound } from "next/navigation";
 import Image from "next/image";
 import { createClient } from "@/lib/supabase/server";

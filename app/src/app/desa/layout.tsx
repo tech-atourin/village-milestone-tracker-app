@@ -1,12 +1,11 @@
-import { LayoutDashboard, ClipboardCheck, MapPin } from "lucide-react";
-import { Sidebar } from "@/components/sidebar";
+import { Sidebar, type SidebarItem } from "@/components/sidebar";
 import { Topbar } from "@/components/topbar";
 import { requireRole } from "@/lib/auth/rbac";
 
-const NAV_ITEMS = [
-  { href: "/desa/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/desa/self-assessment", label: "Self-Assessment", icon: ClipboardCheck },
-  { href: "/desa/profil", label: "Profil Desa", icon: MapPin },
+const NAV_ITEMS: SidebarItem[] = [
+  { href: "/desa/dashboard", label: "Dashboard", icon: "LayoutDashboard" },
+  { href: "/desa/self-assessment", label: "Self-Assessment", icon: "ClipboardCheck" },
+  { href: "/desa/profil", label: "Profil Desa", icon: "MapPin" },
 ];
 
 export default async function DesaLayout({

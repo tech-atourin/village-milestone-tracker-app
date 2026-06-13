@@ -1,3 +1,5 @@
+export const metadata = { title: "Akses Ditolak" };
+
 import Link from "next/link";
 
 export default function ForbiddenPage() {

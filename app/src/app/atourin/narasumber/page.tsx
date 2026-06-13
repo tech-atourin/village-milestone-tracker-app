@@ -1,3 +1,5 @@
+export const metadata = { title: "Narasumber" };
+
 import { Users, GraduationCap, Mail, Phone } from "lucide-react";
 import { listUsers } from "@/server/queries/users";
 

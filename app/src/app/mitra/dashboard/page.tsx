@@ -1,3 +1,5 @@
+export const metadata = { title: "Dashboard Mitra" };
+
 import Link from "next/link";
 import {
   Folder,

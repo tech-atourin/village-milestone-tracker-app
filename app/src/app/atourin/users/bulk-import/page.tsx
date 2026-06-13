@@ -1,3 +1,5 @@
+export const metadata = { title: "Import Peserta" };
+
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { BulkImportFlow } from "./bulk-import-flow";

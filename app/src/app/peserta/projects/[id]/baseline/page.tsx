@@ -1,3 +1,5 @@
+export const metadata = { title: "Baseline Desa" };
+
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft } from "lucide-react";

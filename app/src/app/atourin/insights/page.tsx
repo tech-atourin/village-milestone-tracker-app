@@ -1,3 +1,5 @@
+export const metadata = { title: "AI Insights" };
+
 import Link from "next/link";
 import {
   Sparkles,

@@ -1,3 +1,5 @@
+export const metadata = { title: "Detail Project" };
+
 import Link from "next/link";
 import { ArrowLeft, CheckCircle2, AlertCircle, Clock } from "lucide-react";
 import { notFound } from "next/navigation";

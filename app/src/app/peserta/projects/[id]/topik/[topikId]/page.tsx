@@ -1,3 +1,5 @@
+export const metadata = { title: "Detail Topik" };
+
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { listChecklistItems } from "@/server/queries/peserta";

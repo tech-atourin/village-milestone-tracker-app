@@ -1,3 +1,5 @@
+export const metadata = { title: "Audit Log" };
+
 import { createAdminClient } from "@/lib/supabase/server";
 import { requireRole } from "@/lib/auth/rbac";
 import { ShieldCheck } from "lucide-react";

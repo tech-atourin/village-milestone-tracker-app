@@ -1,3 +1,5 @@
+export const metadata = { title: "Verifikasi Klasifikasi" };
+
 import { createClient } from "@/lib/supabase/server";
 import { requireRole } from "@/lib/auth/rbac";
 import { VerificationQueue } from "./verification-queue";

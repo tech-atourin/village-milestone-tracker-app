@@ -1,3 +1,5 @@
+export const metadata = { title: "Laporan Project" };
+
 import { notFound } from "next/navigation";
 import Image from "next/image";
 import { requireRole } from "@/lib/auth/rbac";

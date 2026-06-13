@@ -1,3 +1,5 @@
+export const metadata = { title: "Dashboard" };
+
 import Link from "next/link";
 import {
   Folder,

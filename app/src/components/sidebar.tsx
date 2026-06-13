@@ -3,13 +3,46 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { type LucideIcon } from "lucide-react";
+import {
+  LayoutDashboard,
+  Folder,
+  LayoutTemplate,
+  Users,
+  GraduationCap,
+  ShieldCheck,
+  Award,
+  Building2,
+  Sparkles,
+  ClipboardCheck,
+  MapPin,
+  BarChart3,
+  type LucideIcon,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
+
+// Icon registry — pass icon as a string from server layouts so the
+// items prop stays serializable across the RSC boundary.
+const ICONS: Record<string, LucideIcon> = {
+  LayoutDashboard,
+  Folder,
+  LayoutTemplate,
+  Users,
+  GraduationCap,
+  ShieldCheck,
+  Award,
+  Building2,
+  Sparkles,
+  ClipboardCheck,
+  MapPin,
+  BarChart3,
+};
+
+export type SidebarIconName = keyof typeof ICONS;
 
 export type SidebarItem = {
   href: string;
   label: string;
-  icon: LucideIcon;
+  icon: SidebarIconName;
 };
 
 export function Sidebar({
@@ -43,7 +76,7 @@ export function Sidebar({
 
       <nav className="flex-1 space-y-0.5 overflow-y-auto p-3">
         {items.map((item) => {
-          const Icon = item.icon;
+          const Icon = ICONS[item.icon] ?? Folder;
           const active =
             pathname === item.href || pathname.startsWith(`${item.href}/`);
           return (

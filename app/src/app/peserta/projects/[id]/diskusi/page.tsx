@@ -1,3 +1,5 @@
+export const metadata = { title: "Diskusi" };
+
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";

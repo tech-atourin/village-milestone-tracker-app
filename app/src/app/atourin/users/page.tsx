@@ -1,3 +1,5 @@
+export const metadata = { title: "Users" };
+
 import Link from "next/link";
 import { Upload, Users as UsersIcon } from "lucide-react";
 import { listUsers } from "@/server/queries/users";

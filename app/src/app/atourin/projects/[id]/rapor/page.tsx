@@ -1,3 +1,5 @@
+export const metadata = { title: "Rapor Project" };
+
 import Link from "next/link";
 import { ArrowLeft, GraduationCap, FileText } from "lucide-react";
 import { requireRole } from "@/lib/auth/rbac";

@@ -4,7 +4,10 @@ import { ServiceWorkerRegister } from "@/components/sw-register";
 import { OfflineIndicator } from "@/components/offline-indicator";
 
 export const metadata: Metadata = {
-  title: "Village Milestone Tracker · by Atourin",
+  title: {
+    default: "Village Milestone Tracker by Atourin",
+    template: "%s | Village Milestone Tracker by Atourin",
+  },
   description:
     "Platform pendampingan desa wisata internal Atourin & mitra terdaftar.",
   manifest: "/manifest.json",
