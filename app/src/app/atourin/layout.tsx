@@ -7,6 +7,7 @@ import {
   ShieldCheck,
   Award,
   Building2,
+  Sparkles,
 } from "lucide-react";
 import { Sidebar } from "@/components/sidebar";
 import { Topbar } from "@/components/topbar";
@@ -16,6 +17,7 @@ const NAV_ITEMS = [
   { href: "/atourin/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/atourin/projects", label: "Projects", icon: Folder },
   { href: "/atourin/klasifikasi", label: "Klasifikasi", icon: Award },
+  { href: "/atourin/insights", label: "AI Insights", icon: Sparkles },
   { href: "/atourin/templates", label: "Templates", icon: LayoutTemplate },
   { href: "/atourin/users", label: "Users", icon: Users },
   { href: "/atourin/orgs", label: "Organisasi", icon: Building2 },

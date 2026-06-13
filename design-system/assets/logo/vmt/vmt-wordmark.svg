@@ -1,4 +1,4 @@
-<svg width="1280" height="320" viewBox="0 0 1280 320" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Village Milestone Tracker wordmark">
+<svg width="1280" height="280" viewBox="0 0 1280 280" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Village Milestone Tracker wordmark">
   <title>Village Milestone Tracker — Wordmark (Horizontal)</title>
 
   <!-- Mark (left, scaled to 240px content area) -->
@@ -26,9 +26,9 @@
   <!-- Wordmark text -->
   <g font-family="Product Sans, -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif">
     <!-- "Village" overline -->
-    <text x="340" y="118" font-size="34" font-weight="400" letter-spacing="6" fill="#8A8B8D">VILLAGE</text>
-    <!-- "Milestone Tracker" main -->
-    <text x="340" y="200" font-size="78" font-weight="700" letter-spacing="-1.5" fill="#58595B">Milestone</text>
-    <text x="340" y="282" font-size="78" font-weight="700" letter-spacing="-1.5" fill="#7068D5">Tracker</text>
+    <text x="340" y="64" font-size="34" font-weight="400" letter-spacing="6" fill="#8A8B8D">VILLAGE</text>
+    <!-- "Milestone Tracker" main — Tracker baseline aligns with mark ground line (y=228) -->
+    <text x="340" y="146" font-size="78" font-weight="700" letter-spacing="-1.5" fill="#58595B">Milestone</text>
+    <text x="340" y="228" font-size="78" font-weight="700" letter-spacing="-1.5" fill="#7068D5">Tracker</text>
   </g>
 </svg>

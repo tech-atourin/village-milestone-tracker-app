@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { ServiceWorkerRegister } from "@/components/sw-register";
+import { OfflineIndicator } from "@/components/offline-indicator";
 
 export const metadata: Metadata = {
   title: "Village Milestone Tracker · by Atourin",
@@ -31,6 +32,7 @@ export default function RootLayout({
     <html lang="id">
       <body className="antialiased">
         {children}
+        <OfflineIndicator />
         <ServiceWorkerRegister />
       </body>
     </html>

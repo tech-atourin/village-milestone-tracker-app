@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { getCurrentUser, scopeHomePath } from "@/lib/auth/rbac";
 import { createClient } from "@/lib/supabase/server";
+import { ChangePasswordCard } from "./change-password";
 
 async function fetchProjectsAndRapor(userId: string) {
   const supabase = createClient();
@@ -110,6 +111,8 @@ export default async function ProfilePage() {
             </div>
           </div>
         </section>
+
+        <ChangePasswordCard />
 
         <section className="rounded-2xl border border-atr-outline bg-white p-6 shadow-atr-1">
           <h2 className="mb-4 flex items-center gap-2 text-sm font-bold text-atr-fg">

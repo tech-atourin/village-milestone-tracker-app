@@ -105,12 +105,23 @@ export function ProjectsTable({
         header: "",
         enableSorting: false,
         cell: ({ row }) => (
-          <Link
-            href={`/${scope}/projects/${row.original.id}`}
-            className="text-sm font-bold text-atr-purple hover:text-atr-purple-600"
-          >
-            Buka →
-          </Link>
+          <div className="flex justify-end gap-2">
+            {scope === "atourin" && (
+              <Link
+                href={`/${scope}/projects/${row.original.id}?tab=settings`}
+                className="text-xs font-bold text-atr-fg-muted hover:text-atr-purple-600"
+                title="Edit project"
+              >
+                Edit
+              </Link>
+            )}
+            <Link
+              href={`/${scope}/projects/${row.original.id}`}
+              className="text-sm font-bold text-atr-purple hover:text-atr-purple-600"
+            >
+              Buka →
+            </Link>
+          </div>
         ),
       },
     ],

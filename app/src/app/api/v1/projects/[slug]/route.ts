@@ -1,6 +1,7 @@
-import { NextResponse } from "next/server";
+import { NextResponse, type NextRequest } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { clientEnv } from "@/lib/env";
+import { rateLimit, ipFromHeaders } from "@/lib/rate-limit";
 
 // =====================================================
 // GET /api/v1/projects/[slug]
@@ -19,9 +20,28 @@ import { clientEnv } from "@/lib/env";
 export const revalidate = 300;
 
 export async function GET(
-  _req: Request,
+  req: NextRequest,
   { params }: { params: { slug: string } },
 ) {
+  // Rate limit: 60 req per minute per IP
+  const ip = ipFromHeaders(req.headers);
+  const rl = rateLimit(`public-api:${ip}`, {
+    limit: 60,
+    windowMs: 60_000,
+  });
+  if (!rl.ok) {
+    return NextResponse.json(
+      { error: "rate_limit_exceeded" },
+      {
+        status: 429,
+        headers: {
+          "Retry-After": Math.ceil((rl.resetAt - Date.now()) / 1000).toString(),
+          "X-RateLimit-Remaining": "0",
+        },
+      },
+    );
+  }
+
   const env = clientEnv();
   const supabase = createClient(
     env.NEXT_PUBLIC_SUPABASE_URL,

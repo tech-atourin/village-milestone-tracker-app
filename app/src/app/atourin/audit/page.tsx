@@ -2,6 +2,7 @@ import { createAdminClient } from "@/lib/supabase/server";
 import { requireRole } from "@/lib/auth/rbac";
 import { ShieldCheck } from "lucide-react";
 import { AuditTable, type AuditRow } from "./audit-table";
+import { AuditDateRange } from "./audit-date-range";
 
 type DbRow = {
   id: string;
@@ -14,15 +15,23 @@ type DbRow = {
   after: Record<string, unknown> | null;
 };
 
-async function fetchAudit(): Promise<AuditRow[]> {
+async function fetchAudit(from?: string, to?: string): Promise<AuditRow[]> {
   const admin = createAdminClient();
-  const { data } = await admin
+  let query = admin
     .from("audit_log")
     .select(
       "id, actor_id, action, entity_type, entity_id, created_at, before, after",
     )
     .order("created_at", { ascending: false })
-    .limit(500);
+    .limit(1000);
+  if (from) query = query.gte("created_at", from);
+  if (to) {
+    // Include the full day
+    const end = new Date(to);
+    end.setDate(end.getDate() + 1);
+    query = query.lt("created_at", end.toISOString().slice(0, 10));
+  }
+  const { data } = await query;
   const rows = (data ?? []) as unknown as DbRow[];
 
   const actorIds = Array.from(
@@ -53,9 +62,13 @@ async function fetchAudit(): Promise<AuditRow[]> {
   }));
 }
 
-export default async function AuditLogPage() {
+export default async function AuditLogPage({
+  searchParams,
+}: {
+  searchParams: { from?: string; to?: string };
+}) {
   await requireRole("superadmin");
-  const rows = await fetchAudit();
+  const rows = await fetchAudit(searchParams.from, searchParams.to);
 
   return (
     <div className="space-y-6">
@@ -64,9 +77,10 @@ export default async function AuditLogPage() {
           Audit log
         </h1>
         <p className="text-sm text-atr-fg-muted">
-          500 entry terbaru. Untuk compliance project pemerintah.
+          {rows.length} entry. Untuk compliance project pemerintah.
         </p>
       </header>
+      <AuditDateRange from={searchParams.from} to={searchParams.to} />
 
       {rows.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-atr-outline bg-white p-12 text-center">
