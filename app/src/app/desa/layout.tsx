@@ -5,6 +5,7 @@ import { requireRole } from "@/lib/auth/rbac";
 const NAV_ITEMS: SidebarItem[] = [
   { href: "/desa/dashboard", label: "Dashboard", icon: "LayoutDashboard" },
   { href: "/desa/self-assessment", label: "Self-Assessment", icon: "ClipboardCheck" },
+  { href: "/desa/riwayat", label: "Riwayat Program", icon: "History" },
   { href: "/desa/profil", label: "Profil Desa", icon: "MapPin" },
 ];
 

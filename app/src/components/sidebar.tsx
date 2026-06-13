@@ -16,6 +16,7 @@ import {
   ClipboardCheck,
   MapPin,
   BarChart3,
+  History,
   type LucideIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -35,6 +36,7 @@ const ICONS: Record<string, LucideIcon> = {
   ClipboardCheck,
   MapPin,
   BarChart3,
+  History,
 };
 
 export type SidebarIconName = keyof typeof ICONS;

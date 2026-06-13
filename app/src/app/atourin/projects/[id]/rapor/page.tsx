@@ -24,14 +24,23 @@ export default async function RaporIndexPage({
         Kembali ke project
       </Link>
 
-      <header>
+      <header className="space-y-1.5">
         <h1 className="text-2xl font-bold tracking-tight text-atr-fg">
-          RAPOR Peserta
+          RAPOR per Peserta
         </h1>
         <p className="text-sm text-atr-fg-muted">
           Input manual hasil pre-test, post-test, attendance, dan survey
-          kepuasan per peserta. GForm sync hadir di iterasi berikut.
+          kepuasan per peserta. Untuk hasil akumulasi tingkat desa, lihat
+          tab RAPOR per Desa.
         </p>
+        <div className="flex gap-4 pt-2 text-xs">
+          <Link
+            href={`/atourin/projects/${params.id}/rapor-desa`}
+            className="font-bold text-atr-purple-600 hover:text-atr-purple"
+          >
+            RAPOR per Desa →
+          </Link>
+        </div>
       </header>
 
       {rows.length === 0 ? (
