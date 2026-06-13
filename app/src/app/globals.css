@@ -1,0 +1,142 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* =====================================================
+ * Atourin brand tokens — sourced from /design-system/atr-tokens.css
+ * (copied inline so Next can compile without filesystem imports).
+ * Keep in sync with the canonical file.
+ * ===================================================== */
+
+@font-face {
+  font-family: "Product Sans";
+  src: url("/fonts/Product-Sans-Regular.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Product Sans";
+  src: url("/fonts/Product-Sans-Italic.ttf") format("truetype");
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Product Sans";
+  src: url("/fonts/Product-Sans-Bold.ttf") format("truetype");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Product Sans";
+  src: url("/fonts/Product-Sans-Bold-Italic.ttf") format("truetype");
+  font-weight: 700;
+  font-style: italic;
+  font-display: swap;
+}
+
+:root {
+  /* Brand: purple */
+  --atr-purple: #7068d5;
+  --atr-purple-soft: #a49ee4;
+  --atr-purple-light: #cdcded;
+  --atr-purple-50: #f1f0fb;
+  --atr-purple-6564ab: #6564ab;
+  --atr-purple-654093: #654093;
+
+  /* Brand: yellow / red / arti */
+  --atr-yellow: #ffc442;
+  --atr-red: #f46263;
+  --atr-arti: #51b054;
+
+  /* Neutrals */
+  --atr-text: #58595b;
+  --atr-text-muted: #8a8b8d;
+  --atr-outline: #e6e6e6;
+  --atr-bg: #ffffff;
+  --atr-bg-soft: #f6f6fb;
+  --atr-bg-cool: #e4e6f3;
+
+  --atr-success: var(--atr-arti);
+  --atr-warning: var(--atr-yellow);
+  --atr-danger: var(--atr-red);
+  --atr-info: var(--atr-purple);
+
+  /* Type */
+  --atr-font-sans: "Product Sans", -apple-system, BlinkMacSystemFont,
+    "Segoe UI", Roboto, sans-serif;
+
+  /* Shadows */
+  --atr-shadow-1: 0 1px 2px rgba(0, 0, 0, 0.05),
+    0 1px 1px rgba(0, 0, 0, 0.04);
+  --atr-shadow-2: 0 2px 6px rgba(0, 0, 0, 0.06),
+    0 1px 2px rgba(0, 0, 0, 0.04);
+  --atr-shadow-4: 0 6px 16px rgba(0, 0, 0, 0.08),
+    0 2px 4px rgba(0, 0, 0, 0.05);
+
+  /* shadcn semantic tokens, remapped to Atourin */
+  --background: 0 0% 100%;                /* #FFFFFF */
+  --foreground: 240 2% 35%;               /* #58595B */
+  --card: 0 0% 100%;
+  --card-foreground: 240 2% 35%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 240 2% 35%;
+  --primary: 245 56% 62%;                 /* #7068D5 atr-purple */
+  --primary-foreground: 0 0% 100%;
+  --secondary: 240 25% 97%;               /* #F1F0FB atr-purple-50 */
+  --secondary-foreground: 245 31% 41%;    /* #6564AB */
+  --muted: 240 25% 97%;
+  --muted-foreground: 240 1% 54%;         /* #8A8B8D atr-text-muted */
+  --accent: 49 100% 63%;                  /* #FFC442 atr-yellow */
+  --accent-foreground: 240 2% 35%;
+  --destructive: 359 87% 67%;             /* #F46263 atr-red */
+  --destructive-foreground: 0 0% 100%;
+  --border: 0 0% 90%;                     /* #E6E6E6 atr-outline */
+  --input: 0 0% 90%;
+  --ring: 245 56% 62%;                    /* atr-purple */
+  --radius: 0.5rem;
+}
+
+/* =====================================================
+ * Base
+ * ===================================================== */
+@layer base {
+  * {
+    border-color: hsl(var(--border));
+  }
+
+  html,
+  body {
+    font-family: var(--atr-font-sans);
+    color: var(--atr-text);
+    background: var(--atr-bg);
+    line-height: 1.4;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Drop the lingering mouse-click outline, keep keyboard ring */
+  button:focus,
+  [role="tab"]:focus,
+  [role="button"]:focus,
+  a:focus,
+  summary:focus {
+    outline: none;
+  }
+  button:focus-visible,
+  [role="tab"]:focus-visible,
+  [role="button"]:focus-visible,
+  a:focus-visible {
+    outline: 2px solid var(--atr-purple);
+    outline-offset: 2px;
+    border-radius: 6px;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}

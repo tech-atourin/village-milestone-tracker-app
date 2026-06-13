@@ -1,0 +1,25 @@
+{
+  "name": "Village Milestone Tracker",
+  "short_name": "VMT",
+  "description": "Platform pendampingan desa wisata Atourin.",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#FFFFFF",
+  "theme_color": "#7068D5",
+  "lang": "id",
+  "icons": [
+    {
+      "src": "/logo/vmt/vmt-app-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/logo/vmt/vmt-app-icon-maskable.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    }
+  ]
+}

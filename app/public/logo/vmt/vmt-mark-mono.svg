@@ -1,0 +1,28 @@
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Village Milestone Tracker mark (monochrome)">
+  <title>Village Milestone Tracker — Mark (Monochrome)</title>
+  <!--
+    Single-color version using currentColor.
+    For print, embossing, single-color media, or when contrast requires mono.
+    Default color: black. Override via CSS color on parent.
+  -->
+  <g fill="currentColor" stroke="currentColor">
+    <rect x="80" y="396" width="352" height="6" rx="3" opacity="0.3" stroke="none"/>
+
+    <rect x="110" y="316" width="56" height="80"  rx="10" opacity="0.4" stroke="none"/>
+    <rect x="190" y="256" width="56" height="140" rx="10" opacity="0.6" stroke="none"/>
+    <rect x="270" y="196" width="56" height="200" rx="10" opacity="0.8" stroke="none"/>
+    <rect x="350" y="136" width="56" height="260" rx="10" stroke="none"/>
+
+    <path d="M138 326 L218 266 L298 206 L378 146"
+          stroke-width="6" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+
+    <circle cx="138" cy="326" r="8" stroke="none"/>
+    <circle cx="218" cy="266" r="8" stroke="none"/>
+    <circle cx="298" cy="206" r="8" stroke="none"/>
+
+    <g transform="translate(378, 130)">
+      <path d="M0 -76 C-22 -76 -38 -60 -38 -38 C-38 -20 -16 -8 -3 14 Q0 18 3 14 C16 -8 38 -20 38 -38 C38 -60 22 -76 0 -76 Z" stroke="none"/>
+      <circle cx="0" cy="-42" r="11" fill="#FFFFFF" stroke="none"/>
+    </g>
+  </g>
+</svg>

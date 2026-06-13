@@ -1,0 +1,30 @@
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Village Milestone Tracker mark">
+  <title>Village Milestone Tracker — Mark</title>
+  <!--
+    Standalone mark on transparent background.
+    Use on white/light surfaces. For dark surfaces use vmt-mark-onpurple.svg.
+  -->
+
+  <!-- Subtle base ground line -->
+  <rect x="80" y="396" width="352" height="6" rx="3" fill="#7068D5" opacity="0.25"/>
+
+  <!-- 4 ascending milestone bars in Atourin purple -->
+  <rect x="110" y="316" width="56" height="80"  rx="10" fill="#7068D5" opacity="0.4"/>
+  <rect x="190" y="256" width="56" height="140" rx="10" fill="#7068D5" opacity="0.6"/>
+  <rect x="270" y="196" width="56" height="200" rx="10" fill="#7068D5" opacity="0.8"/>
+  <rect x="350" y="136" width="56" height="260" rx="10" fill="#7068D5"/>
+
+  <!-- Connecting milestone path -->
+  <path d="M138 326 L218 266 L298 206 L378 146"
+        stroke="#FFC442" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+
+  <circle cx="138" cy="326" r="8" fill="#FFC442" opacity="0.7"/>
+  <circle cx="218" cy="266" r="8" fill="#FFC442" opacity="0.85"/>
+  <circle cx="298" cy="206" r="8" fill="#FFC442"/>
+
+  <!-- Achievement pin -->
+  <g transform="translate(378, 130)">
+    <path d="M0 -76 C-22 -76 -38 -60 -38 -38 C-38 -20 -16 -8 -3 14 Q0 18 3 14 C16 -8 38 -20 38 -38 C38 -60 22 -76 0 -76 Z" fill="#FFC442"/>
+    <circle cx="0" cy="-42" r="11" fill="#7068D5"/>
+  </g>
+</svg>

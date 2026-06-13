@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Atourin · Design System</title>
+<link rel="stylesheet" href="atr-tokens.css" />
+<style>
+  *, *::before, *::after { box-sizing: border-box; }
+  body { margin: 0; background: var(--atr-bg-soft); color: var(--atr-text); font-family: var(--atr-font-sans); }
+  ::selection { background: var(--atr-purple-light); }
+
+  /* ---------- Layout shell ---------- */
+  .app { display: grid; grid-template-columns: 248px 1fr; min-height: 100vh; }
+  .side {
+    position: sticky; top: 0; align-self: start; height: 100vh; overflow-y: auto;
+    background: #fff; border-right: 1px solid var(--atr-outline); padding: 22px 16px;
+  }
+  .side .brand { display: flex; align-items: center; gap: 10px; padding: 4px 8px 18px; }
+  .side .brand img { height: 26px; width: auto; }
+  .side .brand .ver { font-size: 10.5px; font-weight: 700; color: var(--atr-purple); background: var(--atr-purple-50); border: 1px solid var(--atr-purple-light); padding: 2px 7px; border-radius: 999px; }
+  .nav-group { font-size: 10.5px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--atr-text-muted); padding: 16px 10px 6px; }
+  .side a.nav { display: block; padding: 8px 10px; border-radius: 9px; font-size: 13.5px; font-weight: 600; color: var(--atr-text); text-decoration: none; transition: background .12s, color .12s; }
+  .side a.nav:hover { background: var(--atr-purple-50); color: var(--atr-purple); }
+
+  .main { padding: 0 0 120px; }
+  .hero {
+    background: linear-gradient(135deg, var(--atr-purple) 0%, #6c559c 60%, #654093 100%);
+    color: #fff; padding: 56px 56px 48px; position: relative; overflow: hidden;
+  }
+  .hero h1 { font-size: 42px; font-weight: 700; margin: 0 0 10px; letter-spacing: -.01em; }
+  .hero p { font-size: 16px; line-height: 1.6; max-width: 620px; margin: 0; color: rgba(255,255,255,.86); }
+  .hero .meta { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 24px; }
+  .hero .meta span { font-size: 12.5px; font-weight: 600; background: rgba(255,255,255,.15); border: 1px solid rgba(255,255,255,.22); padding: 7px 13px; border-radius: 999px; }
+  .hero .blob { position: absolute; border-radius: 50%; filter: blur(2px); opacity: .5; }
+  .hero .blob.a { width: 220px; height: 220px; background: #FFC442; right: -40px; top: -60px; opacity: .28; }
+  .hero .blob.b { width: 160px; height: 160px; background: #F46263; right: 160px; bottom: -80px; opacity: .22; }
+
+  .wrap { max-width: 1080px; padding: 0 56px; }
+  section.block { padding: 48px 0 8px; border-bottom: 1px solid var(--atr-outline); }
+  section.block:last-child { border-bottom: none; }
+  .eyebrow { font-size: 11px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: var(--atr-purple); }
+  .block h2 { font-size: 27px; font-weight: 700; margin: 8px 0 6px; letter-spacing: -.01em; }
+  .block .lede { font-size: 14.5px; color: var(--atr-text-muted); line-height: 1.6; max-width: 660px; margin: 0 0 28px; }
+  .sub { font-size: 12px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; color: var(--atr-text-muted); margin: 28px 0 14px; }
+
+  .card { background: #fff; border: 1px solid var(--atr-outline); border-radius: var(--atr-radius-lg); box-shadow: var(--atr-shadow-2); }
+
+  /* ---------- Color swatches ---------- */
+  .swatches { display: grid; grid-template-columns: repeat(auto-fill, minmax(168px, 1fr)); gap: 14px; }
+  .sw { border-radius: 14px; overflow: hidden; border: 1px solid var(--atr-outline); background: #fff; }
+  .sw .chip { height: 84px; display: flex; align-items: flex-end; padding: 10px; }
+  .sw .body { padding: 10px 12px 13px; }
+  .sw .name { font-size: 13px; font-weight: 700; }
+  .sw .hex { font-size: 12px; color: var(--atr-text-muted); font-variant-numeric: tabular-nums; margin-top: 2px; text-transform: uppercase; }
+  .sw .role { font-size: 11.5px; color: var(--atr-text-muted); margin-top: 7px; line-height: 1.4; }
+
+  /* ---------- Type specimen ---------- */
+  .typerow { display: flex; align-items: baseline; gap: 20px; padding: 14px 0; border-bottom: 1px dashed var(--atr-outline); }
+  .typerow:last-child { border-bottom: none; }
+  .typerow .spec { width: 200px; flex-shrink: 0; font-size: 12px; color: var(--atr-text-muted); font-variant-numeric: tabular-nums; }
+  .typerow .spec b { display: block; color: var(--atr-text); font-size: 13px; }
+  .typerow .demo { line-height: 1.25; }
+
+  /* ---------- Token tables (spacing/radius/shadow) ---------- */
+  .tokrow { display: flex; align-items: center; gap: 18px; padding: 11px 0; border-bottom: 1px dashed var(--atr-outline); }
+  .tokrow:last-child { border-bottom: none; }
+  .tokrow .vis { flex-shrink: 0; }
+  .tokrow .label { font-size: 13px; font-weight: 700; width: 132px; }
+  .tokrow .val { font-size: 12.5px; color: var(--atr-text-muted); font-variant-numeric: tabular-nums; }
+  .sp-bar { height: 16px; background: var(--atr-purple); border-radius: 3px; }
+  .rad-box { width: 64px; height: 64px; background: var(--atr-purple-50); border: 1.5px solid var(--atr-purple); }
+  .sh-box { width: 90px; height: 56px; background: #fff; border-radius: 10px; }
+
+  /* ---------- Component demos ---------- */
+  .demo-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 18px; }
+  .demo { background: #fff; border: 1px solid var(--atr-outline); border-radius: 16px; padding: 22px; box-shadow: var(--atr-shadow-2); }
+  .demo .dt { font-size: 12px; font-weight: 800; letter-spacing: .03em; text-transform: uppercase; color: var(--atr-text-muted); margin-bottom: 16px; }
+  .stack { display: flex; flex-direction: column; gap: 12px; align-items: flex-start; }
+  .inline { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+
+  /* button recreations */
+  .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; border: none; border-radius: var(--atr-radius-md); font-family: var(--atr-font-sans); font-weight: 700; cursor: pointer; transition: filter .12s, background .12s; }
+  .btn.lg { height: 56px; padding: 0 22px; font-size: 16px; }
+  .btn.md { height: 48px; padding: 0 22px; font-size: 15px; }
+  .btn.sm { height: 38px; padding: 0 14px; font-size: 13px; }
+  .btn.primary { background: var(--atr-purple); color: #fff; }
+  .btn.primary:hover { filter: brightness(1.05); }
+  .btn.outline { background: #fff; color: var(--atr-purple); border: 1.5px solid var(--atr-purple-light); }
+  .btn.ghost { background: var(--atr-purple-50); color: var(--atr-purple); }
+  .btn.danger { background: var(--atr-red); color: #fff; }
+  .btn.disabled { background: var(--atr-outline); color: var(--atr-text-muted); cursor: not-allowed; }
+
+  /* chips */
+  .chip2 { display: inline-flex; align-items: center; gap: 6px; height: 34px; padding: 0 15px; border-radius: 999px; font-size: 13px; font-weight: 600; border: 1px solid var(--atr-outline); background: #fff; color: var(--atr-text); cursor: pointer; }
+  .chip2.on { background: var(--atr-purple); color: #fff; border-color: var(--atr-purple); }
+
+  /* badges */
+  .bdg { display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 999px; font-size: 11.5px; font-weight: 700; }
+  .bdg.purple { background: var(--atr-purple-50); color: var(--atr-purple); }
+  .bdg.green { background: rgba(81,176,84,.12); color: var(--atr-arti); }
+  .bdg.yellow { background: rgba(255,196,66,.18); color: #9a6b00; }
+  .bdg.red { background: rgba(244,98,99,.12); color: var(--atr-red); }
+
+  /* input */
+  .field { width: 100%; }
+  .field label { display: block; font-size: 12.5px; font-weight: 700; margin-bottom: 6px; }
+  .field input { width: 100%; height: 48px; border: 1.5px solid var(--atr-outline); border-radius: var(--atr-radius-md); padding: 0 14px; font-size: 14px; font-family: var(--atr-font-sans); color: var(--atr-text); outline: none; transition: border-color .12s; }
+  .field input:focus { border-color: var(--atr-purple); }
+
+  /* list row */
+  .lrow { display: flex; align-items: center; gap: 13px; padding: 13px 4px; }
+  .lrow .ic { width: 40px; height: 40px; border-radius: 11px; background: var(--atr-purple-50); color: var(--atr-purple); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .lrow .tx { flex: 1; }
+  .lrow .tx b { display: block; font-size: 14px; }
+  .lrow .tx span { font-size: 12.5px; color: var(--atr-text-muted); }
+
+  /* product tile */
+  .tile { width: 230px; border: 1px solid var(--atr-outline); border-radius: 16px; overflow: hidden; background: #fff; box-shadow: var(--atr-shadow-2); }
+  .tile .img { height: 130px; background: linear-gradient(135deg, #A49EE4, #7068D5); position: relative; }
+  .tile .img .b { position: absolute; top: 10px; left: 10px; }
+  .tile .pad { padding: 12px 13px 15px; }
+  .tile .pad .t { font-size: 14px; font-weight: 700; line-height: 1.3; }
+  .tile .pad .loc { font-size: 12px; color: var(--atr-text-muted); margin-top: 3px; }
+  .tile .pad .pr { font-size: 16px; font-weight: 700; color: var(--atr-purple); margin-top: 9px; }
+
+  /* alerts/toast */
+  .toast { display: flex; gap: 11px; align-items: flex-start; padding: 13px 15px; border-radius: 12px; background: #fff; box-shadow: var(--atr-shadow-4); border: 1px solid var(--atr-outline); max-width: 330px; }
+  .toast .dot { width: 30px; height: 30px; border-radius: 9px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; color: #fff; font-weight: 800; }
+  .toast b { font-size: 13.5px; display: block; }
+  .toast span { font-size: 12.5px; color: var(--atr-text-muted); }
+
+  /* principle cards */
+  .princ { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 16px; }
+  .princ .p { background: #fff; border: 1px solid var(--atr-outline); border-radius: 14px; padding: 20px; }
+  .princ .p .n { width: 34px; height: 34px; border-radius: 10px; background: var(--atr-purple); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 800; margin-bottom: 12px; }
+  .princ .p h4 { font-size: 15px; margin: 0 0 6px; }
+  .princ .p p { font-size: 13px; color: var(--atr-text-muted); line-height: 1.55; margin: 0; }
+
+  /* do/dont voice */
+  .voice { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .voice .col { border-radius: 14px; padding: 18px 20px; }
+  .voice .do { background: rgba(81,176,84,.08); border: 1px solid rgba(81,176,84,.3); }
+  .voice .dont { background: rgba(244,98,99,.07); border: 1px solid rgba(244,98,99,.3); }
+  .voice .col .h { font-size: 13px; font-weight: 800; margin-bottom: 12px; display: flex; align-items: center; gap: 7px; }
+  .voice .do .h { color: var(--atr-arti); }
+  .voice .dont .h { color: var(--atr-red); }
+  .voice ul { margin: 0; padding-left: 2px; list-style: none; display: flex; flex-direction: column; gap: 9px; }
+  .voice li { font-size: 13px; line-height: 1.5; padding-left: 22px; position: relative; }
+  .voice .do li::before { content: "✓"; position: absolute; left: 0; color: var(--atr-arti); font-weight: 800; }
+  .voice .dont li::before { content: "✕"; position: absolute; left: 0; color: var(--atr-red); font-weight: 800; }
+  code { background: var(--atr-purple-50); color: var(--atr-purple); padding: 1px 6px; border-radius: 5px; font-size: 12.5px; font-family: ui-monospace, monospace; }
+
+  .logo-card { display: flex; gap: 16px; flex-wrap: wrap; }
+  .logo-card .lc { flex: 1; min-width: 200px; border-radius: 14px; padding: 28px; display: flex; align-items: center; justify-content: center; border: 1px solid var(--atr-outline); }
+  .logo-card .lc img { height: 38px; }
+  .logo-card .lc.dark { background: var(--atr-purple); }
+  .logo-card .lc.light { background: #fff; }
+  .logo-card .lc.soft { background: var(--atr-bg-soft); }
+
+  /* icon grid */
+  .icons { display: grid; grid-template-columns: repeat(auto-fill, minmax(112px, 1fr)); gap: 12px; }
+  .ic-card { background: #fff; border: 1px solid var(--atr-outline); border-radius: 13px; padding: 18px 10px 12px; text-align: center; }
+  .ic-card .glyph { color: var(--atr-purple); display: flex; align-items: center; justify-content: center; height: 32px; }
+  .ic-card .nm { font-size: 11.5px; color: var(--atr-text-muted); margin-top: 10px; }
+  .icon-rules { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 14px; margin-top: 18px; }
+  .icon-rules .r { display: flex; gap: 12px; align-items: flex-start; background: #fff; border: 1px solid var(--atr-outline); border-radius: 12px; padding: 15px 16px; }
+  .icon-rules .r .k { font-size: 12.5px; font-weight: 800; color: var(--atr-purple); width: 70px; flex-shrink: 0; }
+  .icon-rules .r .v { font-size: 12.5px; color: var(--atr-text-muted); line-height: 1.5; }
+
+  /* mascot */
+  .mascot-row { display: flex; gap: 22px; flex-wrap: wrap; }
+  .mascot-row figure { margin: 0; text-align: center; background: #fff; border: 1px solid var(--atr-outline); border-radius: 16px; padding: 18px 22px; box-shadow: var(--atr-shadow-2); }
+  .mascot-row figure svg { width: 116px; height: 116px; }
+  .mascot-row figcaption { font-size: 12px; color: var(--atr-text-muted); margin-top: 6px; }
+  .mascot-row figcaption b { display: block; color: var(--atr-text); font-size: 13px; }
+  .illus-row { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px; margin-top: 18px; }
+  .illus-row .il { border: 1px solid var(--atr-outline); border-radius: 14px; overflow: hidden; background: #fff; }
+  .illus-row .il img { width: 100%; height: 130px; object-fit: cover; display: block; background: var(--atr-bg-soft); }
+  .illus-row .il .cap { padding: 11px 13px; font-size: 12px; color: var(--atr-text-muted); }
+  .illus-row .il .cap b { display: block; color: var(--atr-text); font-size: 13px; margin-bottom: 2px; }
+
+  /* layout anatomy */
+  .layouts { display: grid; grid-template-columns: 280px 1fr; gap: 24px; align-items: start; }
+  .phone-ana { background: #fff; border: 1px solid var(--atr-outline); border-radius: 22px; padding: 10px; box-shadow: var(--atr-shadow-4); }
+  .phone-ana .scr { border-radius: 16px; overflow: hidden; border: 1px solid var(--atr-outline); }
+  .pa-top { background: var(--atr-purple); height: 54px; display: flex; align-items: center; padding: 0 14px; gap: 10px; }
+  .pa-top .dot { width: 22px; height: 22px; border-radius: 7px; background: rgba(255,255,255,.25); }
+  .pa-top .ln { height: 9px; width: 90px; border-radius: 5px; background: rgba(255,255,255,.45); }
+  .pa-body { padding: 14px; display: flex; flex-direction: column; gap: 10px; min-height: 230px; background: var(--atr-bg-soft); }
+  .pa-body .sb { height: 36px; border-radius: 10px; background: #fff; border: 1px solid var(--atr-outline); }
+  .pa-body .cardln { height: 70px; border-radius: 12px; background: #fff; border: 1px solid var(--atr-outline); }
+  .pa-nav { height: 52px; background: #fff; border-top: 1px solid var(--atr-outline); display: flex; align-items: center; justify-content: space-around; }
+  .pa-nav .t { width: 22px; height: 22px; border-radius: 6px; background: var(--atr-outline); }
+  .pa-nav .t.on { background: var(--atr-purple); }
+  .anatomy-list { display: flex; flex-direction: column; gap: 12px; }
+  .anatomy-list .a { display: flex; gap: 13px; align-items: flex-start; }
+  .anatomy-list .a .num { width: 26px; height: 26px; border-radius: 8px; background: var(--atr-purple-50); color: var(--atr-purple); font-weight: 800; font-size: 12.5px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .anatomy-list .a .tx b { font-size: 13.5px; }
+  .anatomy-list .a .tx p { font-size: 12.5px; color: var(--atr-text-muted); margin: 2px 0 0; line-height: 1.5; }
+
+  @media (max-width: 880px) {
+    .app { grid-template-columns: 1fr; }
+    .side { display: none; }
+    .wrap, .hero { padding-left: 24px; padding-right: 24px; }
+    .voice { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <!-- ============ SIDEBAR ============ -->
+  <aside class="side">
+    <div class="brand">
+      <img src="assets/logo/atourin-logo-purple.png" alt="Atourin" onerror="this.style.display='none'" />
+      <span class="ver">v1.0</span>
+    </div>
+    <div class="nav-group">Fondasi</div>
+    <a class="nav" href="#prinsip">Prinsip</a>
+    <a class="nav" href="#warna">Warna</a>
+    <a class="nav" href="#tipografi">Tipografi</a>
+    <a class="nav" href="#spasi">Spasi &amp; Grid</a>
+    <a class="nav" href="#radius">Radius</a>
+    <a class="nav" href="#bayangan">Bayangan &amp; Elevasi</a>
+    <a class="nav" href="#motion">Motion</a>
+    <div class="nav-group">Komponen</div>
+    <a class="nav" href="#tombol">Tombol</a>
+    <a class="nav" href="#chip">Chip &amp; Tab</a>
+    <a class="nav" href="#badge">Badge &amp; Status</a>
+    <a class="nav" href="#input">Input</a>
+    <a class="nav" href="#kartu">Kartu &amp; List</a>
+    <a class="nav" href="#produk">Kartu Produk</a>
+    <a class="nav" href="#feedback">Feedback</a>
+    <div class="nav-group">Brand &amp; Voice</div>
+    <a class="nav" href="#logo">Logo</a>
+    <a class="nav" href="#ikon">Ikonografi</a>
+    <a class="nav" href="#ilustrasi">Ilustrasi &amp; Maskot</a>
+    <a class="nav" href="#layout">Pola Layout</a>
+    <a class="nav" href="#voice">Tone &amp; Penulisan</a>
+    <a class="nav" href="#referensi">File Referensi</a>
+  </aside>
+
+  <!-- ============ MAIN ============ -->
+  <main class="main">
+    <div class="hero">
+      <div class="blob a"></div>
+      <div class="blob b"></div>
+      <h1>Atourin Design System</h1>
+      <p>Fondasi visual & komponen tunggal untuk web dan aplikasi mobile Atourin, platform tourism technology Nusantara. Token diambil langsung dari kode produksi (Flutter + web), bukan rekaan baru.</p>
+      <div class="meta">
+        <span>Brand · Ungu #7068D5</span>
+        <span>Font · Product Sans</span>
+        <span>Web + Mobile sinkron</span>
+        <span>114 screen mobile · 30+ halaman web</span>
+      </div>
+    </div>
+
+    <div class="wrap">
+
+      <!-- PRINSIP -->
+      <section class="block" id="prinsip">
+        <div class="eyebrow">Fondasi</div>
+        <h2>Prinsip desain</h2>
+        <p class="lede">Empat prinsip yang memandu setiap keputusan visual dan interaksi di seluruh produk Atourin.</p>
+        <div class="princ">
+          <div class="p"><div class="n">1</div><h4>Nusantara dulu</h4><p>Konten lokal, bilingual (ID/EN) lewat glosarium, dan rasa percaya diri sebagai platform wisata Indonesia.</p></div>
+          <div class="p"><div class="n">2</div><h4>Jelas & ramah</h4><p>Bahasa hangat dan to the point. Ungu sebagai sinyal aksi, neutral yang tenang untuk konten.</p></div>
+          <div class="p"><div class="n">3</div><h4>Tanpa dead-end</h4><p>Setiap tombol punya aksi nyata: navigasi, modal, atau feedback. Pengguna tidak pernah buntu.</p></div>
+          <div class="p"><div class="n">4</div><h4>Satu sistem</h4><p>Web dan mobile berbagi token, taksonomi, dan pola yang sama. Konsistensi lintas platform.</p></div>
+        </div>
+      </section>
+
+      <!-- WARNA -->
+      <section class="block" id="warna">
+        <div class="eyebrow">Fondasi</div>
+        <h2>Warna</h2>
+        <p class="lede">Ungu adalah jantung brand: dipakai untuk aksi primer, state aktif, dan aksen. Kuning, merah, dan hijau ARTI mendukung sebagai warna fungsional. Neutral menjaga konten tetap mudah dibaca.</p>
+
+        <div class="sub">Brand · Ungu</div>
+        <div class="swatches">
+          <div class="sw"><div class="chip" style="background:#7068D5"></div><div class="body"><div class="name">Purple</div><div class="hex">#7068D5</div><div class="role">Primary. Tombol utama, link, state aktif.</div></div></div>
+          <div class="sw"><div class="chip" style="background:#A49EE4"></div><div class="body"><div class="name">Purple Soft</div><div class="hex">#A49EE4</div><div class="role">Header, gradient, aksen lembut.</div></div></div>
+          <div class="sw"><div class="chip" style="background:#CDCDED"></div><div class="body"><div class="name">Purple Light</div><div class="hex">#CDCDED</div><div class="role">Border chip terpilih, tint.</div></div></div>
+          <div class="sw"><div class="chip" style="background:#F1F0FB"></div><div class="body"><div class="name">Purple 50</div><div class="hex">#F1F0FB</div><div class="role">Background tint, hover halus.</div></div></div>
+          <div class="sw"><div class="chip" style="background:#654093"></div><div class="body"><div class="name">Purple 654093</div><div class="hex">#654093</div><div class="role">Gradient gelap, sekunder.</div></div></div>
+        </div>
+
+        <div class="sub">Fungsional</div>
+        <div class="swatches">
+          <div class="sw"><div class="chip" style="background:#FFC442"></div><div class="body"><div class="name">Yellow</div><div class="hex">#FFC442</div><div class="role">Warning, rating, highlight promo.</div></div></div>
+          <div class="sw"><div class="chip" style="background:#F46263"></div><div class="body"><div class="name">Red / Pink</div><div class="hex">#F46263</div><div class="role">Danger, diskon, wishlist aktif.</div></div></div>
+          <div class="sw"><div class="chip" style="background:#51B054"></div><div class="body"><div class="name">ARTI Green</div><div class="hex">#51B054</div><div class="role">Sukses, jejak karbon ARTI.</div></div></div>
+          <div class="sw"><div class="chip" style="background:#9B6AAB"></div><div class="body"><div class="name">Purple 9b6aab</div><div class="hex">#9B6AAB</div><div class="role">Avatar gradient, aksen.</div></div></div>
+        </div>
+
+        <div class="sub">Neutral</div>
+        <div class="swatches">
+          <div class="sw"><div class="chip" style="background:#58595B"></div><div class="body"><div class="name">Text</div><div class="hex">#58595B</div><div class="role">Teks utama.</div></div></div>
+          <div class="sw"><div class="chip" style="background:#8A8B8D"></div><div class="body"><div class="name">Text Muted</div><div class="hex">#8A8B8D</div><div class="role">Teks sekunder, caption.</div></div></div>
+          <div class="sw"><div class="chip" style="background:#E6E6E6"></div><div class="body"><div class="name">Outline</div><div class="hex">#E6E6E6</div><div class="role">Hairline, divider, border.</div></div></div>
+          <div class="sw"><div class="chip" style="background:#F6F6FB"></div><div class="body"><div class="name">BG Soft</div><div class="hex">#F6F6FB</div><div class="role">Wash halaman.</div></div></div>
+          <div class="sw"><div class="chip" style="background:#FFFFFF; border-bottom:1px solid #E6E6E6"></div><div class="body"><div class="name">BG</div><div class="hex">#FFFFFF</div><div class="role">Permukaan kartu, dasar.</div></div></div>
+        </div>
+      </section>
+
+      <!-- TIPOGRAFI -->
+      <section class="block" id="tipografi">
+        <div class="eyebrow">Fondasi</div>
+        <h2>Tipografi</h2>
+        <p class="lede">Satu typeface untuk semua: <b>Product Sans</b>. Skala mengikuti TextTheme aplikasi Flutter, line-height dasar 1.4. Hanya dua bobot dipakai: Regular (400) dan Bold (700).</p>
+        <div class="card" style="padding: 8px 28px;">
+          <div class="typerow"><div class="spec"><b>Display LG</b>32px · 700 · 1.4</div><div class="demo" style="font-size:32px;font-weight:700">Jelajahi Nusantara</div></div>
+          <div class="typerow"><div class="spec"><b>Display MD</b>28px · 700 · 1.4</div><div class="demo" style="font-size:28px;font-weight:700">Jelajahi Nusantara</div></div>
+          <div class="typerow"><div class="spec"><b>Headline MD</b>20px · 600 · 1.4</div><div class="demo" style="font-size:20px;font-weight:600">Pengalaman tak terlupakan</div></div>
+          <div class="typerow"><div class="spec"><b>Title LG</b>18px · 600 · 1.4</div><div class="demo" style="font-size:18px;font-weight:600">Sailing Komodo 3D2N</div></div>
+          <div class="typerow"><div class="spec"><b>Title MD</b>16px · 600 · 1.4</div><div class="demo" style="font-size:16px;font-weight:600">Detail pemesanan</div></div>
+          <div class="typerow"><div class="spec"><b>Body LG</b>16px · 400 · 1.4</div><div class="demo" style="font-size:16px">Temukan destinasi, pemandu lokal, dan desa wisata terbaik.</div></div>
+          <div class="typerow"><div class="spec"><b>Body MD</b>14px · 400 · 1.4</div><div class="demo" style="font-size:14px">Temukan destinasi, pemandu lokal, dan desa wisata terbaik.</div></div>
+          <div class="typerow"><div class="spec"><b>Label SM</b>11px · 500 · 1.4</div><div class="demo" style="font-size:11px;font-weight:500;letter-spacing:.04em;text-transform:uppercase">Eyebrow / Label</div></div>
+        </div>
+      </section>
+
+      <!-- SPASI -->
+      <section class="block" id="spasi">
+        <div class="eyebrow">Fondasi</div>
+        <h2>Spasi &amp; grid</h2>
+        <p class="lede">Skala 4-pt. Semua padding, gap, dan margin mengacu ke token ini agar ritme tetap konsisten.</p>
+        <div class="card" style="padding: 10px 28px;">
+          <div class="tokrow"><div class="label">space-1</div><div class="vis"><div class="sp-bar" style="width:4px"></div></div><div class="val">4px</div></div>
+          <div class="tokrow"><div class="label">space-2</div><div class="vis"><div class="sp-bar" style="width:8px"></div></div><div class="val">8px</div></div>
+          <div class="tokrow"><div class="label">space-3</div><div class="vis"><div class="sp-bar" style="width:12px"></div></div><div class="val">12px</div></div>
+          <div class="tokrow"><div class="label">space-4</div><div class="vis"><div class="sp-bar" style="width:16px"></div></div><div class="val">16px · default gutter</div></div>
+          <div class="tokrow"><div class="label">space-5</div><div class="vis"><div class="sp-bar" style="width:20px"></div></div><div class="val">20px · padding layar mobile</div></div>
+          <div class="tokrow"><div class="label">space-6</div><div class="vis"><div class="sp-bar" style="width:24px"></div></div><div class="val">24px</div></div>
+          <div class="tokrow"><div class="label">space-7</div><div class="vis"><div class="sp-bar" style="width:32px"></div></div><div class="val">32px</div></div>
+          <div class="tokrow"><div class="label">space-8</div><div class="vis"><div class="sp-bar" style="width:40px"></div></div><div class="val">40px · padding section web</div></div>
+        </div>
+      </section>
+
+      <!-- RADIUS -->
+      <section class="block" id="radius">
+        <div class="eyebrow">Fondasi</div>
+        <h2>Radius</h2>
+        <p class="lede">Sudut membulat memberi kesan ramah. Pill dipakai untuk chip dan badge; kartu memakai 12px.</p>
+        <div class="card" style="padding: 10px 28px;">
+          <div class="tokrow"><div class="vis"><div class="rad-box" style="border-radius:4px"></div></div><div class="label">radius-xs</div><div class="val">4px · input border</div></div>
+          <div class="tokrow"><div class="vis"><div class="rad-box" style="border-radius:8px"></div></div><div class="label">radius-md</div><div class="val">8px · tombol, sheet</div></div>
+          <div class="tokrow"><div class="vis"><div class="rad-box" style="border-radius:12px"></div></div><div class="label">radius-lg</div><div class="val">12px · kartu (default)</div></div>
+          <div class="tokrow"><div class="vis"><div class="rad-box" style="border-radius:16px"></div></div><div class="label">radius-xl</div><div class="val">16px · kartu besar</div></div>
+          <div class="tokrow"><div class="vis"><div class="rad-box" style="border-radius:999px;width:64px"></div></div><div class="label">radius-pill</div><div class="val">9999px · chip, badge</div></div>
+        </div>
+      </section>
+
+      <!-- BAYANGAN -->
+      <section class="block" id="bayangan">
+        <div class="eyebrow">Fondasi</div>
+        <h2>Bayangan &amp; elevasi</h2>
+        <p class="lede">Tiga tingkat elevasi mengikuti Material (1 / 2 / 4). Lembut dan rendah-kontras, bukan drop shadow tebal.</p>
+        <div class="card" style="padding: 24px 28px;">
+          <div class="inline" style="gap:28px">
+            <div style="text-align:center"><div class="sh-box" style="box-shadow:var(--atr-shadow-1)"></div><div class="val" style="margin-top:10px;font-size:12px;color:var(--atr-text-muted)">shadow-1 · hairline lift</div></div>
+            <div style="text-align:center"><div class="sh-box" style="box-shadow:var(--atr-shadow-2)"></div><div class="val" style="margin-top:10px;font-size:12px;color:var(--atr-text-muted)">shadow-2 · kartu</div></div>
+            <div style="text-align:center"><div class="sh-box" style="box-shadow:var(--atr-shadow-4)"></div><div class="val" style="margin-top:10px;font-size:12px;color:var(--atr-text-muted)">shadow-4 · sheet, toast</div></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- MOTION -->
+      <section class="block" id="motion">
+        <div class="eyebrow">Fondasi</div>
+        <h2>Motion</h2>
+        <p class="lede">Transisi singkat dan halus. Easing standar <code>cubic-bezier(.4, 0, .2, 1)</code>. Hindari animasi dekoratif yang berulang tanpa henti.</p>
+        <div class="demo-grid">
+          <div class="demo"><div class="dt">Fast · 150ms</div><p style="font-size:13px;color:var(--atr-text-muted);margin:0;line-height:1.55">Hover, tap feedback, perubahan warna tombol & chip.</p></div>
+          <div class="demo"><div class="dt">Base · 250ms</div><p style="font-size:13px;color:var(--atr-text-muted);margin:0;line-height:1.55">Sheet naik dari bawah, toast masuk, expand/collapse.</p></div>
+          <div class="demo"><div class="dt">Slow · 700ms</div><p style="font-size:13px;color:var(--atr-text-muted);margin:0;line-height:1.55">Transisi antar halaman, progress panjang.</p></div>
+        </div>
+      </section>
+
+      <!-- TOMBOL -->
+      <section class="block" id="tombol">
+        <div class="eyebrow">Komponen</div>
+        <h2>Tombol</h2>
+        <p class="lede">Komponen <code>MButton</code> (mobile) & tombol web. Tiga ukuran (sm 38 / md 48 / lg 56px), radius 8px. Primary untuk aksi utama, outline/ghost untuk sekunder.</p>
+        <div class="demo-grid">
+          <div class="demo"><div class="dt">Varian</div><div class="stack"><button class="btn md primary">Pesan sekarang</button><button class="btn md outline">Lihat detail</button><button class="btn md ghost">Simpan</button><button class="btn md danger">Hapus akun</button><button class="btn md disabled">Tidak aktif</button></div></div>
+          <div class="demo"><div class="dt">Ukuran</div><div class="stack"><button class="btn lg primary">Large · 56px</button><button class="btn md primary">Medium · 48px</button><button class="btn sm primary">Small · 38px</button></div></div>
+          <div class="demo"><div class="dt">Dengan ikon</div><div class="stack"><button class="btn md primary"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2"><path d="M5 12h14m-6-6l6 6-6 6"/></svg> Lanjut</button><button class="btn md outline"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg> Tambah</button></div></div>
+        </div>
+      </section>
+
+      <!-- CHIP -->
+      <section class="block" id="chip">
+        <div class="eyebrow">Komponen</div>
+        <h2>Chip &amp; tab filter</h2>
+        <p class="lede"><code>MChip</code> berbentuk stadium (pill). Dipakai untuk filter kategori, saran pencarian, dan tag. State terpilih memakai ungu solid.</p>
+        <div class="demo"><div class="dt">Filter kategori</div><div class="inline"><span class="chip2 on">Semua</span><span class="chip2">Atraksi</span><span class="chip2">Pemandu</span><span class="chip2">Desa Wisata</span><span class="chip2">Homestay</span><span class="chip2">Experience</span></div></div>
+      </section>
+
+      <!-- BADGE -->
+      <section class="block" id="badge">
+        <div class="eyebrow">Komponen</div>
+        <h2>Badge &amp; status</h2>
+        <p class="lede"><code>MBadge</code> untuk label kecil: status pesanan, tier loyalty, diskon. Warna mengikuti makna (ungu netral, hijau sukses, kuning menunggu, merah penting).</p>
+        <div class="demo"><div class="dt">Pill badge</div><div class="inline"><span class="bdg purple">Petualang</span><span class="bdg green">Selesai</span><span class="bdg yellow">Menunggu pembayaran</span><span class="bdg red">-25%</span><span class="bdg purple">1.240 poin</span></div></div>
+      </section>
+
+      <!-- INPUT -->
+      <section class="block" id="input">
+        <div class="eyebrow">Komponen</div>
+        <h2>Input &amp; form</h2>
+        <p class="lede"><code>MInput</code> tinggi 48px, border 1.5px, fokus berubah ungu. Label tebal 12.5px di atas field.</p>
+        <div class="demo-grid">
+          <div class="demo"><div class="dt">Field teks</div><div class="field"><label>Nama lengkap</label><input value="Aulia Putri" /></div></div>
+          <div class="demo"><div class="dt">Fokus (ungu)</div><div class="field"><label>Email</label><input style="border-color:var(--atr-purple)" value="aulia@email.com" /></div></div>
+        </div>
+      </section>
+
+      <!-- KARTU -->
+      <section class="block" id="kartu">
+        <div class="eyebrow">Komponen</div>
+        <h2>Kartu &amp; list row</h2>
+        <p class="lede"><code>MCard</code> permukaan dasar (radius 12, shadow-2, border hairline). <code>MListRow</code> untuk menu pengaturan dengan ikon, judul, subjudul, dan trailing.</p>
+        <div class="demo-grid">
+          <div class="demo"><div class="dt">List row</div>
+            <div class="lrow"><div class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2l2.4 7.4H22l-6 4.4 2.3 7.2-6.3-4.6L5.7 21 8 14 2 9.6h7.6z"/></svg></div><div class="tx"><b>Poin &amp; Reward</b><span>1.240 poin · tier Petualang</span></div><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#8A8B8D" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg></div>
+            <div class="lrow"><div class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18"/></svg></div><div class="tx"><b>Atourin Pay</b><span>Saldo Rp 250.000</span></div><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#8A8B8D" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg></div>
+          </div>
+          <div class="demo"><div class="dt">Kartu info</div><div class="card" style="padding:18px"><div style="font-size:14px;font-weight:700;margin-bottom:6px">Sailing Komodo 3D2N</div><div style="font-size:12.5px;color:var(--atr-text-muted);line-height:1.5">Permukaan dasar untuk konten apa pun: radius-lg, shadow-2, border outline.</div></div></div>
+        </div>
+      </section>
+
+      <!-- PRODUK -->
+      <section class="block" id="produk">
+        <div class="eyebrow">Komponen</div>
+        <h2>Kartu produk</h2>
+        <p class="lede"><code>MProductTile</code>: kartu utama katalog. Gambar 130px, badge opsional di kiri-atas, judul, lokasi, rating, dan harga ungu menonjol.</p>
+        <div class="inline" style="gap:18px">
+          <div class="tile"><div class="img"><span class="b bdg red" style="background:var(--atr-red);color:#fff">-20%</span></div><div class="pad"><div class="t">Sailing Komodo 3D2N</div><div class="loc">Labuan Bajo, NTT</div><div class="pr">Rp 2.450.000</div></div></div>
+          <div class="tile"><div class="img" style="background:linear-gradient(135deg,#FFC442,#F46263)"><span class="b bdg purple" style="background:#fff">Populer</span></div><div class="pad"><div class="t">Desa Wae Rebo</div><div class="loc">Manggarai, NTT</div><div class="pr">Rp 350.000<span style="font-size:12px;color:var(--atr-text-muted);font-weight:400">/malam</span></div></div></div>
+        </div>
+      </section>
+
+      <!-- FEEDBACK -->
+      <section class="block" id="feedback">
+        <div class="eyebrow">Komponen</div>
+        <h2>Feedback</h2>
+        <p class="lede">Toast & empty state menjaga pengguna selalu mendapat respons. Mobile memakai <code>showMToast()</code>, web memakai <code>atrToast()</code> dengan tipe success / error / info / warning / loading.</p>
+        <div class="demo-grid">
+          <div class="demo"><div class="dt">Toast</div><div class="stack" style="gap:12px;width:100%">
+            <div class="toast"><div class="dot" style="background:var(--atr-arti)">✓</div><div><b>Berhasil disimpan</b><span>Itinerary ditambahkan ke Wishlist.</span></div></div>
+            <div class="toast"><div class="dot" style="background:var(--atr-red)">!</div><div><b>Gagal memuat</b><span>Periksa koneksi internetmu lalu coba lagi.</span></div></div>
+          </div></div>
+          <div class="demo"><div class="dt">Empty state</div><div style="text-align:center;padding:14px 8px">
+            <div style="width:64px;height:64px;border-radius:50%;background:var(--atr-purple-50);display:flex;align-items:center;justify-content:center;margin:0 auto 12px"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="var(--atr-purple)" stroke-width="1.8"><circle cx="11" cy="11" r="7"/><path d="m20 20-3-3"/></svg></div>
+            <div style="font-size:14px;font-weight:700">Tidak ada hasil</div>
+            <div style="font-size:12.5px;color:var(--atr-text-muted);margin-top:4px">Coba kata kunci yang berbeda atau lebih umum.</div>
+          </div></div>
+        </div>
+        <p class="lede" style="margin-top:18px">Demo interaktif penuh (toast hidup, skeleton, maskot Poi) ada di <code>Komponen Feedback.html</code> &amp; <code>_uikit-preview.html</code>.</p>
+      </section>
+
+      <!-- LOGO -->
+      <section class="block" id="logo">
+        <div class="eyebrow">Brand</div>
+        <h2>Logo</h2>
+        <p class="lede">Gunakan versi ungu di atas permukaan terang, versi putih di atas ungu/foto gelap. Jaga ruang kosong minimal setinggi huruf logo. Jangan ubah warna, regang, atau beri bayangan.</p>
+        <div class="logo-card">
+          <div class="lc light"><img src="assets/logo/atourin-logo-purple.png" alt="Atourin ungu" onerror="this.parentElement.innerHTML='<span style=\'color:#7068D5;font-weight:700;font-size:22px\'>Atourin</span>'" /></div>
+          <div class="lc dark"><img src="assets/logo/atourin-logo-white.png" alt="Atourin putih" onerror="this.parentElement.innerHTML='<span style=\'color:#fff;font-weight:700;font-size:22px\'>Atourin</span>'" /></div>
+          <div class="lc soft"><img src="assets/logo/atourin-wordmark.png" alt="Wordmark" onerror="this.parentElement.innerHTML='<span style=\'color:#58595B;font-weight:700;font-size:22px\'>Atourin</span>'" /></div>
+        </div>
+      </section>
+
+      <!-- IKONOGRAFI -->
+      <section class="block" id="ikon">
+        <div class="eyebrow">Brand</div>
+        <h2>Ikonografi</h2>
+        <p class="lede">Ikon bergaya garis (outline), stroke 1.8-2px, ujung membulat, kotak 24px. Konsisten, ringan, dan netral, mewarnai ungu saat aktif dan abu-abu saat idle. Hindari ikon penuh-warna atau gradien.</p>
+        <div class="icons">
+          <div class="ic-card"><div class="glyph"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg></div><div class="nm">Beranda</div></div>
+          <div class="ic-card"><div class="glyph"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><circle cx="11" cy="11" r="7"/><path d="m20 20-3-3"/></svg></div><div class="nm">Cari</div></div>
+          <div class="ic-card"><div class="glyph"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"><path d="M12 21s-7-4.5-7-10a7 7 0 0114 0c0 5.5-7 10-7 10z"/><circle cx="12" cy="11" r="2.5"/></svg></div><div class="nm">Lokasi</div></div>
+          <div class="ic-card"><div class="glyph"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><path d="M20.8 5.6a5 5 0 00-7 0L12 7.3l-1.8-1.7a5 5 0 10-7 7l8.8 8.6 8.8-8.6a5 5 0 000-7z"/></svg></div><div class="nm">Wishlist</div></div>
+          <div class="ic-card"><div class="glyph"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><circle cx="12" cy="8" r="4"/><path d="M5 21c0-4 3-6 7-6s7 2 7 6"/></svg></div><div class="nm">Akun</div></div>
+          <div class="ic-card"><div class="glyph"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M12 2l2.4 7.4H22l-6 4.4 2.3 7.2-6.3-4.6L5.7 21 8 14 2 9.6h7.6z"/></svg></div><div class="nm">Poin</div></div>
+          <div class="ic-card"><div class="glyph"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18"/></svg></div><div class="nm">Dompet</div></div>
+          <div class="ic-card"><div class="glyph"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M4 5h16v12H7l-3 3z"/></svg></div><div class="nm">Chat</div></div>
+          <div class="ic-card"><div class="glyph"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="5" width="16" height="16" rx="2"/><path d="M8 3v4M16 3v4M4 11h16"/></svg></div><div class="nm">Kalender</div></div>
+          <div class="ic-card"><div class="glyph"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 2h9l5 5v15H6z"/><path d="M14 2v6h6"/></svg></div><div class="nm">E-tiket</div></div>
+          <div class="ic-card"><div class="glyph"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9z"/><path d="M13.7 21a2 2 0 01-3.4 0"/></svg></div><div class="nm">Notifikasi</div></div>
+          <div class="ic-card"><div class="glyph"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M12 2l2.6 6.6L22 9l-5 4.8 1.4 7.2L12 17l-6.4 4 1.4-7.2L2 9l7.4-.4z"/></svg></div><div class="nm">Rating</div></div>
+        </div>
+        <div class="icon-rules">
+          <div class="r"><div class="k">Stroke</div><div class="v">1.8-2px, ujung &amp; sambungan membulat (round cap/join).</div></div>
+          <div class="r"><div class="k">Kotak</div><div class="v">Grid 24px, padding optis seragam antar ikon.</div></div>
+          <div class="r"><div class="k">Warna</div><div class="v">Ungu saat aktif, <code>text-muted</code> saat idle. Tanpa fill warna.</div></div>
+          <div class="r"><div class="k">Ukuran</div><div class="v">18px inline, 24px nav/aksi, 26px+ untuk fitur.</div></div>
+        </div>
+      </section>
+
+      <!-- ILUSTRASI & MASKOT -->
+      <section class="block" id="ilustrasi">
+        <div class="eyebrow">Brand</div>
+        <h2>Ilustrasi &amp; maskot Poi</h2>
+        <p class="lede"><b>Poi</b> adalah maskot Atourin: blob ungu bertopi penjelajah kuning, dibangun dari bentuk dasar. Dipakai di empty state, onboarding, dan momen ramah, untuk menjaga nada hangat tanpa terasa kekanak-kanakan.</p>
+        <div class="mascot-row">
+          <figure>
+            <svg viewBox="0 0 120 120" fill="none"><ellipse cx="60" cy="108" rx="34" ry="6.5" fill="#1F1B33" opacity="0.08"/><path d="M60 22c20 0 33 15 33 38 0 24-14 38-33 38S27 84 27 60c0-23 13-38 33-38z" fill="#7068D5"/><ellipse cx="60" cy="70" rx="20" ry="22" fill="#fff" opacity="0.10"/><ellipse cx="60" cy="30" rx="30" ry="8" fill="#FFC442"/><path d="M40 30c0-12 9-19 20-19s20 7 20 19z" fill="#FFE7A8"/><path d="M40 30c0-12 9-19 20-19s20 7 20 19" stroke="#FFC442" stroke-width="3.4" stroke-linecap="round"/><circle cx="48.5" cy="60" r="5.2" fill="#fff"/><circle cx="71.5" cy="60" r="5.2" fill="#fff"/><circle cx="49.5" cy="61" r="2.6" fill="#1F1B33"/><circle cx="70.5" cy="61" r="2.6" fill="#1F1B33"/><circle cx="42" cy="70" r="4" fill="#F46263" opacity="0.45"/><circle cx="78" cy="70" r="4" fill="#F46263" opacity="0.45"/><path d="M52 72c3 5 13 5 16 0" stroke="#3A2E63" stroke-width="3.2" stroke-linecap="round"/><ellipse cx="28" cy="74" rx="6" ry="8" fill="#7068D5" transform="rotate(-18 28 74)"/><ellipse cx="92" cy="74" rx="6" ry="8" fill="#7068D5" transform="rotate(18 92 74)"/></svg>
+            <figcaption><b>Happy</b>Sukses, sambutan</figcaption>
+          </figure>
+          <figure>
+            <svg viewBox="0 0 120 120" fill="none"><ellipse cx="60" cy="108" rx="34" ry="6.5" fill="#1F1B33" opacity="0.08"/><path d="M60 22c20 0 33 15 33 38 0 24-14 38-33 38S27 84 27 60c0-23 13-38 33-38z" fill="#7068D5"/><ellipse cx="60" cy="70" rx="20" ry="22" fill="#fff" opacity="0.10"/><ellipse cx="60" cy="30" rx="30" ry="8" fill="#FFC442"/><path d="M40 30c0-12 9-19 20-19s20 7 20 19z" fill="#FFE7A8"/><path d="M40 30c0-12 9-19 20-19s20 7 20 19" stroke="#FFC442" stroke-width="3.4" stroke-linecap="round"/><circle cx="48.5" cy="60" r="5.2" fill="#fff"/><circle cx="71.5" cy="60" r="5.2" fill="#fff"/><circle cx="50" cy="61" r="2.6" fill="#1F1B33"/><circle cx="73" cy="61" r="2.6" fill="#1F1B33"/><circle cx="42" cy="70" r="4" fill="#F46263" opacity="0.45"/><circle cx="78" cy="70" r="4" fill="#F46263" opacity="0.45"/><ellipse cx="60" cy="74" rx="5.5" ry="4.5" fill="#3A2E63"/><ellipse cx="28" cy="74" rx="6" ry="8" fill="#7068D5" transform="rotate(-18 28 74)"/><ellipse cx="92" cy="74" rx="6" ry="8" fill="#7068D5" transform="rotate(18 92 74)"/><g transform="translate(86 22)"><circle cx="0" cy="0" r="13" fill="#fff" stroke="#FFC442" stroke-width="3"/><text x="0" y="5.5" text-anchor="middle" font-size="17" font-weight="800" fill="#FFC442" font-family="var(--atr-font-sans)">?</text></g></svg>
+            <figcaption><b>Search</b>No-result, bingung</figcaption>
+          </figure>
+          <figure>
+            <svg viewBox="0 0 120 120" fill="none"><ellipse cx="60" cy="108" rx="34" ry="6.5" fill="#1F1B33" opacity="0.08"/><path d="M60 22c20 0 33 15 33 38 0 24-14 38-33 38S27 84 27 60c0-23 13-38 33-38z" fill="#7068D5"/><ellipse cx="60" cy="70" rx="20" ry="22" fill="#fff" opacity="0.10"/><ellipse cx="60" cy="30" rx="30" ry="8" fill="#FFC442"/><path d="M40 30c0-12 9-19 20-19s20 7 20 19z" fill="#FFE7A8"/><path d="M40 30c0-12 9-19 20-19s20 7 20 19" stroke="#FFC442" stroke-width="3.4" stroke-linecap="round"/><path d="M44 58c2.5 2.5 6.5 2.5 9 0" stroke="#5B53C0" stroke-width="3" stroke-linecap="round"/><path d="M67 58c2.5 2.5 6.5 2.5 9 0" stroke="#5B53C0" stroke-width="3" stroke-linecap="round"/><circle cx="42" cy="70" r="4" fill="#F46263" opacity="0.45"/><circle cx="78" cy="70" r="4" fill="#F46263" opacity="0.45"/><path d="M52 72c3 5 13 5 16 0" stroke="#3A2E63" stroke-width="3.2" stroke-linecap="round"/><ellipse cx="28" cy="74" rx="6" ry="8" fill="#7068D5" transform="rotate(-18 28 74)"/><ellipse cx="92" cy="74" rx="6" ry="8" fill="#7068D5" transform="rotate(18 92 74)"/></svg>
+            <figcaption><b>Sleep</b>Idle, kosong tenang</figcaption>
+          </figure>
+          <figure>
+            <svg viewBox="0 0 120 120" fill="none"><ellipse cx="60" cy="108" rx="34" ry="6.5" fill="#1F1B33" opacity="0.08"/><path d="M60 22c20 0 33 15 33 38 0 24-14 38-33 38S27 84 27 60c0-23 13-38 33-38z" fill="#7068D5"/><ellipse cx="60" cy="70" rx="20" ry="22" fill="#fff" opacity="0.10"/><ellipse cx="60" cy="30" rx="30" ry="8" fill="#FFC442"/><path d="M40 30c0-12 9-19 20-19s20 7 20 19z" fill="#FFE7A8"/><path d="M40 30c0-12 9-19 20-19s20 7 20 19" stroke="#FFC442" stroke-width="3.4" stroke-linecap="round"/><circle cx="48.5" cy="60" r="5.2" fill="#fff"/><circle cx="71.5" cy="60" r="5.2" fill="#fff"/><circle cx="49.5" cy="61" r="2.6" fill="#1F1B33"/><circle cx="70.5" cy="61" r="2.6" fill="#1F1B33"/><circle cx="42" cy="70" r="4" fill="#F46263" opacity="0.45"/><circle cx="78" cy="70" r="4" fill="#F46263" opacity="0.45"/><ellipse cx="60" cy="74" rx="5" ry="6" fill="#3A2E63"/><ellipse cx="28" cy="74" rx="6" ry="8" fill="#7068D5" transform="rotate(-18 28 74)"/><ellipse cx="92" cy="74" rx="6" ry="8" fill="#7068D5" transform="rotate(18 92 74)"/></svg>
+            <figcaption><b>Error</b>Gagal, 404</figcaption>
+          </figure>
+        </div>
+        <div class="sub">Ilustrasi pendukung</div>
+        <p class="lede" style="margin-bottom:0">Ilustrasi spot bergaya datar dengan palet brand untuk header & state. Aset ada di <code>assets/atr/illustrations/</code> dan <code>no_connection.png</code> / <code>no_entries.png</code>.</p>
+        <div class="illus-row">
+          <div class="il"><img src="assets/illustrations/header.png" alt="Header" onerror="this.style.display='none'" /><div class="cap"><b>Header illustration</b>Hero halaman & banner.</div></div>
+          <div class="il"><div style="height:130px;display:flex;align-items:center;justify-content:center;background:var(--atr-purple-50)"><svg width="60" height="60" viewBox="0 0 120 120" fill="none"><ellipse cx="60" cy="30" rx="30" ry="8" fill="#FFC442"/><path d="M60 22c20 0 33 15 33 38 0 24-14 38-33 38S27 84 27 60c0-23 13-38 33-38z" fill="#7068D5"/><circle cx="48.5" cy="60" r="5.2" fill="#fff"/><circle cx="71.5" cy="60" r="5.2" fill="#fff"/><circle cx="49.5" cy="61" r="2.6" fill="#1F1B33"/><circle cx="70.5" cy="61" r="2.6" fill="#1F1B33"/></svg></div><div class="cap"><b>Empty state</b>Maskot + judul + aksi.</div></div>
+          <div class="il"><div style="height:130px;display:flex;align-items:center;justify-content:center;background:var(--atr-bg-cool-2)"><svg width="46" height="46" viewBox="0 0 24 24" fill="none" stroke="#7068D5" stroke-width="1.6"><path d="M2 8.8C5 6 8.4 4.5 12 4.5S19 6 22 8.8M5.5 12.3a9 9 0 0113 0M8.8 15.6a4.5 4.5 0 016.4 0"/><path d="M3 3l18 18" stroke="#F46263" stroke-width="1.8"/></svg></div><div class="cap"><b>No connection</b>Offline & error jaringan.</div></div>
+        </div>
+      </section>
+
+      <!-- POLA LAYOUT -->
+      <section class="block" id="layout">
+        <div class="eyebrow">Brand</div>
+        <h2>Pola layout</h2>
+        <p class="lede">Anatomi layar mobile: top bar ungu, konten ber-gutter 20px di atas wash <code>bg-soft</code>, dan bottom nav 5-tab dengan FAB tengah. Halaman web memakai grid maksimal 1280px dengan gutter 40px.</p>
+        <div class="layouts">
+          <div class="phone-ana">
+            <div class="scr">
+              <div class="pa-top"><div class="dot"></div><div class="ln"></div></div>
+              <div class="pa-body"><div class="sb"></div><div class="cardln"></div><div class="cardln"></div></div>
+              <div class="pa-nav"><span class="t on"></span><span class="t"></span><span class="t"></span><span class="t"></span><span class="t"></span></div>
+            </div>
+          </div>
+          <div class="anatomy-list">
+            <div class="a"><div class="num">1</div><div class="tx"><b>Top bar · 54px</b><p>Ungu solid, teks putih. Judul + aksi opsional (back / trailing). Transparan di atas hero.</p></div></div>
+            <div class="a"><div class="num">2</div><div class="tx"><b>Konten · gutter 20px</b><p>Di atas <code>bg-soft</code>. Kartu putih radius 12, gap 10-16px. Section title dengan "Lihat semua".</p></div></div>
+            <div class="a"><div class="num">3</div><div class="tx"><b>Bottom nav · 52px</b><p>5 tab: Beranda, Jelajahi, FAB tengah, Pesan, Akun. Tab aktif berwarna ungu.</p></div></div>
+            <div class="a"><div class="num">4</div><div class="tx"><b>Sheet &amp; modal</b><p>Naik dari bawah (250ms), radius-xl atas, shadow-4. Untuk filter, pilihan, &amp; konfirmasi.</p></div></div>
+            <div class="a"><div class="num">5</div><div class="tx"><b>Web · grid 1280px</b><p>Konten terpusat maks 1280px, gutter 40px. TopNav + UtilityBar di atas, footer multi-kolom di bawah.</p></div></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- VOICE -->
+      <section class="block" id="voice">
+        <div class="eyebrow">Brand</div>
+        <h2>Tone &amp; penulisan</h2>
+        <p class="lede">Hangat, percaya diri, dan jelas. Berbahasa seperti teman lokal yang paham wisata Nusantara, bukan korporat kaku.</p>
+        <div class="voice">
+          <div class="col do"><div class="h">Lakukan</div><ul>
+            <li>Pakai pemisah titik tengah <code>·</code>, koma, titik dua, atau tanda hubung <code>-</code>.</li>
+            <li>Format Rupiah dengan titik ribuan: <code>Rp 1.240.000</code>.</li>
+            <li>Istilah taksonomi via glosarium bilingual (ID/EN).</li>
+            <li>Microcopy aktif &amp; ramah: "Lanjutkan petualanganmu".</li>
+            <li>Hit target minimal 44px; teks body mobile 13-15px.</li>
+          </ul></div>
+          <div class="col dont"><div class="h">Hindari</div><ul>
+            <li>JANGAN pakai em-dash <code>—</code>. Terasa seperti format AI.</li>
+            <li>Jangan campur Bahasa Inggris korporat berlebihan.</li>
+            <li>Jangan tombol tanpa aksi (dead-end).</li>
+            <li>Jangan warna di luar palet token.</li>
+            <li>Jangan ubah proporsi atau warna logo.</li>
+          </ul></div>
+        </div>
+      </section>
+
+      <!-- REFERENSI -->
+      <section class="block" id="referensi">
+        <div class="eyebrow">Implementasi</div>
+        <h2>File referensi</h2>
+        <p class="lede">Design system ini bukan rekaan: token & komponen diambil dari kode produksi. Sumber kebenaran:</p>
+        <div class="demo-grid">
+          <div class="demo"><div class="dt">Token</div><p style="font-size:13px;line-height:1.7;margin:0"><code>design-system/atr-tokens.css</code><br/><span style="color:var(--atr-text-muted)">Semua CSS variable: warna, type, spasi, radius, shadow, motion.</span></p></div>
+          <div class="demo"><div class="dt">Komponen mobile</div><p style="font-size:13px;line-height:1.7;margin:0"><code>mobile/mobile-shared.jsx</code><br/><span style="color:var(--atr-text-muted)">MButton, MCard, MChip, MBadge, MInput, MListRow, MProductTile, MBottomNav, MToastHost.</span></p></div>
+          <div class="demo"><div class="dt">Chrome web</div><p style="font-size:13px;line-height:1.7;margin:0"><code>site-chrome.jsx</code><br/><span style="color:var(--atr-text-muted)">TopNav, UtilityBar, Footer, login modal, atrToast.</span></p></div>
+          <div class="demo"><div class="dt">UI kit feedback</div><p style="font-size:13px;line-height:1.7;margin:0"><code>atr-ui-kit.jsx</code><br/><span style="color:var(--atr-text-muted)">Toast, Skeleton, EmptyState, maskot Poi.</span></p></div>
+          <div class="demo"><div class="dt">Spec teknis</div><p style="font-size:13px;line-height:1.7;margin:0"><code>Panduan Developer.html</code><br/><span style="color:var(--atr-text-muted)">DB, endpoint API, enum, integrasi lintas-fitur.</span></p></div>
+          <div class="demo"><div class="dt">Data &amp; i18n</div><p style="font-size:13px;line-height:1.7;margin:0"><code>shared/atr-canon.js · atr-i18n.js</code><br/><span style="color:var(--atr-text-muted)">Data mock & glosarium bilingual.</span></p></div>
+        </div>
+      </section>
+
+    </div>
+  </main>
+</div>
+</body>
+</html>

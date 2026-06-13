@@ -1,0 +1,193 @@
+/* ============================================================
+   ATOURIN DESIGN SYSTEM, colors & type
+   Source of truth:
+     - lib/constant/color.dart  (Flutter app)
+     - lib/constant/theme_text.dart
+     - "Warna Atourin" brand book
+   ============================================================ */
+
+/* ---------- Fonts ---------- */
+@font-face {
+  font-family: "Product Sans";
+  src: url("assets/fonts/Product-Sans-Regular.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Product Sans";
+  src: url("assets/fonts/Product-Sans-Italic.ttf") format("truetype");
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Product Sans";
+  src: url("assets/fonts/Product-Sans-Bold.ttf") format("truetype");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Product Sans";
+  src: url("assets/fonts/Product-Sans-Bold-Italic.ttf") format("truetype");
+  font-weight: 700;
+  font-style: italic;
+  font-display: swap;
+}
+
+/* ============================================================
+   TOKENS
+   ============================================================ */
+:root {
+  /* ----- Brand: Purple (primary) ----- */
+  --atr-purple:           #7068D5;   /* primary brand purple */
+  --atr-purple-soft:      #A49EE4;   /* "primary" in code, lighter, used in headers */
+  --atr-purple-light:     #CDCDED;   /* selected chip backgrounds, soft tints */
+  --atr-purple-alt:       rgba(112, 104, 213, 0.4); /* 0x66 alpha overlay */
+  --atr-purple-50:        #F1F0FB;   /* nearly-white tint */
+
+  /* Secondary purple family (from brand book) */
+  --atr-purple-6564ab:    #6564AB;
+  --atr-purple-6c559c:    #6C559C;
+  --atr-purple-654093:    #654093;
+  --atr-purple-9b6aab:    #9B6AAB;
+
+  /* ----- Brand: Yellow ----- */
+  --atr-yellow:           #FFC442;   /* main yellow */
+  --atr-yellow-fdc442:    #FDC442;   /* secondary yellow */
+
+  /* ----- Brand: Red / Pink ----- */
+  --atr-red:              #F46263;   /* main red, used as "pink" accent in code */
+  --atr-red-ec6466:       #EC6466;
+  --atr-red-ec6366:       #EC6366;
+
+  /* ----- Functional color (from code) ----- */
+  --atr-arti:             #51B054;   /* ARTI carbon-offset green */
+
+  /* ----- Neutrals ----- */
+  --atr-text:             #58595B;   /* primary text */
+  --atr-text-muted:       #8A8B8D;   /* derived from --atr-text @ ~70% */
+  --atr-outline:          #E6E6E6;   /* hairline / divider */
+  --atr-bg:               #FFFFFF;
+  --atr-bg-soft:          #F6F6FB;   /* page wash */
+  --atr-bg-cool:          #E4E6F3;   /* secondary cool wash */
+  --atr-bg-cool-2:        #D4ECF4;
+  --atr-bg-warm:          #F6F6FB;
+
+  /* ----- Semantic foreground / background ----- */
+  --atr-fg-1:             var(--atr-text);          /* primary text */
+  --atr-fg-2:             var(--atr-text-muted);    /* secondary text */
+  --atr-fg-on-purple:     #FFFFFF;
+  --atr-fg-link:          var(--atr-purple);
+
+  /* ----- Status (derived from brand palette) ----- */
+  --atr-success:          var(--atr-arti);
+  --atr-warning:          var(--atr-yellow);
+  --atr-danger:           var(--atr-red);
+  --atr-info:             var(--atr-purple);
+
+  /* ----- Type ----- */
+  --atr-font-sans: "Product Sans", -apple-system, BlinkMacSystemFont,
+                   "Segoe UI", Roboto, sans-serif;
+
+  --atr-fs-display-lg:    32px;
+  --atr-fs-display-md:    28px;
+  --atr-fs-headline-md:   20px;
+  --atr-fs-headline-sm:   18px;
+  --atr-fs-title-lg:      18px;
+  --atr-fs-title-md:      16px;
+  --atr-fs-title-sm:      14px;
+  --atr-fs-body-lg:       16px;
+  --atr-fs-body-md:       14px;
+  --atr-fs-body-sm:       12px;
+  --atr-fs-label-lg:      14px;
+  --atr-fs-label-sm:      11px;
+
+  --atr-lh-base:          1.4;       /* matches Flutter `_base.height = 1.4` */
+  --atr-lh-tight:         1.2;
+
+  /* ----- Spacing (4-pt scale from common Pad usage) ----- */
+  --atr-space-0:           0px;
+  --atr-space-1:           4px;
+  --atr-space-2:           8px;
+  --atr-space-3:          12px;
+  --atr-space-4:          16px;
+  --atr-space-5:          20px;
+  --atr-space-6:          24px;
+  --atr-space-7:          32px;
+  --atr-space-8:          40px;
+
+  /* ----- Radii (from observed Flutter values) ----- */
+  --atr-radius-xs:         4px;       /* OutsideInputBorder default */
+  --atr-radius-sm:         5px;       /* features card */
+  --atr-radius-md:         8px;       /* PrimaryButton, sheets */
+  --atr-radius-lg:        12px;       /* WxCard default */
+  --atr-radius-xl:        16px;
+  --atr-radius-pill:    9999px;       /* chips, stadium border */
+
+  /* ----- Elevation (matches Material elevation: 1 / 2 / 4) ----- */
+  --atr-shadow-1:  0 1px 2px rgba(0, 0, 0, 0.05),
+                   0 1px 1px rgba(0, 0, 0, 0.04);
+  --atr-shadow-2:  0 2px 6px rgba(0, 0, 0, 0.06),
+                   0 1px 2px rgba(0, 0, 0, 0.04);   /* WxCard */
+  --atr-shadow-4:  0 6px 16px rgba(0, 0, 0, 0.08),
+                   0 2px 4px rgba(0, 0, 0, 0.05);   /* bottom sheet */
+  --atr-shadow-bottombar: 0 -2px 4px rgba(0, 0, 0, 0.10);
+
+  /* ----- Motion ----- */
+  --atr-duration-fast:    150ms;
+  --atr-duration-base:    250ms;
+  --atr-duration-slow:    700ms;       /* page transitions */
+  --atr-easing:           cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ============================================================
+   BASE
+   ============================================================ */
+html, body {
+  font-family: var(--atr-font-sans);
+  color: var(--atr-fg-1);
+  background: var(--atr-bg);
+  line-height: var(--atr-lh-base);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ============================================================
+   SEMANTIC TYPE CLASSES
+   Mapped 1:1 to TextTheme in lib/constant/theme_text.dart
+   ============================================================ */
+.atr-display-lg  { font-size: var(--atr-fs-display-lg);  font-weight: 700; line-height: var(--atr-lh-base); }
+.atr-display-md  { font-size: var(--atr-fs-display-md);  font-weight: 700; line-height: var(--atr-lh-base); }
+.atr-headline-md { font-size: var(--atr-fs-headline-md); font-weight: 600; line-height: var(--atr-lh-base); }
+.atr-headline-sm { font-size: var(--atr-fs-headline-sm); font-weight: 600; line-height: var(--atr-lh-base); }
+.atr-title-lg    { font-size: var(--atr-fs-title-lg);    font-weight: 600; line-height: var(--atr-lh-base); }
+.atr-title-md    { font-size: var(--atr-fs-title-md);    font-weight: 600; line-height: var(--atr-lh-base); }
+.atr-title-sm    { font-size: var(--atr-fs-title-sm);    font-weight: 500; line-height: var(--atr-lh-base); }
+.atr-body-lg     { font-size: var(--atr-fs-body-lg);     font-weight: 400; line-height: var(--atr-lh-base); }
+.atr-body-md     { font-size: var(--atr-fs-body-md);     font-weight: 400; line-height: var(--atr-lh-base); }
+.atr-body-sm     { font-size: var(--atr-fs-body-sm);     font-weight: 400; line-height: var(--atr-lh-base); }
+.atr-label-lg    { font-size: var(--atr-fs-label-lg);    font-weight: 500; line-height: var(--atr-lh-base); }
+.atr-label-sm    { font-size: var(--atr-fs-label-sm);    font-weight: 500; line-height: var(--atr-lh-base); }
+
+/* Headings remap (HTML fallback) */
+h1 { font-size: var(--atr-fs-display-lg);  font-weight: 700; line-height: var(--atr-lh-base); margin: 0; }
+h2 { font-size: var(--atr-fs-display-md);  font-weight: 700; line-height: var(--atr-lh-base); margin: 0; }
+h3 { font-size: var(--atr-fs-headline-md); font-weight: 600; line-height: var(--atr-lh-base); margin: 0; }
+h4 { font-size: var(--atr-fs-headline-sm); font-weight: 600; line-height: var(--atr-lh-base); margin: 0; }
+h5 { font-size: var(--atr-fs-title-md);    font-weight: 600; line-height: var(--atr-lh-base); margin: 0; }
+h6 { font-size: var(--atr-fs-title-sm);    font-weight: 500; line-height: var(--atr-lh-base); margin: 0; }
+p  { font-size: var(--atr-fs-body-md);     font-weight: 400; line-height: var(--atr-lh-base); margin: 0; }
+
+a  { color: var(--atr-fg-link); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+/* Focus: drop the lingering mouse-click outline, keep keyboard ring */
+button, [role="tab"], [role="button"], a, summary, select, input, textarea {
+  -webkit-tap-highlight-color: transparent;
+}
+button:focus, [role="tab"]:focus, [role="button"]:focus, a:focus { outline: none; }
+button:focus-visible, [role="tab"]:focus-visible, [role="button"]:focus-visible, a:focus-visible {
+  outline: 2px solid var(--atr-purple); outline-offset: 2px; border-radius: 6px;
+}
