@@ -25,6 +25,7 @@ const profileSchema = z.object({
   social_twitter: z.string().max(200).optional().nullable(),
   social_instagram: z.string().max(200).optional().nullable(),
   social_youtube: z.string().max(200).optional().nullable(),
+  cover_image_url: z.string().max(500).optional().nullable(),
 });
 
 export async function saveDesaProfile(input: z.input<typeof profileSchema>) {
@@ -79,6 +80,67 @@ const pengelolaSchema = z.object({
   jaringan_kerjasama: z.array(z.string()).optional().nullable(),
   catatan: z.string().max(3000).optional().nullable(),
 });
+
+// =====================================================
+// Cover image upload — returns public URL after storing
+// =====================================================
+const coverSchema = z.object({
+  desa_id: z.string().uuid(),
+  filename: z.string().min(1).max(200),
+  mime_type: z.string().min(1).max(100),
+  base64: z.string().min(1),
+});
+
+export async function uploadDesaCover(input: z.input<typeof coverSchema>) {
+  const user = await getCurrentUser();
+  if (!user) return { error: "Tidak terautentikasi" };
+  const parsed = coverSchema.safeParse(input);
+  if (!parsed.success) return { error: "Input tidak valid" };
+  if (!parsed.data.mime_type.startsWith("image/")) {
+    return { error: "Hanya file gambar yang diterima" };
+  }
+  const bytes = Buffer.from(parsed.data.base64, "base64");
+  if (bytes.byteLength > 10 * 1024 * 1024) {
+    return { error: "File terlalu besar (maks 10 MB)" };
+  }
+  const safe = parsed.data.filename.replace(/[^a-zA-Z0-9._-]/g, "_");
+  const path = `desa-cover/${parsed.data.desa_id}/${Date.now()}-${safe}`;
+  const supabase = createClient();
+  const { error: upErr } = await supabase.storage
+    .from("vmt-org-assets")
+    .upload(path, bytes, {
+      contentType: parsed.data.mime_type,
+      upsert: true,
+    });
+  if (upErr) return { error: upErr.message };
+  const { data: pub } = supabase.storage
+    .from("vmt-org-assets")
+    .getPublicUrl(path);
+  const url = pub?.publicUrl ?? null;
+  if (!url) return { error: "Gagal generate URL" };
+
+  // Update desa_profile_data.cover_image_url
+  const { data: existing } = await supabase
+    .from("desa_profile_data")
+    .select("desa_id")
+    .eq("desa_id", parsed.data.desa_id)
+    .maybeSingle();
+  if (existing) {
+    await supabase
+      .from("desa_profile_data")
+      .update({ cover_image_url: url, source: "manual" })
+      .eq("desa_id", parsed.data.desa_id);
+  } else {
+    await supabase.from("desa_profile_data").insert({
+      desa_id: parsed.data.desa_id,
+      cover_image_url: url,
+      source: "manual",
+    });
+  }
+  revalidatePath("/desa/profil");
+  revalidatePath(`/atourin/desa/${parsed.data.desa_id}`);
+  return { ok: true, url };
+}
 
 export async function savePengelolaData(
   input: z.input<typeof pengelolaSchema>,

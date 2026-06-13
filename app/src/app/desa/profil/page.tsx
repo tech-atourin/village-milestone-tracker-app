@@ -14,6 +14,7 @@ import { createClient } from "@/lib/supabase/server";
 import { EmptyState } from "@/components/ui/empty-state";
 import { HubSyncButton } from "@/components/desa/hub-sync-button";
 import { ProfileEditForm } from "@/components/desa/profile-edit-form";
+import { HubExtrasSections } from "@/components/desa/hub-extras-sections";
 
 const TIER_LABEL: Record<string, string> = {
   unclassified: "Belum Diklasifikasi",
@@ -53,6 +54,37 @@ type ProfileData = {
   social_facebook: string | null;
   social_youtube: string | null;
   synced_from_hub_at: string | null;
+  produk_list: Array<{
+    id: string;
+    jenis: string | null;
+    nama: string | null;
+    sub_jenis: string | null;
+    harga: number | null;
+    deskripsi: string | null;
+    image_url: string | null;
+    is_available: boolean | null;
+  }> | null;
+  foto_galeri: Array<{
+    id: string;
+    url: string;
+    is_cover: boolean | null;
+    urutan: number | null;
+  }> | null;
+  awards: Array<{
+    id: string;
+    tahun: number | null;
+    edisi: string | null;
+    kategori: string | null;
+    peringkat: string | null;
+  }> | null;
+  events: Array<{
+    id: string;
+    judul: string | null;
+    deskripsi: string | null;
+    mulai: string | null;
+    selesai: string | null;
+    image_url: string | null;
+  }> | null;
 } | null;
 
 type Baseline = {
@@ -86,7 +118,7 @@ async function loadDesaProfile(userId: string): Promise<{
   const { data: profile } = await supabase
     .from("desa_profile_data")
     .select(
-      "alamat, cover_image_url, deskripsi, keunikan, rekomendasi_kunjungan, fasilitas, pengelola_nama, pengelola_kontak_person, pengelola_email, pengelola_whatsapp, social_website, social_instagram, social_facebook, social_youtube, synced_from_hub_at",
+      "alamat, cover_image_url, deskripsi, keunikan, rekomendasi_kunjungan, fasilitas, pengelola_nama, pengelola_kontak_person, pengelola_email, pengelola_whatsapp, social_website, social_instagram, social_facebook, social_youtube, synced_from_hub_at, produk_list, foto_galeri, awards, events",
     )
     .eq("desa_id", desaId)
     .maybeSingle();
@@ -193,6 +225,7 @@ export default async function DesaProfilPage() {
               social_twitter: null,
               social_instagram: profile?.social_instagram ?? null,
               social_youtube: profile?.social_youtube ?? null,
+              cover_image_url: profile?.cover_image_url ?? null,
             }}
           />
         </div>
@@ -373,6 +406,13 @@ export default async function DesaProfilPage() {
           </div>
         </article>
       )}
+
+      <HubExtrasSections
+        produk={profile?.produk_list ?? null}
+        foto={profile?.foto_galeri ?? null}
+        awards={profile?.awards ?? null}
+        events={profile?.events ?? null}
+      />
 
       {baseline && (
         <article className="rounded-2xl border border-atr-outline bg-white p-6 shadow-atr-1">

@@ -1,9 +1,10 @@
 export const metadata = { title: "Verifikasi Klasifikasi" };
 
 import { createClient } from "@/lib/supabase/server";
-import { requireRole } from "@/lib/auth/rbac";
+import { requireRole, getCurrentUser } from "@/lib/auth/rbac";
 import { VerificationQueue } from "./verification-queue";
 import { HubVerifyQueue, type HubSubmissionRow } from "./hub-verify-queue";
+import { listCommentsForHubAssessment } from "@/server/queries/assessment-comments";
 
 type QueueItem = {
   progress_id: string;
@@ -65,8 +66,29 @@ async function loadV2Queue(): Promise<HubSubmissionRow[]> {
 }
 
 export default async function KlasifikasiQueuePage() {
-  await requireRole("superadmin");
+  const user = await requireRole("superadmin");
   const [v1, v2] = await Promise.all([loadV1Queue(), loadV2Queue()]);
+
+  // Preload comments map for all submitted V2 assessments (one Map per assessment)
+  const commentsByAssessment = new Map<
+    string,
+    Map<string, Awaited<ReturnType<typeof listCommentsForHubAssessment>> extends Map<string, infer V> ? V : never>
+  >();
+  for (const r of v2) {
+    const m = await listCommentsForHubAssessment(r.desa_id, r.id);
+    commentsByAssessment.set(r.id, m);
+  }
+
+  // Flatten total comment count per assessment
+  const commentCountByAssessment = new Map<string, number>();
+  commentsByAssessment.forEach((map, assessmentId) => {
+    let total = 0;
+    map.forEach((arr) => {
+      total += arr.length;
+    });
+    commentCountByAssessment.set(assessmentId, total);
+  });
+  void user;
 
   return (
     <div className="space-y-8">
@@ -92,7 +114,10 @@ export default async function KlasifikasiQueuePage() {
             </p>
           )}
         </div>
-        <HubVerifyQueue rows={v2} />
+        <HubVerifyQueue
+          rows={v2}
+          commentCountByAssessment={Object.fromEntries(commentCountByAssessment)}
+        />
       </section>
 
       <section className="space-y-3">

@@ -15,7 +15,9 @@ export type AssessmentComment = {
   created_at: string;
 };
 
-export async function listCommentsForCriteriaProgress(
+// Returns map keyed by criteria_item_id (not progress_id), so threads
+// are visible even when the desa hasn't submitted that item yet.
+export async function listCommentsForCriteriaItem(
   desaId: string,
 ): Promise<Map<string, AssessmentComment[]>> {
   const supabase = createClient();
@@ -25,7 +27,7 @@ export async function listCommentsForCriteriaProgress(
       "id, target_type, target_id, desa_id, author_id, author_role, body, is_internal, created_at, author:users!assessment_comments_author_id_fkey(full_name)",
     )
     .eq("desa_id", desaId)
-    .eq("target_type", "criteria_progress")
+    .eq("target_type", "criteria_item")
     .order("created_at", { ascending: true });
 
   const map = new Map<string, AssessmentComment[]>();

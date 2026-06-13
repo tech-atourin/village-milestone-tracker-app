@@ -78,6 +78,8 @@ export type HubAssessmentResponse = {
   level_hasil: string | null;
   status: "draft" | "submitted" | "verified";
   submitted_at: string | null;
+  verifier_note: string | null;
+  verified_at: string | null;
 };
 
 export async function getHubAssessmentResponse(
@@ -88,7 +90,7 @@ export async function getHubAssessmentResponse(
   const { data } = await supabase
     .from("hub_assessment")
     .select(
-      "id, desa_id, template_id, jawaban, skor_pilar, skor_total, level_hasil, status, submitted_at",
+      "id, desa_id, template_id, jawaban, skor_pilar, skor_total, level_hasil, status, submitted_at, verifier_note, verified_at",
     )
     .eq("desa_id", desaId)
     .eq("template_id", templateId)

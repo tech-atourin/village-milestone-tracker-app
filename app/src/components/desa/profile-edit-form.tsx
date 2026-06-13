@@ -7,8 +7,10 @@ import {
   Loader2,
   Pencil,
   X,
+  Upload,
+  Image as ImageIcon,
 } from "lucide-react";
-import { saveDesaProfile } from "@/server/actions/desa-profile";
+import { saveDesaProfile, uploadDesaCover } from "@/server/actions/desa-profile";
 
 const FASILITAS_OPTIONS = [
   "Homestay",
@@ -41,7 +43,20 @@ type ProfileInput = {
   social_twitter: string | null;
   social_instagram: string | null;
   social_youtube: string | null;
+  cover_image_url?: string | null;
 };
+
+function fileToBase64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const r = reader.result as string;
+      resolve(r.split(",")[1] ?? "");
+    };
+    reader.onerror = () => reject(reader.error);
+    reader.readAsDataURL(file);
+  });
+}
 
 export function ProfileEditForm({
   desaId,
@@ -70,7 +85,28 @@ export function ProfileEditForm({
     social_twitter: initial.social_twitter ?? "",
     social_instagram: initial.social_instagram ?? "",
     social_youtube: initial.social_youtube ?? "",
+    cover_image_url: initial.cover_image_url ?? null,
   });
+
+  async function uploadCover(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setErr(null);
+    const base64 = await fileToBase64(file);
+    startTransition(async () => {
+      const r = await uploadDesaCover({
+        desa_id: desaId,
+        filename: file.name,
+        mime_type: file.type || "image/jpeg",
+        base64,
+      });
+      if (r.error) setErr(r.error);
+      else if (r.url) {
+        setForm((s) => ({ ...s, cover_image_url: r.url }));
+        router.refresh();
+      }
+    });
+  }
 
   function toggleFasilitas(f: string) {
     const cur = form.fasilitas ?? [];
@@ -117,6 +153,39 @@ export function ProfileEditForm({
           <X className="h-4 w-4" />
         </button>
       </div>
+
+      <F label="Foto Cover (1200×400 ideal)">
+        <div className="flex items-start gap-3">
+          <div className="aspect-[3/1] w-48 shrink-0 overflow-hidden rounded-lg border border-atr-outline bg-atr-bg-soft">
+            {form.cover_image_url ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={form.cover_image_url}
+                alt=""
+                className="h-full w-full object-cover"
+              />
+            ) : (
+              <div className="flex h-full w-full items-center justify-center">
+                <ImageIcon className="h-6 w-6 text-atr-fg-muted" />
+              </div>
+            )}
+          </div>
+          <label className="inline-flex h-9 cursor-pointer items-center gap-1.5 rounded-md bg-atr-purple px-3 text-xs font-bold text-white hover:bg-atr-purple-600">
+            <input
+              type="file"
+              accept="image/*"
+              onChange={uploadCover}
+              className="hidden"
+            />
+            {pending ? (
+              <Loader2 className="h-3 w-3 animate-spin" />
+            ) : (
+              <Upload className="h-3 w-3" />
+            )}
+            {form.cover_image_url ? "Ganti cover" : "Upload cover"}
+          </label>
+        </div>
+      </F>
 
       <F label="Alamat lengkap">
         <input type="text" value={form.alamat ?? ""} onChange={(e) => setForm({ ...form, alamat: e.target.value })} className={input} />

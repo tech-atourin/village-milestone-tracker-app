@@ -9,6 +9,7 @@ import {
   CheckCircle2,
   XCircle,
   ExternalLink,
+  MessageSquare,
 } from "lucide-react";
 import {
   verifyHubAssessment,
@@ -34,8 +35,10 @@ const TIER_COLOR: Record<string, string> = {
 
 export function HubVerifyQueue({
   rows,
+  commentCountByAssessment,
 }: {
   rows: HubSubmissionRow[];
+  commentCountByAssessment?: Record<string, number>;
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -128,13 +131,23 @@ export function HubVerifyQueue({
                 </p>
               )}
             </div>
-            <Link
-              href={`/atourin/desa/${r.desa_id}`}
-              className="inline-flex h-8 items-center gap-1 rounded-md border border-atr-outline bg-white px-2.5 text-xs font-bold text-atr-fg hover:bg-atr-bg-soft"
-            >
-              <ExternalLink className="h-3 w-3" />
-              Detail Desa
-            </Link>
+            <div className="flex shrink-0 flex-col items-end gap-1.5">
+              <Link
+                href={`/atourin/desa/${r.desa_id}`}
+                className="inline-flex h-8 items-center gap-1 rounded-md border border-atr-outline bg-white px-2.5 text-xs font-bold text-atr-fg hover:bg-atr-bg-soft"
+              >
+                <ExternalLink className="h-3 w-3" />
+                Detail Desa
+              </Link>
+              <Link
+                href={`/desa/self-assessment?v=v2`}
+                className="inline-flex h-7 items-center gap-1 rounded-md border border-atr-outline bg-white px-2 text-[11px] font-bold text-atr-fg hover:bg-atr-bg-soft"
+                title="Buka untuk balas comment per question (login sebagai admin sudah cukup)"
+              >
+                <MessageSquare className="h-3 w-3" />
+                Thread ({commentCountByAssessment?.[r.id] ?? 0})
+              </Link>
+            </div>
           </div>
 
           {openId === r.id ? (

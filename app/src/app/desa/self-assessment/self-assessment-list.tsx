@@ -54,13 +54,13 @@ function fileToBase64(file: File): Promise<string> {
 export function SelfAssessmentList({
   desaId,
   items,
-  commentsByProgress,
+  commentsByItem,
   currentUserId,
   currentUserRole,
 }: {
   desaId: string;
   items: CriteriaItemRow[];
-  commentsByProgress: Map<string, AssessmentComment[]>;
+  commentsByItem: Map<string, AssessmentComment[]>;
   currentUserId: string;
   currentUserRole: string;
 }) {
@@ -352,16 +352,14 @@ export function SelfAssessmentList({
                         </button>
                       )}
                     </div>
-                    {it.progress_id && (
-                      <CommentThread
-                        targetType="criteria_progress"
-                        targetId={it.progress_id}
-                        desaId={desaId}
-                        comments={commentsByProgress.get(it.progress_id) ?? []}
-                        currentUserId={currentUserId}
-                        currentUserRole={currentUserRole}
-                      />
-                    )}
+                    <CommentThread
+                      targetType="criteria_item"
+                      targetId={it.id}
+                      desaId={desaId}
+                      comments={commentsByItem.get(it.id) ?? []}
+                      currentUserId={currentUserId}
+                      currentUserRole={currentUserRole}
+                    />
                   </li>
                 );
               })}

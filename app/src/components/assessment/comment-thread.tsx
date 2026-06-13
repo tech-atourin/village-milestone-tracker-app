@@ -48,7 +48,7 @@ export function CommentThread({
   currentUserId,
   currentUserRole,
 }: {
-  targetType: "criteria_progress" | "hub_question";
+  targetType: "criteria_progress" | "criteria_item" | "hub_question";
   targetId: string;
   desaId: string;
   comments: AssessmentComment[];

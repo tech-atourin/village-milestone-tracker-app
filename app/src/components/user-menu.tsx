@@ -8,7 +8,6 @@ import {
   User,
   KeyRound,
   Bell,
-  HelpCircle,
   LogOut,
 } from "lucide-react";
 import { signOutAction } from "@/app/login/actions";
@@ -25,7 +24,6 @@ const ITEMS = [
   { href: "/profile", label: "Profil Saya", icon: User },
   { href: "/profile#ubah-password", label: "Ubah Password", icon: KeyRound },
   { href: "/profile#notifikasi", label: "Notifikasi", icon: Bell },
-  { href: "/profile#panduan", label: "Panduan & Bantuan", icon: HelpCircle },
 ];
 
 export function UserMenu({

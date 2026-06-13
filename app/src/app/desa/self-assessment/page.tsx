@@ -13,7 +13,7 @@ import {
   getHubAssessmentResponse,
 } from "@/server/queries/hub-assessment";
 import {
-  listCommentsForCriteriaProgress,
+  listCommentsForCriteriaItem,
   listCommentsForHubAssessment,
 } from "@/server/queries/assessment-comments";
 import { SelfAssessmentList } from "./self-assessment-list";
@@ -150,9 +150,9 @@ async function V1Tab({
       />
     );
   }
-  const [items, commentsByProgress] = await Promise.all([
+  const [items, commentsByItem] = await Promise.all([
     listCriteriaForDesa(desaId, master.id),
-    listCommentsForCriteriaProgress(desaId),
+    listCommentsForCriteriaItem(desaId),
   ]);
   return (
     <section className="space-y-4">
@@ -163,7 +163,7 @@ async function V1Tab({
       <SelfAssessmentList
         desaId={desaId}
         items={items}
-        commentsByProgress={commentsByProgress}
+        commentsByItem={commentsByItem}
         currentUserId={currentUserId}
         currentUserRole={currentUserRole}
       />
@@ -194,8 +194,31 @@ async function V2Tab({
   const commentsByQuestion = existing
     ? await listCommentsForHubAssessment(desaId, existing.id)
     : new Map();
+  // Detect rejection: status reverted to draft AND verifier_note exists
+  const wasRejected =
+    existing?.status === "draft" && (existing?.verifier_note?.trim()?.length ?? 0) > 0;
   return (
     <section className="space-y-4">
+      {wasRejected && (
+        <div className="rounded-2xl border-2 border-atr-red/40 bg-atr-red/5 p-4">
+          <div className="flex items-start gap-3">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-atr-red text-white">
+              ⚠
+            </div>
+            <div className="flex-1">
+              <h3 className="text-sm font-bold text-atr-red">
+                Submission Anda perlu revisi
+              </h3>
+              <p className="mt-1 whitespace-pre-line text-sm text-atr-fg">
+                {existing!.verifier_note}
+              </p>
+              <p className="mt-2 text-[11px] text-atr-fg-muted">
+                Setelah revisi, klik Submit lagi untuk dikirim ke tim Atourin.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
       <div className="rounded-lg border border-atr-outline bg-atr-bg-soft p-3 text-xs text-atr-fg-muted">
         Template: <strong className="text-atr-fg">{template.name}</strong> · versi {template.versi}
         {existing?.status === "submitted" && (
