@@ -70,9 +70,10 @@ export default function LoginPage() {
           </h1>
 
           <p className="max-w-md text-sm leading-relaxed text-white/85">
-            Satu platform untuk semua mitra — Kemenpar, BUMN, Pemda, dan swasta.
-            Kurasi template, kelola peserta, dan tracking progress real-time
-            tanpa rebuild sistem tiap project baru.
+            Platform pendampingan desa wisata multi-tenant. Kelola program
+            Kementerian, BUMN, Pemda, dan swasta dalam satu sistem dengan tiga
+            layer pengukuran: klasifikasi desa, progress pendampingan, dan
+            capacity building peserta.
           </p>
 
           <ul className="space-y-4 pt-2">
