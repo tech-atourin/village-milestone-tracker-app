@@ -23,6 +23,7 @@ import {
   updateActionPlan,
   deleteActionPlan,
   uploadActionPlanEvidence,
+  getActionPlanEvidenceUrl,
 } from "@/server/actions/action-plans";
 
 type DesaOption = {
@@ -260,31 +261,63 @@ function PlanCard({
             {new Intl.DateTimeFormat("id-ID").format(new Date(p.created_at))}
           </div>
         </div>
-        {canEdit && (
-          <div className="flex shrink-0 gap-1">
-            <EvidenceUploadButton planId={p.id} hasEvidence={!!p.evidence_path} />
-            <button
-              type="button"
-              onClick={onEdit}
-              disabled={pending}
-              className="rounded-md border border-atr-outline bg-white p-1.5 text-atr-fg-muted hover:bg-atr-bg-soft hover:text-atr-fg disabled:opacity-50"
-              aria-label="Edit"
-            >
-              <Pencil className="h-3.5 w-3.5" />
-            </button>
-            <button
-              type="button"
-              onClick={onDelete}
-              disabled={pending}
-              className="rounded-md border border-atr-outline bg-white p-1.5 text-atr-fg-muted hover:bg-atr-red/10 hover:text-atr-red disabled:opacity-50"
-              aria-label="Hapus"
-            >
-              <Trash2 className="h-3.5 w-3.5" />
-            </button>
-          </div>
-        )}
+        <div className="flex shrink-0 gap-1">
+          {p.evidence_path && (
+            <EvidenceViewButton evidencePath={p.evidence_path} />
+          )}
+          {canEdit && (
+            <>
+              <EvidenceUploadButton planId={p.id} hasEvidence={!!p.evidence_path} />
+              <button
+                type="button"
+                onClick={onEdit}
+                disabled={pending}
+                className="rounded-md border border-atr-outline bg-white p-1.5 text-atr-fg-muted hover:bg-atr-bg-soft hover:text-atr-fg disabled:opacity-50"
+                aria-label="Edit"
+              >
+                <Pencil className="h-3.5 w-3.5" />
+              </button>
+              <button
+                type="button"
+                onClick={onDelete}
+                disabled={pending}
+                className="rounded-md border border-atr-outline bg-white p-1.5 text-atr-fg-muted hover:bg-atr-red/10 hover:text-atr-red disabled:opacity-50"
+                aria-label="Hapus"
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+              </button>
+            </>
+          )}
+        </div>
       </div>
     </article>
+  );
+}
+
+function EvidenceViewButton({ evidencePath }: { evidencePath: string }) {
+  const [pending, startTransition] = useTransition();
+  function open() {
+    startTransition(async () => {
+      const url = await getActionPlanEvidenceUrl(evidencePath);
+      if (url) window.open(url, "_blank", "noopener,noreferrer");
+      else alert("Gagal membuka file evidence");
+    });
+  }
+  return (
+    <button
+      type="button"
+      onClick={open}
+      disabled={pending}
+      className="rounded-md border border-atr-arti/30 bg-atr-arti/10 p-1.5 text-atr-arti hover:bg-atr-arti/15 disabled:opacity-50"
+      title="Lihat evidence"
+      aria-label="Lihat evidence"
+    >
+      {pending ? (
+        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+      ) : (
+        <Paperclip className="h-3.5 w-3.5" />
+      )}
+    </button>
   );
 }
 

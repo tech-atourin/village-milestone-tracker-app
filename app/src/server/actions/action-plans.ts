@@ -125,3 +125,16 @@ export async function uploadActionPlanEvidence(
   revalidatePath("/narasumber/rencana-aksi");
   return { ok: true, path };
 }
+
+// Returns signed URL (1 hour) for an existing evidence_path
+export async function getActionPlanEvidenceUrl(
+  evidencePath: string,
+): Promise<string | null> {
+  const user = await getCurrentUser();
+  if (!user) return null;
+  const supabase = createClient();
+  const { data } = await supabase.storage
+    .from("vmt-evidence")
+    .createSignedUrl(evidencePath, 60 * 60);
+  return data?.signedUrl ?? null;
+}

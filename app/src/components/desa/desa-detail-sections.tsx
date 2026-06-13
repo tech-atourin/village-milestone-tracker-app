@@ -12,8 +12,10 @@ import {
   Cloud,
   ClipboardCheck,
   Image as ImageIcon,
+  Handshake,
 } from "lucide-react";
 import type { DesaDetail } from "@/server/queries/desa-master";
+import { HubExtrasSections } from "@/components/desa/hub-extras-sections";
 
 const TIER_BADGE: Record<string, string> = {
   rintisan: "bg-atr-yellow/20 text-atr-fg",
@@ -46,7 +48,7 @@ export function DesaDetailSections({
   data: DesaDetail;
   hubSyncSlot?: React.ReactNode;
 }) {
-  const { base, profile, baseline, baseline_submitted_at, hub_assessment, projects } = data;
+  const { base, profile, pengelola, baseline, baseline_submitted_at, hub_assessment, projects } = data;
   const tier = base.current_classification ?? "unclassified";
 
   const b = (baseline ?? {}) as Record<string, unknown>;
@@ -351,6 +353,79 @@ export function DesaDetailSections({
         )}
       </Section>
 
+      {/* Profil Pengelola (Jadesta-style data — filled by desa wisata at /desa/pengelola) */}
+      <Section title="Profil Lembaga Pengelola" icon={Handshake}>
+        {pengelola ? (
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-3 text-sm sm:grid-cols-3">
+              <Detail label="Bentuk Lembaga" value={pengelola.bentuk_kelembagaan} />
+              <Detail label="No. SK" value={pengelola.nomor_sk} />
+              <Detail label="Tanggal SK" value={fmtDate(pengelola.tanggal_sk)} />
+              <Detail
+                label="Total Pengurus"
+                value={pengelola.total_pengurus?.toString() ?? null}
+              />
+              <Detail
+                label="Pengurus P"
+                value={pengelola.total_pengurus_p?.toString() ?? null}
+              />
+            </div>
+            {pengelola.landasan_pembentukan && (
+              <div>
+                <div className="text-xs font-bold uppercase tracking-wide text-atr-fg-muted">
+                  Landasan Pembentukan
+                </div>
+                <p className="mt-1 whitespace-pre-line text-sm text-atr-fg">
+                  {pengelola.landasan_pembentukan}
+                </p>
+              </div>
+            )}
+            <div className="grid grid-cols-3 gap-3">
+              <RatingDisplay label="Kemandirian" value={pengelola.rating_kemandirian} />
+              <RatingDisplay label="Keberlanjutan" value={pengelola.rating_keberlanjutan} />
+              <RatingDisplay label="Inovasi" value={pengelola.rating_inovasi} />
+            </div>
+            {pengelola.jaringan_kerjasama && pengelola.jaringan_kerjasama.length > 0 && (
+              <div>
+                <div className="text-xs font-bold uppercase tracking-wide text-atr-fg-muted">
+                  Jaringan Kerjasama ({pengelola.jaringan_kerjasama.length})
+                </div>
+                <div className="mt-1.5 flex flex-wrap gap-1.5">
+                  {pengelola.jaringan_kerjasama.map((j) => (
+                    <span
+                      key={j}
+                      className="inline-flex rounded-full bg-atr-purple-50 px-2.5 py-0.5 text-xs font-bold text-atr-purple-600"
+                    >
+                      {j}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+            {pengelola.catatan && (
+              <div>
+                <div className="text-xs font-bold uppercase tracking-wide text-atr-fg-muted">
+                  Catatan
+                </div>
+                <p className="mt-1 whitespace-pre-line text-sm text-atr-fg">
+                  {pengelola.catatan}
+                </p>
+              </div>
+            )}
+          </div>
+        ) : (
+          <EmptySection message="Desa belum mengisi profil pengelola (form di /desa/pengelola)" />
+        )}
+      </Section>
+
+      {/* Hub extras (produk/foto/awards/events) */}
+      <HubExtrasSections
+        produk={profile?.produk_list ?? null}
+        foto={profile?.foto_galeri ?? null}
+        awards={profile?.awards ?? null}
+        events={profile?.events ?? null}
+      />
+
       {/* Self-Assessment Hub V2 */}
       <Section title="Self-Assessment Hub (V2)" icon={FileText}>
         {hub_assessment ? (
@@ -460,6 +535,26 @@ function EmptySection({ message }: { message: string }) {
   return (
     <div className="rounded-lg border border-dashed border-atr-outline bg-atr-bg-soft p-6 text-center">
       <p className="text-xs italic text-atr-fg-muted">{message}</p>
+    </div>
+  );
+}
+
+function RatingDisplay({
+  label,
+  value,
+}: {
+  label: string;
+  value: number | null;
+}) {
+  return (
+    <div className="rounded-lg border border-atr-outline bg-atr-bg-soft p-3 text-center">
+      <div className="text-[10px] font-bold uppercase tracking-wide text-atr-fg-muted">
+        {label}
+      </div>
+      <div className="mt-1 text-2xl font-bold text-atr-purple-600">
+        {value != null ? value : "—"}
+        <span className="text-xs font-normal text-atr-fg-muted">/5</span>
+      </div>
     </div>
   );
 }

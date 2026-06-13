@@ -149,6 +149,28 @@ export type DesaDetail = {
     social_facebook: string | null;
     social_youtube: string | null;
     synced_from_hub_at: string | null;
+    // Hub extras (raw jsonb from sync)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    produk_list: any[] | null;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    foto_galeri: any[] | null;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    awards: any[] | null;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    events: any[] | null;
+  } | null;
+  pengelola: {
+    bentuk_kelembagaan: string | null;
+    landasan_pembentukan: string | null;
+    nomor_sk: string | null;
+    tanggal_sk: string | null;
+    total_pengurus: number | null;
+    total_pengurus_p: number | null;
+    rating_kemandirian: number | null;
+    rating_keberlanjutan: number | null;
+    rating_inovasi: number | null;
+    jaringan_kerjasama: string[] | null;
+    catatan: string | null;
   } | null;
   baseline: Record<string, unknown> | null;
   baseline_submitted_at: string | null;
@@ -179,7 +201,15 @@ export async function getDesaDetail(
   const { data: profile } = await supabase
     .from("desa_profile_data")
     .select(
-      "alamat, cover_image_url, deskripsi, keunikan, rekomendasi_kunjungan, fasilitas, pengelola_nama, pengelola_kontak_person, pengelola_email, pengelola_whatsapp, social_website, social_instagram, social_facebook, social_youtube, synced_from_hub_at",
+      "alamat, cover_image_url, deskripsi, keunikan, rekomendasi_kunjungan, fasilitas, pengelola_nama, pengelola_kontak_person, pengelola_email, pengelola_whatsapp, social_website, social_instagram, social_facebook, social_youtube, synced_from_hub_at, produk_list, foto_galeri, awards, events",
+    )
+    .eq("desa_id", desaId)
+    .maybeSingle();
+
+  const { data: pengelola } = await supabase
+    .from("desa_pengelola_data")
+    .select(
+      "bentuk_kelembagaan, landasan_pembentukan, nomor_sk, tanggal_sk, total_pengurus, total_pengurus_p, rating_kemandirian, rating_keberlanjutan, rating_inovasi, jaringan_kerjasama, catatan",
     )
     .eq("desa_id", desaId)
     .maybeSingle();
@@ -250,6 +280,7 @@ export async function getDesaDetail(
   return {
     base,
     profile: profile as DesaDetail["profile"],
+    pengelola: pengelola as DesaDetail["pengelola"],
     baseline,
     baseline_submitted_at,
     hub_assessment: hubA as DesaDetail["hub_assessment"],
