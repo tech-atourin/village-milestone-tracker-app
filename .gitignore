@@ -9,6 +9,11 @@ akun.md
 **/.env
 **/.env.local
 
+# Service account JSON keys — NEVER commit
+*-service-account.json
+**/*-service-account.json
+**/service-account*.json
+
 # =====================================================
 # Node / Next.js
 # =====================================================

@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { requireRole } from "@/lib/auth/rbac";
+import { syncGformLocal } from "@/lib/gform/local-sync";
 
 const addSchema = z.object({
   project_id: z.string().uuid(),
@@ -27,24 +28,5 @@ export async function addProjectGform(input: z.input<typeof addSchema>) {
 
 export async function triggerGformSync(projectGformId: string) {
   await requireRole("superadmin");
-  // Invoke the Edge Function
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!url || !key) {
-    return { error: "SUPABASE env vars missing" };
-  }
-  const res = await fetch(`${url}/functions/v1/sync-gform`, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${key}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ project_gform_id: projectGformId }),
-  });
-  if (!res.ok) {
-    const text = await res.text();
-    return { error: `Sync failed: ${text}` };
-  }
-  const data = await res.json();
-  return { ok: true, data };
+  return syncGformLocal(projectGformId);
 }

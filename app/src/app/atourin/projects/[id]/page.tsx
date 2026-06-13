@@ -13,6 +13,7 @@ import { TopikTab } from "./topik-tab";
 import { EvidenceTab } from "./evidence-tab";
 import { ProjectActions } from "./project-actions";
 import { SettingsTab } from "./settings-tab";
+import { GformsPanel, type GformRow } from "./gforms-panel";
 
 async function getPublicState(projectId: string) {
   const supabase = createClient();
@@ -146,17 +147,20 @@ export default async function ProjectDetailPage({
       {activeTab === "peserta" && <PesertaTabLoader projectId={project.id} />}
       {activeTab === "evidence" && <EvidenceTabLoader projectId={project.id} />}
       {activeTab === "settings" && (
-        <SettingsTab
-          project={{
-            id: project.id,
-            name: project.name,
-            description: project.description,
-            period_start: project.period_start,
-            period_end: project.period_end,
-            status: project.status,
-            enabled_modules: project.enabled_modules,
-          }}
-        />
+        <div className="space-y-6">
+          <SettingsTab
+            project={{
+              id: project.id,
+              name: project.name,
+              description: project.description,
+              period_start: project.period_start,
+              period_end: project.period_end,
+              status: project.status,
+              enabled_modules: project.enabled_modules,
+            }}
+          />
+          <GformsTabLoader projectId={project.id} />
+        </div>
       )}
     </div>
   );
@@ -193,6 +197,19 @@ async function TopikTabLoader({ projectId }: { projectId: string }) {
 
 async function EvidenceTabLoader({ projectId }: { projectId: string }) {
   return <EvidenceTab projectId={projectId} />;
+}
+
+async function GformsTabLoader({ projectId }: { projectId: string }) {
+  const supabase = createClient();
+  const { data } = await supabase
+    .from("project_gforms")
+    .select(
+      "id, form_type, form_label, gform_id, sheet_id, identifier_field, sync_status, last_sync_at, last_sync_error",
+    )
+    .eq("project_id", projectId)
+    .order("created_at", { ascending: false });
+  const gforms = (data ?? []) as unknown as GformRow[];
+  return <GformsPanel projectId={projectId} gforms={gforms} />;
 }
 
 function OverviewTab({
