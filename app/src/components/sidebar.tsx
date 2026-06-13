@@ -17,12 +17,13 @@ import {
   MapPin,
   BarChart3,
   History,
+  CalendarDays,
+  ListChecks,
   type LucideIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { UserMenu, type UserMenuUser } from "@/components/user-menu";
 
-// Icon registry — pass icon as a string from server layouts so the
-// items prop stays serializable across the RSC boundary.
 const ICONS: Record<string, LucideIcon> = {
   LayoutDashboard,
   Folder,
@@ -37,6 +38,8 @@ const ICONS: Record<string, LucideIcon> = {
   MapPin,
   BarChart3,
   History,
+  CalendarDays,
+  ListChecks,
 };
 
 export type SidebarIconName = keyof typeof ICONS;
@@ -50,9 +53,11 @@ export type SidebarItem = {
 export function Sidebar({
   items,
   scopeLabel,
+  user,
 }: {
   items: SidebarItem[];
   scopeLabel: string;
+  user: UserMenuUser;
 }) {
   const pathname = usePathname();
 
@@ -104,8 +109,9 @@ export function Sidebar({
         })}
       </nav>
 
-      <div className="border-t border-atr-outline px-4 py-3 text-[11px] text-atr-fg-muted">
-        © 2026 Atourin · v0.1
+      {/* Sticky user menu at bottom */}
+      <div className="border-t border-atr-outline p-3">
+        <UserMenu user={user} variant="sidebar-up" />
       </div>
     </aside>
   );

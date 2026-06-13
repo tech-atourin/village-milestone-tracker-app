@@ -15,6 +15,8 @@ export type CriteriaItemRow = {
   sort_order: number;
   status: "not_started" | "submitted" | "verified" | "rejected";
   progress_id: string | null;
+  evidence_path: string | null;
+  evidence_note: string | null;
 };
 
 export async function getRepresentingDesa(userId: string) {
@@ -70,20 +72,32 @@ export async function listCriteriaForDesa(
       .order("sort_order"),
     supabase
       .from("national_criteria_progress")
-      .select("id, criteria_item_id, status")
+      .select("id, criteria_item_id, status, evidence_path, evidence_note")
       .eq("desa_id", desaId),
   ]);
 
   const progressMap = new Map<
     string,
-    { id: string; status: CriteriaItemRow["status"] }
+    {
+      id: string;
+      status: CriteriaItemRow["status"];
+      evidence_path: string | null;
+      evidence_note: string | null;
+    }
   >();
   for (const p of (progress ?? []) as Array<{
     id: string;
     criteria_item_id: string;
     status: CriteriaItemRow["status"];
+    evidence_path: string | null;
+    evidence_note: string | null;
   }>) {
-    progressMap.set(p.criteria_item_id, { id: p.id, status: p.status });
+    progressMap.set(p.criteria_item_id, {
+      id: p.id,
+      status: p.status,
+      evidence_path: p.evidence_path,
+      evidence_note: p.evidence_note,
+    });
   }
 
   return ((items ?? []) as unknown as Array<{
@@ -101,6 +115,8 @@ export async function listCriteriaForDesa(
       ...it,
       status: p?.status ?? "not_started",
       progress_id: p?.id ?? null,
+      evidence_path: p?.evidence_path ?? null,
+      evidence_note: p?.evidence_note ?? null,
     };
   });
 }

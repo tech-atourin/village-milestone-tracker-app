@@ -73,8 +73,9 @@ export function scopeHomePath(role: GlobalRole): string {
     case "mitra_admin":
       return "/mitra/dashboard";
     case "peserta":
-    case "narasumber":
       return "/peserta/home";
+    case "narasumber":
+      return "/narasumber/dashboard";
     case "desa_wisata":
       return "/desa/dashboard";
   }

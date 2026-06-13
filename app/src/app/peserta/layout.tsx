@@ -6,7 +6,7 @@ export default async function PesertaLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const user = await requireRole("peserta", "narasumber");
+  const user = await requireRole("peserta");
 
   return (
     <div className="min-h-screen bg-atr-bg-soft">

@@ -12,6 +12,8 @@ import {
   GraduationCap,
   FileText,
   MapPin,
+  BarChart3,
+  ListChecks,
 } from "lucide-react";
 import { togglePublicDashboard } from "@/server/actions/public-dashboard";
 import { exportProjectExcel } from "@/server/actions/export";
@@ -120,14 +122,28 @@ export function ProjectActions({
         className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-atr-outline bg-white px-3 text-sm font-bold text-atr-fg transition hover:bg-atr-bg-soft"
       >
         <GraduationCap className="h-3.5 w-3.5" />
-        RAPOR Peserta
+        Rapor Peserta
       </Link>
       <Link
         href={`/atourin/projects/${projectId}/rapor-desa`}
         className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-atr-outline bg-white px-3 text-sm font-bold text-atr-fg transition hover:bg-atr-bg-soft"
       >
         <MapPin className="h-3.5 w-3.5" />
-        RAPOR Desa
+        Rapor Desa
+      </Link>
+      <Link
+        href={`/atourin/projects/${projectId}/rencana-aksi`}
+        className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-atr-outline bg-white px-3 text-sm font-bold text-atr-fg transition hover:bg-atr-bg-soft"
+      >
+        <ListChecks className="h-3.5 w-3.5" />
+        Rencana Aksi
+      </Link>
+      <Link
+        href={`/atourin/projects/${projectId}/analytics`}
+        className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-atr-outline bg-white px-3 text-sm font-bold text-atr-fg transition hover:bg-atr-bg-soft"
+      >
+        <BarChart3 className="h-3.5 w-3.5" />
+        Analytics
       </Link>
       <Link
         href={`/atourin/projects/${projectId}/report`}

@@ -26,19 +26,19 @@ export default async function RaporIndexPage({
 
       <header className="space-y-1.5">
         <h1 className="text-2xl font-bold tracking-tight text-atr-fg">
-          RAPOR per Peserta
+          Rapor per Peserta
         </h1>
         <p className="text-sm text-atr-fg-muted">
           Input manual hasil pre-test, post-test, attendance, dan survey
           kepuasan per peserta. Untuk hasil akumulasi tingkat desa, lihat
-          tab RAPOR per Desa.
+          tab Rapor per Desa.
         </p>
         <div className="flex gap-4 pt-2 text-xs">
           <Link
             href={`/atourin/projects/${params.id}/rapor-desa`}
             className="font-bold text-atr-purple-600 hover:text-atr-purple"
           >
-            RAPOR per Desa →
+            Rapor per Desa →
           </Link>
         </div>
       </header>
@@ -61,8 +61,8 @@ export default async function RaporIndexPage({
         <div className="flex items-start gap-3">
           <FileText className="mt-0.5 h-4 w-4 shrink-0 text-atr-purple" />
           <p className="text-xs text-atr-fg-muted">
-            Setelah RAPOR diisi, klik &quot;Lihat&quot; di kolom Aksi untuk
-            preview halaman RAPOR yang siap di-print sebagai PDF.
+            Setelah rapor diisi, klik &quot;Lihat&quot; di kolom Aksi untuk
+            preview halaman rapor yang siap di-print sebagai PDF.
           </p>
         </div>
       </div>

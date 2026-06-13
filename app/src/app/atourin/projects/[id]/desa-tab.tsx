@@ -253,8 +253,8 @@ export function DesaTab({
           )}
 
           <p className="mt-2 text-[11px] text-atr-fg-muted">
-            ✨ Hub adalah master 5.964 desa wisata yang Atourin sudah crawl
-            dari Jadesta. Import akan otomatis pre-fill baseline + history ADWI.
+            ✨ Hub adalah master 5.964 desa wisata milik internal Atourin.
+            Import akan otomatis pre-fill baseline + history ADWI.
           </p>
         </div>
       )}

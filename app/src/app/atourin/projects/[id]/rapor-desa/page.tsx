@@ -26,7 +26,7 @@ export default async function RaporDesaIndexPage({
 
       <header className="space-y-1.5">
         <h1 className="text-2xl font-bold tracking-tight text-atr-fg">
-          RAPOR per Desa
+          Rapor per Desa
         </h1>
         <p className="text-sm text-atr-fg-muted">
           Akumulasi hasil dari seluruh perwakilan peserta yang mewakili desa di
@@ -37,7 +37,7 @@ export default async function RaporDesaIndexPage({
             href={`/atourin/projects/${params.id}/rapor`}
             className="font-bold text-atr-fg-muted hover:text-atr-purple"
           >
-            ← RAPOR per Peserta
+            ← Rapor per Peserta
           </Link>
         </div>
       </header>
