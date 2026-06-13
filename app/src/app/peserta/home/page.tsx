@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ChevronRight, MapPin, ClipboardList } from "lucide-react";
 import { getCurrentUser } from "@/lib/auth/rbac";
 import { listPesertaProjectDesa } from "@/server/queries/peserta";
+import { EmptyState } from "@/components/ui/empty-state";
 
 export default async function PesertaHomePage() {
   const user = await getCurrentUser();
@@ -22,18 +23,11 @@ export default async function PesertaHomePage() {
       </header>
 
       {projects.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-atr-outline bg-white p-8 text-center">
-          <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-atr-bg-soft">
-            <ClipboardList className="h-5 w-5 text-atr-fg-muted" />
-          </div>
-          <p className="text-sm font-bold text-atr-fg">
-            Belum ada project aktif
-          </p>
-          <p className="mt-1 text-xs text-atr-fg-muted">
-            Admin Atourin atau mitra akan menambahkan Anda ke project. Cek lagi
-            nanti.
-          </p>
-        </div>
+        <EmptyState
+          icon={ClipboardList}
+          title="Belum ada project aktif"
+          description="Admin Atourin atau mitra akan menambahkan Anda ke project. Cek lagi nanti."
+        />
       ) : (
         <ul className="space-y-3">
           {projects.map((p) => (

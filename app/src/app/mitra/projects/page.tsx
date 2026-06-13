@@ -1,6 +1,7 @@
 import { Folder } from "lucide-react";
 import { listProjects } from "@/server/queries/projects";
 import { ProjectsTable } from "@/app/atourin/projects/projects-table";
+import { EmptyState } from "@/components/ui/empty-state";
 
 export default async function MitraProjectsPage() {
   const projects = await listProjects();
@@ -17,17 +18,11 @@ export default async function MitraProjectsPage() {
       </header>
 
       {projects.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-atr-outline bg-white p-12 text-center">
-          <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-atr-bg-soft">
-            <Folder className="h-5 w-5 text-atr-fg-muted" />
-          </div>
-          <p className="text-sm font-bold text-atr-fg">
-            Belum ada project ditugaskan
-          </p>
-          <p className="mt-1 text-sm text-atr-fg-muted">
-            Tim Atourin akan menugaskan project ke organisasi Anda saat siap.
-          </p>
-        </div>
+        <EmptyState
+          icon={Folder}
+          title="Belum ada project ditugaskan"
+          description="Tim Atourin akan menugaskan project ke organisasi Anda saat siap."
+        />
       ) : (
         <ProjectsTable projects={projects} scope="mitra" />
       )}

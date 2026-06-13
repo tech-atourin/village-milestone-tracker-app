@@ -2,6 +2,7 @@ import "server-only";
 
 import { createAdminClient } from "@/lib/supabase/server";
 import { createSign, createPrivateKey } from "node:crypto";
+import { calcScore } from "./score";
 
 // =====================================================
 // Local GForm sync (Next.js server-side)
@@ -94,13 +95,7 @@ async function readSheet(
   });
 }
 
-function calcScore(row: Record<string, string>, identifierField: string) {
-  const skip = new Set([identifierField, "Timestamp", "Email Address"]);
-  const ans = Object.entries(row).filter(([k]) => !skip.has(k));
-  if (!ans.length) return null;
-  const score = ans.filter(([, v]) => v && v.trim() !== "").length;
-  return { score, max: ans.length };
-}
+// (calcScore extracted to ./score.ts for testability)
 
 export type SyncReport = {
   matched: number;
