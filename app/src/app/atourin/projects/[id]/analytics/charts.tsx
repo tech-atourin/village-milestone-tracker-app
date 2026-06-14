@@ -12,6 +12,12 @@ import {
   Radar,
   Tooltip,
   Legend,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  LabelList,
 } from "recharts";
 import type { ProjectAnalytics } from "@/server/queries/project-analytics";
 import { Award, TrendingUp, Sparkles } from "lucide-react";
@@ -150,22 +156,28 @@ export function AnalyticsCharts({ data }: { data: ProjectAnalytics }) {
           ) : (
             <div className="h-56">
               <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
+                <PieChart margin={{ top: 5, right: 5, bottom: 5, left: 5 }}>
                   <Pie
                     data={genderData}
                     dataKey="value"
                     nameKey="name"
-                    innerRadius={50}
-                    outerRadius={80}
+                    cx="35%"
+                    innerRadius={45}
+                    outerRadius={75}
                     paddingAngle={3}
-                    label
                   >
                     {genderData.map((d, i) => (
                       <Cell key={i} fill={d.color} />
                     ))}
                   </Pie>
                   <Tooltip />
-                  <Legend />
+                  <Legend
+                    verticalAlign="middle"
+                    align="right"
+                    layout="vertical"
+                    iconType="circle"
+                    wrapperStyle={{ fontSize: 12, paddingLeft: 12 }}
+                  />
                 </PieChart>
               </ResponsiveContainer>
             </div>
@@ -173,39 +185,92 @@ export function AnalyticsCharts({ data }: { data: ProjectAnalytics }) {
         </section>
       </div>
 
-      {/* Materi radar */}
-      <section className="rounded-2xl border border-atr-outline bg-white p-6 shadow-atr-1">
-        <header className="mb-4 flex items-center gap-2">
-          <TrendingUp className="h-4 w-4 text-atr-purple" />
-          <h3 className="text-sm font-bold uppercase tracking-wide text-atr-fg">
-            Distribusi Materi Pendampingan (per Kompetensi Narasumber)
-          </h3>
-        </header>
-        {materiData.length < 3 ? (
-          <p className="py-12 text-center text-sm italic text-atr-fg-muted">
-            Belum cukup sesi pendampingan untuk visualisasi radar (butuh ≥3
-            kategori).
-          </p>
-        ) : (
-          <div className="h-72">
-            <ResponsiveContainer width="100%" height="100%">
-              <RadarChart data={materiData}>
-                <PolarGrid stroke="#E5E7EB" />
-                <PolarAngleAxis dataKey="kompetensi" tick={{ fontSize: 11 }} />
-                <PolarRadiusAxis tick={{ fontSize: 10 }} />
-                <Radar
-                  name="Sesi"
-                  dataKey="sessions"
-                  stroke={PURPLE}
-                  fill={PURPLE}
-                  fillOpacity={0.35}
-                />
-                <Tooltip />
-              </RadarChart>
-            </ResponsiveContainer>
-          </div>
-        )}
-      </section>
+      {/* Materi radar + top narasumber side-by-side */}
+      <div className="grid gap-4 lg:grid-cols-2">
+        <section className="rounded-2xl border border-atr-outline bg-white p-6 shadow-atr-1">
+          <header className="mb-4 flex items-center gap-2">
+            <TrendingUp className="h-4 w-4 text-atr-purple" />
+            <h3 className="text-sm font-bold uppercase tracking-wide text-atr-fg">
+              Distribusi Materi per Kompetensi
+            </h3>
+          </header>
+          {materiData.length < 3 ? (
+            <p className="py-12 text-center text-sm italic text-atr-fg-muted">
+              Belum cukup sesi pendampingan untuk visualisasi radar (butuh ≥3
+              kategori).
+            </p>
+          ) : (
+            <div className="h-72">
+              <ResponsiveContainer width="100%" height="100%">
+                <RadarChart data={materiData} margin={{ top: 10, right: 30, bottom: 10, left: 30 }}>
+                  <PolarGrid stroke="#E5E7EB" />
+                  <PolarAngleAxis
+                    dataKey="kompetensi"
+                    tick={{ fontSize: 10 }}
+                  />
+                  <PolarRadiusAxis tick={{ fontSize: 10 }} />
+                  <Radar
+                    name="Sesi"
+                    dataKey="sessions"
+                    stroke={PURPLE}
+                    fill={PURPLE}
+                    fillOpacity={0.35}
+                  />
+                  <Tooltip />
+                </RadarChart>
+              </ResponsiveContainer>
+            </div>
+          )}
+        </section>
+
+        <section className="rounded-2xl border border-atr-outline bg-white p-6 shadow-atr-1">
+          <header className="mb-4 flex items-center gap-2">
+            <TrendingUp className="h-4 w-4 text-atr-purple" />
+            <h3 className="text-sm font-bold uppercase tracking-wide text-atr-fg">
+              Top Narasumber (by Sesi)
+            </h3>
+          </header>
+          {data.top_narasumber.length === 0 ? (
+            <p className="py-12 text-center text-sm italic text-atr-fg-muted">
+              Belum ada sesi pendampingan tercatat.
+            </p>
+          ) : (
+            <div className="h-72">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart
+                  data={data.top_narasumber}
+                  layout="vertical"
+                  margin={{ top: 5, right: 30, bottom: 5, left: 5 }}
+                >
+                  <CartesianGrid stroke="#E5E7EB" horizontal={false} />
+                  <XAxis
+                    type="number"
+                    allowDecimals={false}
+                    tick={{ fontSize: 11 }}
+                  />
+                  <YAxis
+                    type="category"
+                    dataKey="name"
+                    tick={{ fontSize: 11 }}
+                    width={120}
+                    tickFormatter={(s: string) =>
+                      s.length > 16 ? s.slice(0, 16) + "…" : s
+                    }
+                  />
+                  <Tooltip />
+                  <Bar dataKey="sessions" fill={PURPLE} radius={[0, 4, 4, 0]}>
+                    <LabelList
+                      dataKey="sessions"
+                      position="right"
+                      style={{ fontSize: 11, fontWeight: 700, fill: "#374151" }}
+                    />
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          )}
+        </section>
+      </div>
 
       {/* Rencana aksi + sesi status */}
       <div className="grid gap-4 lg:grid-cols-2">
@@ -222,20 +287,26 @@ export function AnalyticsCharts({ data }: { data: ProjectAnalytics }) {
           ) : (
             <div className="h-56">
               <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
+                <PieChart margin={{ top: 5, right: 5, bottom: 5, left: 5 }}>
                   <Pie
                     data={apData}
                     dataKey="value"
                     nameKey="name"
-                    outerRadius={80}
-                    label
+                    cx="35%"
+                    outerRadius={75}
                   >
                     {apData.map((d, i) => (
                       <Cell key={i} fill={d.color} />
                     ))}
                   </Pie>
                   <Tooltip />
-                  <Legend />
+                  <Legend
+                    verticalAlign="middle"
+                    align="right"
+                    layout="vertical"
+                    iconType="circle"
+                    wrapperStyle={{ fontSize: 12, paddingLeft: 12 }}
+                  />
                 </PieChart>
               </ResponsiveContainer>
             </div>

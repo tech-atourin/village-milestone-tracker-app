@@ -65,6 +65,12 @@ export const bulkRowSchema = z
     role: z
       .enum(["peserta", "mitra_admin", "narasumber"])
       .default("peserta"),
+    // Narasumber-only extras (ignored for other roles)
+    kategori_narasumber: z.string().optional().or(z.literal("")),
+    kompetensi: z.string().optional().or(z.literal("")),
+    jabatan: z.string().optional().or(z.literal("")),
+    instansi: z.string().optional().or(z.literal("")),
+    kota: z.string().optional().or(z.literal("")),
   })
   .superRefine((v, ctx) => {
     if (!v.email && !v.phone) {
@@ -113,6 +119,16 @@ const COLUMN_ALIASES: Record<string, string> = {
   desa_name: "desa_name",
   desa: "desa_name",
   role: "role",
+  // Narasumber extras
+  kategori_narasumber: "kategori_narasumber",
+  kategori: "kategori_narasumber",
+  kompetensi: "kompetensi",
+  bidang: "kompetensi",
+  jabatan: "jabatan",
+  instansi: "instansi",
+  afiliasi: "instansi",
+  kota: "kota",
+  domisili: "kota",
 };
 
 export function normalizeColumns(

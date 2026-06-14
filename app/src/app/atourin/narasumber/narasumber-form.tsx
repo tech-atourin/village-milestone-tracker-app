@@ -2,7 +2,7 @@
 
 import { useState, useTransition, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Loader2, X, Save, Trash2 } from "lucide-react";
+import { Loader2, X, Save, Trash2, Check, Copy, KeyRound } from "lucide-react";
 import {
   upsertNarasumber,
   deleteNarasumber,
@@ -46,6 +46,10 @@ export function NarasumberFormDialog({
   const [pending, startTransition] = useTransition();
   const [busyAction, setBusyAction] = useState<"save" | "delete" | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [credentials, setCredentials] = useState<
+    { email: string; password: string } | null
+  >(null);
+  const [copied, setCopied] = useState(false);
   const [form, setForm] = useState<NarasumberFormValue>({
     full_name: "",
     email: null,
@@ -107,11 +111,12 @@ export function NarasumberFormDialog({
   function submit() {
     setError(null);
     setBusyAction("save");
+    const submittedEmail = form.email?.trim() || null;
     startTransition(async () => {
       const r = await upsertNarasumber({
         id: form.id ?? null,
         full_name: (form.full_name ?? "").trim(),
-        email: form.email?.trim() || null,
+        email: submittedEmail,
         phone: form.phone?.trim() || null,
         jabatan: form.jabatan?.trim() || null,
         instansi: form.instansi?.trim() || null,
@@ -121,12 +126,41 @@ export function NarasumberFormDialog({
         kompetensi: form.kompetensi?.trim() || null,
       });
       setBusyAction(null);
-      if ("error" in r && r.error) setError(r.error);
-      else {
-        onClose();
-        router.refresh();
+      if ("error" in r) {
+        setError(r.error);
+        return;
       }
+      // If a fresh account was created with a generated password,
+      // show it to the admin so they can hand it off to the narasumber.
+      if (
+        r.generated_password &&
+        submittedEmail &&
+        !form.id
+      ) {
+        setCredentials({
+          email: submittedEmail,
+          password: r.generated_password,
+        });
+        router.refresh();
+        return;
+      }
+      onClose();
+      router.refresh();
     });
+  }
+
+  async function copyCredentials() {
+    if (!credentials) return;
+    const text = `Email: ${credentials.email}\nPassword: ${credentials.password}`;
+    await navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1800);
+  }
+
+  function closeCredentials() {
+    setCredentials(null);
+    setCopied(false);
+    onClose();
   }
 
   function remove() {
@@ -158,6 +192,70 @@ export function NarasumberFormDialog({
         ref={dialogRef}
         className="max-h-[90vh] w-full max-w-xl overflow-y-auto rounded-2xl border border-atr-outline bg-white p-6 shadow-2xl"
       >
+        {credentials ? (
+          <div className="space-y-4">
+            <header>
+              <div className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-atr-arti/15 text-atr-arti">
+                <Check className="h-5 w-5" />
+              </div>
+              <h2 className="mt-2 text-lg font-bold text-atr-fg">
+                Narasumber berhasil dibuat
+              </h2>
+              <p className="text-xs text-atr-fg-muted">
+                Berikan kredensial login berikut ke narasumber. Untuk alasan
+                keamanan, password tidak akan ditampilkan lagi setelah dialog
+                ini ditutup.
+              </p>
+            </header>
+            <div className="rounded-2xl border border-atr-yellow/40 bg-atr-yellow/10 p-4 font-mono text-sm">
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-xs font-bold uppercase tracking-wide text-atr-fg-muted">
+                  Email
+                </span>
+              </div>
+              <div className="mt-1 break-all text-atr-fg">
+                {credentials.email}
+              </div>
+              <div className="mt-3 flex items-center justify-between gap-2">
+                <span className="text-xs font-bold uppercase tracking-wide text-atr-fg-muted">
+                  Password awal
+                </span>
+                <KeyRound className="h-3.5 w-3.5 text-atr-fg-muted" />
+              </div>
+              <div className="mt-1 break-all text-atr-fg">
+                {credentials.password}
+              </div>
+            </div>
+            <p className="text-[11px] text-atr-fg-muted">
+              💡 Narasumber bisa langsung login di halaman login (
+              <code className="rounded bg-atr-bg-soft px-1">/login</code>).
+              Setelah login pertama, mereka disarankan ganti password di
+              halaman Profile.
+            </p>
+            <div className="flex items-center justify-end gap-2">
+              <button
+                type="button"
+                onClick={copyCredentials}
+                className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-atr-outline bg-white px-3 text-sm font-bold text-atr-fg hover:bg-atr-bg-soft"
+              >
+                {copied ? (
+                  <Check className="h-3.5 w-3.5 text-atr-arti" />
+                ) : (
+                  <Copy className="h-3.5 w-3.5" />
+                )}
+                {copied ? "Tersalin" : "Salin email + password"}
+              </button>
+              <button
+                type="button"
+                onClick={closeCredentials}
+                className="inline-flex h-9 items-center rounded-lg bg-atr-purple px-4 text-sm font-bold text-white hover:bg-atr-purple-600"
+              >
+                Selesai
+              </button>
+            </div>
+          </div>
+        ) : (
+        <>
         <header className="mb-4 flex items-start justify-between">
           <div>
             <h2 className="text-lg font-bold text-atr-fg">
@@ -166,7 +264,7 @@ export function NarasumberFormDialog({
             <p className="text-xs text-atr-fg-muted">
               {form.id
                 ? "Update profil narasumber. Perubahan langsung berlaku di seluruh project."
-                : "Tambah mentor / narasumber ke pool agar bisa di-assign ke sesi pendampingan."}
+                : "Tambah mentor / narasumber ke pool agar bisa di-assign ke sesi pendampingan. Jika diisi email, akun login otomatis dibuat."}
             </p>
           </div>
           <button
@@ -372,6 +470,8 @@ export function NarasumberFormDialog({
             </button>
           </div>
         </footer>
+        </>
+        )}
       </div>
     </div>
   );

@@ -1,30 +1,35 @@
 export const metadata = { title: "Organisasi" };
 
-import { Building2, Plus } from "lucide-react";
+import { Building2 } from "lucide-react";
 import { listOrgsDetailed } from "@/server/queries/orgs";
 import { OrgCard } from "./org-card";
+import { AddOrgButton } from "./add-org-button";
 
 export default async function OrgsPage() {
   const orgs = await listOrgsDetailed();
 
   return (
     <div className="space-y-6">
-      <header className="flex items-center justify-between">
+      <header className="flex flex-wrap items-center justify-between gap-2">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-atr-fg">
             Organisasi
           </h1>
           <p className="text-sm text-atr-fg-muted">
-            Atourin + mitra (Kemenpar, BUMN, Pemda, dll). Upload logo +
-            atur brand color untuk branded report.
+            Atourin + mitra (Kemenpar, BUMN, Pemda, dll). Klik &quot;Tambah
+            Organisasi&quot; untuk buat mitra baru + auto-generate akun admin.
           </p>
         </div>
+        <AddOrgButton />
       </header>
 
       {orgs.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-atr-outline bg-white p-12 text-center">
           <Building2 className="mx-auto mb-3 h-6 w-6 text-atr-fg-muted" />
           <p className="text-sm font-bold text-atr-fg">Belum ada organisasi</p>
+          <p className="mt-1 text-sm text-atr-fg-muted">
+            Klik &quot;Tambah Organisasi&quot; untuk mulai.
+          </p>
         </div>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">

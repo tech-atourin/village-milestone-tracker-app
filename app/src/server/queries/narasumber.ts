@@ -1,6 +1,6 @@
 import "server-only";
 
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/server";
 
 export type NarasumberRow = {
   id: string;
@@ -19,7 +19,7 @@ export type NarasumberRow = {
 };
 
 export async function listNarasumbersWithStats(): Promise<NarasumberRow[]> {
-  const supabase = createClient();
+  const supabase = createAdminClient();
   const { data: users } = await supabase
     .from("users")
     .select(
@@ -89,7 +89,7 @@ export type NarasumberDetail = NarasumberRow & {
 export async function getNarasumberDetail(
   id: string,
 ): Promise<NarasumberDetail | null> {
-  const supabase = createClient();
+  const supabase = createAdminClient();
   const { data: u } = await supabase
     .from("users")
     .select(

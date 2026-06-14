@@ -13,10 +13,12 @@ import {
 // =====================================================
 // Generate Excel template
 // =====================================================
-export async function generateTemplateBase64(): Promise<string> {
+export async function generateTemplateBase64(
+  mode: "peserta" | "narasumber" = "peserta",
+): Promise<string> {
   await requireRole("superadmin");
 
-  const headers = [
+  const pesertaHeaders = [
     "full_name",
     "email",
     "phone",
@@ -26,7 +28,7 @@ export async function generateTemplateBase64(): Promise<string> {
     "desa_name",
     "role",
   ];
-  const sample = [
+  const pesertaSample = [
     "Eko Haryanto",
     "eko@example.com",
     "081234567890",
@@ -36,7 +38,7 @@ export async function generateTemplateBase64(): Promise<string> {
     "Wanurejo",
     "peserta",
   ];
-  const guidance = [
+  const pesertaGuidance = [
     "Wajib diisi: nama lengkap",
     "Email ATAU HP wajib (boleh keduanya)",
     "Format 62xxx atau 08xxx — sistem auto-normalize",
@@ -47,11 +49,54 @@ export async function generateTemplateBase64(): Promise<string> {
     "peserta | mitra_admin | narasumber — default peserta",
   ];
 
+  const narasumberHeaders = [
+    "full_name",
+    "email",
+    "phone",
+    "gender",
+    "jabatan",
+    "instansi",
+    "kota",
+    "kategori_narasumber",
+    "kompetensi",
+    "role",
+  ];
+  const narasumberSample = [
+    "Dr. Ratna Hapsari M.Si",
+    "ratna@example.com",
+    "081234567890",
+    "P",
+    "Dosen Senior",
+    "UGM",
+    "Yogyakarta",
+    "akademisi",
+    "Storytelling & branding desa wisata",
+    "narasumber",
+  ];
+  const narasumberGuidance = [
+    "Wajib diisi: nama lengkap",
+    "Wajib (untuk login). Tanpa email = profil saja, tidak bisa login.",
+    "Format 62xxx atau 08xxx — sistem auto-normalize",
+    "L atau P (opsional)",
+    "Jabatan kerja saat ini (opsional)",
+    "Nama instansi / lembaga (opsional)",
+    "Kota domisili (opsional)",
+    "praktisi | akademisi | profesional | pns | lainnya",
+    "Bidang ahli / topik utama yang dikuasai",
+    "Selalu 'narasumber' untuk template ini",
+  ];
+
+  const headers = mode === "narasumber" ? narasumberHeaders : pesertaHeaders;
+  const sample = mode === "narasumber" ? narasumberSample : pesertaSample;
+  const guidance =
+    mode === "narasumber" ? narasumberGuidance : pesertaGuidance;
+  const sheetName = mode === "narasumber" ? "Narasumber" : "Peserta";
+
   const ws = XLSX.utils.aoa_to_sheet([headers, sample, guidance]);
-  ws["!cols"] = headers.map(() => ({ wch: 20 }));
+  ws["!cols"] = headers.map(() => ({ wch: 22 }));
 
   const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, "Peserta");
+  XLSX.utils.book_append_sheet(wb, ws, sheetName);
 
   const buf = XLSX.write(wb, { type: "buffer", bookType: "xlsx" }) as Buffer;
   return buf.toString("base64");
@@ -307,7 +352,7 @@ export async function commitBulkImport(
     }
 
     // 4. Insert vmt.users row
-    const { error: insertError } = await admin.from("users").insert({
+    const userPayload: Record<string, unknown> = {
       id: authResult.user.id,
       full_name: row.full_name,
       email,
@@ -317,7 +362,17 @@ export async function commitBulkImport(
       gender: row.gender || null,
       birthdate: row.birthdate || null,
       global_role: row.role,
-    });
+    };
+    if (row.role === "narasumber") {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const r = row as any;
+      userPayload.kategori_narasumber = r.kategori_narasumber || null;
+      userPayload.kompetensi = r.kompetensi || null;
+      userPayload.jabatan = r.jabatan || null;
+      userPayload.instansi = r.instansi || null;
+      userPayload.kota = r.kota || null;
+    }
+    const { error: insertError } = await admin.from("users").insert(userPayload);
 
     if (insertError) {
       // Roll back auth user to avoid orphan

@@ -111,7 +111,7 @@ export function ProjectActions({
         Rapor Desa
       </Link>
       <Link
-        href={`/atourin/projects/${projectId}/report`}
+        href={`/${scope}/projects/${projectId}/report`}
         target="_blank"
         className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-atr-outline bg-white px-3 text-sm font-bold text-atr-fg transition hover:bg-atr-bg-soft"
       >

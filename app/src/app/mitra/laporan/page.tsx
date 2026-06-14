@@ -56,7 +56,7 @@ export default async function MitraLaporanPage() {
                     Buka project
                   </Link>
                   <Link
-                    href={`/atourin/projects/${p.id}/report`}
+                    href={`/mitra/projects/${p.id}/report`}
                     target="_blank"
                     className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-atr-outline bg-white px-3 text-xs font-bold text-atr-fg transition hover:bg-atr-bg-soft"
                   >

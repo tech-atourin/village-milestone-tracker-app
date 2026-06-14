@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { uploadEvidence } from "@/server/actions/evidence";
 import { submitChecklistItem } from "@/server/actions/checklist";
+import { compressIfImage } from "@/lib/image-compress";
 
 type Evidence = {
   id: string;
@@ -79,56 +80,79 @@ export function ItemDetailForm({
   const [pending, startTransition] = useTransition();
   const [caption, setCaption] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [progress, setProgress] = useState<{
+    current: number;
+    total: number;
+  } | null>(null);
 
   const status = existingProgress?.status ?? "not_started";
   const statusCfg = STATUS_BAR[status];
   const StatusIcon = statusCfg.icon;
 
-  async function handleFile(file: File) {
-    if (file.size > 50 * 1024 * 1024) {
-      setError("File terlalu besar (maks 50 MB)");
-      return;
+  async function uploadOne(file: File, cpId: string): Promise<string | null> {
+    // Auto-compress images > 500KB to keep storage usage manageable.
+    const compressed = await compressIfImage(file);
+    if (compressed.size > 50 * 1024 * 1024) {
+      return `${file.name}: terlalu besar (maks 50 MB)`;
     }
-    setError(null);
-
-    const buf = await file.arrayBuffer();
+    const buf = await compressed.arrayBuffer();
     const bytes = new Uint8Array(buf);
     let binary = "";
     for (let i = 0; i < bytes.length; i++) {
       binary += String.fromCharCode(bytes[i]);
     }
     const base64 = btoa(binary);
+    const u = await uploadEvidence({
+      project_desa_id: projectDesaId,
+      checklist_progress_id: cpId,
+      filename: compressed.name,
+      mime_type: compressed.type || "application/octet-stream",
+      base64,
+      caption: caption.trim() || null,
+    });
+    return u.error ?? null;
+  }
 
+  async function handleFiles(files: FileList | File[]) {
+    const list = Array.from(files);
+    if (list.length === 0) return;
+    setError(null);
+    setProgress({ current: 0, total: list.length });
     startTransition(async () => {
-      // Ensure progress row exists so we can tag
-      let cpId = existingProgress?.id ?? null;
-      if (!cpId) {
-        const r = await submitChecklistItem({
-          project_desa_id: projectDesaId,
-          project_topik_id: projectTopikId,
-          project_checklist_item_id: checklistItemId,
-        });
-        if (r.error) {
-          setError(r.error);
+      try {
+        // Ensure progress row exists so we can tag every upload
+        let cpId = existingProgress?.id ?? null;
+        if (!cpId) {
+          const r = await submitChecklistItem({
+            project_desa_id: projectDesaId,
+            project_topik_id: projectTopikId,
+            project_checklist_item_id: checklistItemId,
+          });
+          if (r.error) {
+            setError(r.error);
+            return;
+          }
+          cpId = r.checklist_progress_id ?? null;
+        }
+        if (!cpId) {
+          setError("Gagal inisialisasi progress row");
           return;
         }
-        cpId = r.checklist_progress_id ?? null;
+        const errors: string[] = [];
+        for (let i = 0; i < list.length; i++) {
+          setProgress({ current: i + 1, total: list.length });
+          const e = await uploadOne(list[i], cpId);
+          if (e) errors.push(e);
+        }
+        if (errors.length > 0)
+          setError(
+            `${errors.length} dari ${list.length} file gagal: ${errors.slice(0, 3).join("; ")}`,
+          );
+        setCaption("");
+        router.refresh();
+      } finally {
+        setProgress(null);
       }
-
-      const u = await uploadEvidence({
-        project_desa_id: projectDesaId,
-        checklist_progress_id: cpId,
-        filename: file.name,
-        mime_type: file.type || "application/octet-stream",
-        base64,
-        caption: caption.trim() || null,
-      });
-      if (u.error) {
-        setError(u.error);
-        return;
-      }
-      setCaption("");
-      router.refresh();
     });
   }
 
@@ -234,18 +258,23 @@ export function ItemDetailForm({
             <Upload className="h-8 w-8 text-atr-fg-muted" />
           )}
           <span className="text-sm font-bold text-atr-fg">
-            {pending ? "Mengupload…" : "Klik atau drag file ke sini"}
+            {pending && progress
+              ? `Mengupload ${progress.current}/${progress.total}…`
+              : "Klik atau drag file ke sini"}
           </span>
           <span className="text-xs text-atr-fg-muted">
-            JPG / PNG / PDF / MP4 · maks 50 MB
+            JPG / PNG / PDF / MP4 · multi-file · maks 50 MB / file · foto
+            otomatis dikompres
           </span>
           <input
             type="file"
             accept="image/*,application/pdf,video/mp4,video/quicktime,audio/mpeg,.doc,.docx"
+            multiple
             disabled={pending}
             onChange={(e) => {
-              const f = e.target.files?.[0];
-              if (f) handleFile(f);
+              const files = e.target.files;
+              if (files && files.length > 0) handleFiles(files);
+              e.target.value = "";
             }}
             className="hidden"
           />

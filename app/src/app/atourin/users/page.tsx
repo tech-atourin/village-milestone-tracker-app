@@ -3,14 +3,17 @@ export const metadata = { title: "Users" };
 import Link from "next/link";
 import { Upload, Users as UsersIcon } from "lucide-react";
 import { listUsers } from "@/server/queries/users";
+import { listOrgsDetailed } from "@/server/queries/orgs";
 import { UsersTable } from "./users-table";
+import { AddUserButton } from "./add-user-button";
 
 export default async function UsersListPage() {
-  const users = await listUsers();
+  const [users, orgs] = await Promise.all([listUsers(), listOrgsDetailed()]);
+  const orgOptions = orgs.map((o) => ({ id: o.id, name: o.name }));
 
   return (
     <div className="space-y-6">
-      <header className="flex items-center justify-between">
+      <header className="flex flex-wrap items-center justify-between gap-2">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-atr-fg">
             Users
@@ -19,13 +22,16 @@ export default async function UsersListPage() {
             Semua peserta, admin mitra, narasumber, dan desa wisata.
           </p>
         </div>
-        <Link
-          href="/atourin/users/bulk-import"
-          className="inline-flex h-10 items-center gap-2 rounded-lg bg-atr-purple px-4 text-sm font-bold text-white transition hover:bg-atr-purple-600"
-        >
-          <Upload className="h-4 w-4" />
-          Bulk Import
-        </Link>
+        <div className="flex items-center gap-2">
+          <AddUserButton orgOptions={orgOptions} />
+          <Link
+            href="/atourin/users/bulk-import"
+            className="inline-flex h-10 items-center gap-2 rounded-lg border border-atr-outline bg-white px-4 text-sm font-bold text-atr-fg transition hover:bg-atr-bg-soft"
+          >
+            <Upload className="h-4 w-4" />
+            Bulk Import
+          </Link>
+        </div>
       </header>
 
       {users.length === 0 ? (
@@ -35,7 +41,8 @@ export default async function UsersListPage() {
           </div>
           <p className="text-sm font-bold text-atr-fg">Belum ada user</p>
           <p className="mt-1 text-sm text-atr-fg-muted">
-            Tambahkan user lewat bulk import dari Excel.
+            Klik &quot;Tambah User&quot; untuk individual atau &quot;Bulk
+            Import&quot; untuk batch dari Excel.
           </p>
         </div>
       ) : (

@@ -25,6 +25,14 @@ const upsertSchema = z.object({
   kompetensi: z.string().max(500).optional().nullable(),
 });
 
+function cryptoRandomPassword(): string {
+  const bytes = crypto.getRandomValues(new Uint8Array(12));
+  return Buffer.from(bytes)
+    .toString("base64")
+    .replace(/[+/=]/g, "")
+    .slice(0, 14);
+}
+
 async function ensureAccess() {
   const user = await getCurrentUser();
   if (!user)
@@ -34,9 +42,14 @@ async function ensureAccess() {
   return { user } as const;
 }
 
-export async function upsertNarasumber(input: z.input<typeof upsertSchema>) {
+export async function upsertNarasumber(
+  input: z.input<typeof upsertSchema>,
+): Promise<
+  | { ok: true; id: string; generated_password?: string }
+  | { error: string }
+> {
   const access = await ensureAccess();
-  if ("error" in access) return access;
+  if ("error" in access) return { error: access.error ?? "Tidak diizinkan" };
   const parsed = upsertSchema.safeParse(input);
   if (!parsed.success) return { error: "Data tidak valid: " + parsed.error.issues[0].message };
   const body = parsed.data;
@@ -84,22 +97,50 @@ export async function upsertNarasumber(input: z.input<typeof upsertSchema>) {
       .maybeSingle();
     if (dup) return { error: "Email sudah dipakai user lain" };
   }
-  const { data, error } = await admin
-    .from("users")
-    .insert(payload)
-    .select("id")
-    .single();
-  if (error) return { error: error.message };
+
+  // If email provided, create auth user too so narasumber can login.
+  let newId: string | null = null;
+  let generatedPassword: string | undefined;
+  if (body.email) {
+    const password = cryptoRandomPassword();
+    const { data: authResult, error: authError } =
+      await admin.auth.admin.createUser({
+        email: body.email,
+        email_confirm: true,
+        password,
+        user_metadata: { full_name: body.full_name },
+      });
+    if (authError || !authResult.user)
+      return { error: authError?.message ?? "Gagal buat akun login" };
+    newId = authResult.user.id;
+    generatedPassword = password;
+    const { error: insErr } = await admin
+      .from("users")
+      .insert({ id: newId, ...payload });
+    if (insErr) {
+      await admin.auth.admin.deleteUser(newId);
+      return { error: insErr.message };
+    }
+  } else {
+    const { data, error } = await admin
+      .from("users")
+      .insert(payload)
+      .select("id")
+      .single();
+    if (error) return { error: error.message };
+    newId = (data as { id: string }).id;
+  }
+
   await audit({
     actor_id: access.user.id,
     action: "member.added",
     entity_type: "narasumber",
-    entity_id: (data as { id: string }).id,
+    entity_id: newId,
     after: { full_name: body.full_name },
   });
   revalidatePath("/atourin/narasumber");
   revalidatePath("/mitra/narasumber");
-  return { ok: true, id: (data as { id: string }).id };
+  return { ok: true, id: newId, generated_password: generatedPassword };
 }
 
 export async function deleteNarasumber(id: string) {

@@ -28,7 +28,11 @@ type Summary = {
   existing_users: number;
 };
 
-export function BulkImportFlow() {
+export function BulkImportFlow({
+  mode = "peserta",
+}: {
+  mode?: "peserta" | "narasumber";
+}) {
   const [stage, setStage] = useState<Stage>("upload");
   const [error, setError] = useState<string | null>(null);
   const [rows, setRows] = useState<BulkRowResult[]>([]);
@@ -39,7 +43,7 @@ export function BulkImportFlow() {
   const [pending, startTransition] = useTransition();
 
   async function handleDownload() {
-    const base64 = await generateTemplateBase64();
+    const base64 = await generateTemplateBase64(mode);
     const bytes = Uint8Array.from(atob(base64), (c) => c.charCodeAt(0));
     const blob = new Blob([bytes], {
       type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
@@ -47,7 +51,7 @@ export function BulkImportFlow() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = "template-import-peserta.xlsx";
+    a.download = `template-import-${mode}.xlsx`;
     a.click();
     URL.revokeObjectURL(url);
   }

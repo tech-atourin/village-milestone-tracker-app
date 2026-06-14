@@ -1,6 +1,6 @@
 import "server-only";
 
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/server";
 
 export type ProjectAnalytics = {
   project: {
@@ -17,6 +17,8 @@ export type ProjectAnalytics = {
   // Materi pendampingan (count sessions per pilar competence)
   // We approximate per-narasumber kompetensi: each session links to a narasumber's kompetensi
   materi_by_kompetensi: Array<{ kompetensi: string; sessions: number }>;
+  // Top narasumber by # sesi pendampingan (max 5)
+  top_narasumber: Array<{ name: string; sessions: number }>;
   // Sesi summary
   sessions_total: number;
   sessions_verified: number;
@@ -48,7 +50,12 @@ export type ProjectAnalytics = {
 export async function getProjectAnalytics(
   projectId: string,
 ): Promise<ProjectAnalytics> {
-  const supabase = createClient();
+  // Admin client: analytics is read-only aggregation; callers enforce
+  // project ownership before invoking (mitra/atourin page guards). Using
+  // the anon client previously caused mitra to see empty radar/SWOT data
+  // because RLS on users (narasumber kompetensi) and pendampingan_sessions
+  // blocked the embedded joins.
+  const supabase = createAdminClient();
 
   const { data: pr } = await supabase
     .from("projects")
@@ -107,12 +114,13 @@ export async function getProjectAnalytics(
   const { data: sessions } = await supabase
     .from("pendampingan_sessions")
     .select(
-      "id, status, narasumber:users!pendampingan_sessions_narasumber_id_fkey(kompetensi)",
+      "id, status, narasumber:users!pendampingan_sessions_narasumber_id_fkey(full_name, kompetensi)",
     )
     .eq("project_id", projectId);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const sRows = (sessions ?? []) as any[];
   const materiMap = new Map<string, number>();
+  const narasumberMap = new Map<string, number>();
   let ses_verified = 0, ses_submitted = 0, ses_draft = 0;
   for (const s of sRows) {
     if (s.status === "verified") ses_verified++;
@@ -120,10 +128,16 @@ export async function getProjectAnalytics(
     else ses_draft++;
     const k = s.narasumber?.kompetensi ?? "Lain-lain";
     materiMap.set(k, (materiMap.get(k) ?? 0) + 1);
+    const nm = s.narasumber?.full_name;
+    if (nm) narasumberMap.set(nm, (narasumberMap.get(nm) ?? 0) + 1);
   }
   const materi_by_kompetensi = Array.from(materiMap.entries()).map(
     ([kompetensi, sessions]) => ({ kompetensi, sessions }),
   );
+  const top_narasumber = Array.from(narasumberMap.entries())
+    .map(([name, sessions]) => ({ name, sessions }))
+    .sort((a, b) => b.sessions - a.sessions)
+    .slice(0, 5);
 
   // Attendance avg pct
   let totalAttendance = 0;
@@ -246,6 +260,7 @@ export async function getProjectAnalytics(
     desa_total: desaRows.length,
     desa_by_tier: tierCounts,
     materi_by_kompetensi,
+    top_narasumber,
     sessions_total: sRows.length,
     sessions_verified: ses_verified,
     sessions_submitted: ses_submitted,

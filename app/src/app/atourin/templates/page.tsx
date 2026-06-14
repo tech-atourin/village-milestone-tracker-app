@@ -1,7 +1,7 @@
 export const metadata = { title: "Templates" };
 
 import Link from "next/link";
-import { LayoutTemplate, Plus } from "lucide-react";
+import { LayoutTemplate, Plus, Pencil } from "lucide-react";
 import { listTemplates } from "@/server/queries/projects";
 
 export default async function TemplatesPage() {
@@ -9,7 +9,7 @@ export default async function TemplatesPage() {
 
   return (
     <div className="space-y-6">
-      <header className="flex items-center justify-between">
+      <header className="flex flex-wrap items-center justify-between gap-2">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-atr-fg">
             Templates
@@ -20,15 +20,13 @@ export default async function TemplatesPage() {
             template tidak mengubah project yang sudah jalan.
           </p>
         </div>
-        <button
-          type="button"
-          disabled
-          className="inline-flex h-10 cursor-not-allowed items-center gap-2 rounded-lg border border-atr-outline bg-white px-4 text-sm font-bold text-atr-fg-muted"
-          title="Pembuatan template kustom hadir di iterasi berikut"
+        <Link
+          href="/atourin/templates/new"
+          className="inline-flex h-10 items-center gap-2 rounded-lg bg-atr-purple px-4 text-sm font-bold text-white transition hover:bg-atr-purple-600"
         >
           <Plus className="h-4 w-4" />
           Template baru
-        </button>
+        </Link>
       </header>
 
       {templates.length === 0 ? (
@@ -37,6 +35,9 @@ export default async function TemplatesPage() {
             <LayoutTemplate className="h-5 w-5 text-atr-fg-muted" />
           </div>
           <p className="text-sm font-bold text-atr-fg">Belum ada template</p>
+          <p className="mt-1 text-sm text-atr-fg-muted">
+            Klik &quot;Template baru&quot; untuk mulai.
+          </p>
         </div>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -90,6 +91,14 @@ export default async function TemplatesPage() {
               </div>
 
               <div className="mt-4 flex gap-2">
+                <Link
+                  href={`/atourin/templates/${t.id}/edit`}
+                  className="inline-flex h-9 items-center gap-1 rounded-lg border border-atr-outline bg-white px-3 text-xs font-bold text-atr-fg transition hover:bg-atr-bg-soft"
+                  title="Edit template"
+                >
+                  <Pencil className="h-3 w-3" />
+                  Edit
+                </Link>
                 <Link
                   href={`/atourin/projects/new?template=${t.id}`}
                   className="inline-flex h-9 flex-1 items-center justify-center rounded-lg bg-atr-purple px-3 text-xs font-bold text-white transition hover:bg-atr-purple-600"
