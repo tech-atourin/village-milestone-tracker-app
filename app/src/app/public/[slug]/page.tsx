@@ -66,7 +66,7 @@ export default async function PublicDashboardPage({
           <div className="flex items-start justify-between gap-4">
             <div>
               <div className="text-xs font-bold uppercase tracking-wide text-white/70">
-                Dashboard project — shareable link
+                Dashboard project · shareable link
               </div>
               <h1 className="mt-1 text-3xl font-bold tracking-tight">
                 {summary.project.name}

@@ -25,7 +25,7 @@ type Tab = (typeof TABS)[number];
 
 const TAB_META: Record<Tab, { label: string; sublabel: string }> = {
   v1: {
-    label: "Versi 1: Checklist Permenparekraf",
+    label: "Versi 1: Checklist Permenpar",
     sublabel: "Checklist 98 item per tier (Rintisan → Mandiri). Wajib upload bukti per kriteria.",
   },
   v2: {
@@ -85,7 +85,7 @@ async function SelfAssessmentBody({
         </h1>
         <p className="text-sm text-atr-fg-muted">
           Tentukan tier desa wisata Anda dengan mengisi self-assessment.
-          Tersedia 2 versi untuk komparasi — keduanya akan diverifikasi tim Atourin.
+          Tersedia 2 versi untuk komparasi. Keduanya akan diverifikasi tim Atourin.
         </p>
       </header>
 
@@ -145,8 +145,8 @@ async function V1Tab({
     return (
       <EmptyState
         icon={ClipboardCheck}
-        title="Kriteria Permenparekraf belum tersedia"
-        description="Master kriteria Permenparekraf belum di-seed di sistem."
+        title="Kriteria Permenpar belum tersedia"
+        description="Master kriteria Permenpar belum di-seed di sistem."
       />
     );
   }
@@ -186,7 +186,7 @@ async function V2Tab({
       <EmptyState
         icon={ClipboardCheck}
         title="Template Hub belum tersedia"
-        description="Hubungi admin Atourin untuk mengaktifkan template Hub V2."
+        description="Hubungi admin Atourin untuk mengaktifkan template Assessment Desa V2."
       />
     );
   }

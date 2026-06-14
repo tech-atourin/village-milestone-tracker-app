@@ -77,7 +77,7 @@ export async function getAttentionItems(): Promise<AttentionItem[]> {
       id: "stagnant-desa",
       kind: "stagnant",
       title: `${stagnant.length} desa stagnan > ${STAGNANT_DAYS} hari`,
-      subtitle: "Tidak ada submission baru — pertimbangkan intervensi.",
+      subtitle: "Tidak ada submission baru. Pertimbangkan intervensi.",
       href: "/atourin/projects",
       count: stagnant.length,
     });

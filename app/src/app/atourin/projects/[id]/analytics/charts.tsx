@@ -310,7 +310,7 @@ export function AnalyticsCharts({ data }: { data: ProjectAnalytics }) {
         <section className="rounded-2xl border border-atr-outline bg-white p-6 shadow-atr-1">
           <header className="mb-4">
             <h3 className="text-sm font-bold uppercase tracking-wide text-atr-fg">
-              Hasil Self-Assessment Hub (Versi 2)
+              Hasil Assessment Desa V2
             </h3>
           </header>
           <ul className="space-y-2">

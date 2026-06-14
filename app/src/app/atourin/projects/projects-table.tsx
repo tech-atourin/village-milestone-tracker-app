@@ -80,6 +80,20 @@ export function ProjectsTable({
         accessorKey: "period_start",
         header: "Mulai",
         cell: ({ getValue }) => formatDate(getValue() as string | null),
+        filterFn: (row, _columnId, filterValue) => {
+          const range = filterValue as
+            | [string | null, string | null]
+            | undefined;
+          if (!range) return true;
+          const [from, to] = range;
+          const ps = row.original.period_start;
+          const pe = row.original.period_end;
+          // Overlap check: project [ps, pe] intersects [from, to]
+          if (from && pe && pe < from) return false;
+          if (to && ps && ps > to) return false;
+          // If both missing, fall back to including
+          return true;
+        },
       },
       {
         accessorKey: "period_end",
@@ -102,22 +116,20 @@ export function ProjectsTable({
       },
       {
         id: "actions",
-        header: "",
+        header: "Aksi",
         enableSorting: false,
         cell: ({ row }) => (
-          <div className="flex justify-end gap-2">
-            {scope === "atourin" && (
-              <Link
-                href={`/${scope}/projects/${row.original.id}?tab=settings`}
-                className="text-xs font-bold text-atr-fg-muted hover:text-atr-purple-600"
-                title="Edit project"
-              >
-                Edit
-              </Link>
-            )}
+          <div className="flex justify-end gap-1.5">
+            <Link
+              href={`/${scope}/projects/${row.original.id}?tab=settings`}
+              className="inline-flex h-8 items-center rounded-md border border-atr-outline bg-white px-2.5 text-xs font-bold text-atr-fg-muted transition hover:bg-atr-bg-soft hover:text-atr-fg"
+              title="Edit project"
+            >
+              Edit
+            </Link>
             <Link
               href={`/${scope}/projects/${row.original.id}`}
-              className="text-sm font-bold text-atr-purple hover:text-atr-purple-600"
+              className="inline-flex h-8 items-center gap-1 rounded-md bg-atr-purple-50 px-3 text-xs font-bold text-atr-purple-600 transition hover:bg-atr-purple/20"
             >
               Buka →
             </Link>
@@ -153,10 +165,19 @@ export function ProjectsTable({
             { value: "archived", label: "Arsip" },
           ],
         },
+        ...(scope === "atourin"
+          ? ([
+              {
+                key: "organization_name" as const,
+                label: "Mitra",
+                options: orgOptions,
+              },
+            ] as const)
+          : []),
         {
-          key: "organization_name",
-          label: "Mitra",
-          options: orgOptions,
+          key: "period_start",
+          label: "Periode (range tanggal)",
+          type: "dateRange",
         },
       ]}
     />

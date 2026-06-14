@@ -24,7 +24,7 @@ const JARINGAN_OPTIONS = [
   "Tour Operator nasional",
   "Universitas / Akademisi",
   "Dinas Pariwisata",
-  "Kemenparekraf",
+  "Kemenpar",
   "Sponsor CSR",
 ];
 
@@ -112,7 +112,7 @@ export function PengelolaForm({
               onChange={(e) => setF({ ...f, bentuk_kelembagaan: e.target.value })}
               className={input}
             >
-              <option value="">— Pilih —</option>
+              <option value="">Pilih…</option>
               {BENTUK_OPTIONS.map((b) => (
                 <option key={b} value={b}>
                   {b}

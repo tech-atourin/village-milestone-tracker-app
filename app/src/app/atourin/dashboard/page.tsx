@@ -94,7 +94,7 @@ export default async function AtourinDashboardPage() {
           <div className="px-5 py-12 text-center">
             <CheckCircle2 className="mx-auto mb-2 h-8 w-8 text-atr-arti" />
             <p className="text-sm font-bold text-atr-fg">
-              Tidak ada yang menunggu — semuanya tertangani 🎉
+              Tidak ada yang menunggu. Semuanya tertangani 🎉
             </p>
           </div>
         ) : (

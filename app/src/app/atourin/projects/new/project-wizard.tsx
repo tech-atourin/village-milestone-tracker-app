@@ -48,16 +48,20 @@ const MODULE_LABELS: Record<keyof State["enabled_modules"], string> = {
   desa_baseline: "Desa Baseline (form profil desa)",
   topik_pendampingan: "Topik Pendampingan (checklist per topik)",
   capacity_building: "Capacity Building (RAPOR peserta)",
-  klasifikasi_nasional: "Klasifikasi Nasional (Permenparekraf)",
+  klasifikasi_nasional: "Klasifikasi Nasional (Permenpar)",
   public_dashboard: "Public Dashboard (shareable link)",
 };
 
 export function ProjectWizard({
   templates,
   organizations,
+  defaultOrganizationId,
+  redirectScope = "atourin",
 }: {
   templates: TemplateSummary[];
   organizations: OrganizationSummary[];
+  defaultOrganizationId?: string;
+  redirectScope?: "atourin" | "mitra";
 }) {
   const router = useRouter();
   const [step, setStep] = useState(0);
@@ -71,7 +75,7 @@ export function ProjectWizard({
     period_start: "",
     period_end: "",
     template_id: null,
-    organization_id: "",
+    organization_id: defaultOrganizationId ?? "",
     enabled_modules: {
       desa_baseline: true,
       topik_pendampingan: true,
@@ -125,7 +129,7 @@ export function ProjectWizard({
         return;
       }
       if (result.projectId) {
-        router.push(`/atourin/projects/${result.projectId}`);
+        router.push(`/${redirectScope}/projects/${result.projectId}`);
       }
     });
   }
@@ -322,7 +326,7 @@ export function ProjectWizard({
                 }
                 className="h-11 w-full rounded-lg border border-atr-outline px-3 text-sm outline-none transition focus:border-atr-purple focus:ring-2 focus:ring-atr-purple/15"
               >
-                <option value="">— Pilih organisasi —</option>
+                <option value="">Pilih organisasi…</option>
                 {organizations.map((o) => (
                   <option key={o.id} value={o.id}>
                     {o.name} ({o.type === "atourin" ? "Atourin" : "Mitra"})

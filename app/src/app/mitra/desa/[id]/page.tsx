@@ -56,7 +56,7 @@ export default async function MitraDesaDetailPage({
         <ArrowLeft className="h-4 w-4" />
         Kembali ke daftar desa
       </Link>
-      <DesaDetailSections data={data} />
+      <DesaDetailSections data={data} viewerRole="mitra" />
       {(criteriaCount > 0 || hubCount > 0) && (
         <article className="rounded-2xl border border-atr-purple/30 bg-atr-purple-50/30 p-5 shadow-atr-1">
           <header className="mb-3 flex items-center gap-2">

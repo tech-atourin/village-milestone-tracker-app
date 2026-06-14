@@ -9,6 +9,9 @@ import {
   Search,
   ChevronLeft,
   ChevronRight,
+  ChevronUp,
+  ChevronDown,
+  ChevronsUpDown,
 } from "lucide-react";
 import type { DesaListRow } from "@/server/queries/desa-master";
 
@@ -38,14 +41,32 @@ export function DesaTable({
 }) {
   const [search, setSearch] = useState("");
   const [tierFilter, setTierFilter] = useState<string>("all");
+  const [provinsiFilter, setProvinsiFilter] = useState<string>("all");
   const [hubFilter, setHubFilter] = useState<"all" | "yes" | "no">("all");
+  const [sortKey, setSortKey] = useState<"name" | "lokasi" | "tier" | "project_count">("name");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
   const [page, setPage] = useState(1);
+
+  function toggleSort(k: typeof sortKey) {
+    if (k === sortKey) setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    else {
+      setSortKey(k);
+      setSortDir("asc");
+    }
+  }
+
+  const provinsiOptions = useMemo(() => {
+    const set = new Set<string>();
+    for (const r of rows) if (r.provinsi) set.add(r.provinsi);
+    return Array.from(set).sort();
+  }, [rows]);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     return rows.filter((r) => {
       const tier = r.current_classification ?? "unclassified";
       if (tierFilter !== "all" && tier !== tierFilter) return false;
+      if (provinsiFilter !== "all" && r.provinsi !== provinsiFilter) return false;
       if (hubFilter === "yes" && !r.hub_desa_id) return false;
       if (hubFilter === "no" && r.hub_desa_id) return false;
       if (q) {
@@ -54,13 +75,40 @@ export function DesaTable({
       }
       return true;
     });
-  }, [rows, search, tierFilter, hubFilter]);
+  }, [rows, search, tierFilter, provinsiFilter, hubFilter]);
+
+  const sorted = useMemo(() => {
+    const TIER_ORDER: Record<string, number> = {
+      unclassified: 0,
+      rintisan: 1,
+      berkembang: 2,
+      maju: 3,
+      mandiri: 4,
+    };
+    const dir = sortDir === "asc" ? 1 : -1;
+    return [...filtered].sort((a, b) => {
+      let cmp = 0;
+      if (sortKey === "name") cmp = a.name.localeCompare(b.name, "id-ID");
+      else if (sortKey === "lokasi") {
+        const la = `${a.provinsi ?? ""}|${a.kabupaten ?? ""}`;
+        const lb = `${b.provinsi ?? ""}|${b.kabupaten ?? ""}`;
+        cmp = la.localeCompare(lb, "id-ID");
+      } else if (sortKey === "tier") {
+        cmp =
+          (TIER_ORDER[a.current_classification ?? "unclassified"] ?? 0) -
+          (TIER_ORDER[b.current_classification ?? "unclassified"] ?? 0);
+      } else if (sortKey === "project_count") {
+        cmp = (a.project_count ?? 0) - (b.project_count ?? 0);
+      }
+      return cmp * dir;
+    });
+  }, [filtered, sortKey, sortDir]);
 
   // Reset page when filters change
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const totalPages = Math.max(1, Math.ceil(sorted.length / PAGE_SIZE));
   const effectivePage = Math.min(page, totalPages);
   const start = (effectivePage - 1) * PAGE_SIZE;
-  const pageRows = filtered.slice(start, start + PAGE_SIZE);
+  const pageRows = sorted.slice(start, start + PAGE_SIZE);
 
   const tierCounts = useMemo(() => {
     const counts: Record<string, number> = {
@@ -81,7 +129,7 @@ export function DesaTable({
   return (
     <div className="space-y-4">
       {/* Filter bar */}
-      <div className="flex flex-col gap-3 rounded-2xl border border-atr-outline bg-white p-4 shadow-atr-1 sm:flex-row sm:items-center">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-atr-fg-muted" />
           <input
@@ -103,12 +151,27 @@ export function DesaTable({
           }}
           className="h-10 rounded-md border border-atr-outline bg-white px-2 text-sm outline-none focus:border-atr-purple"
         >
-          <option value="all">Semua Tier ({tierCounts.all})</option>
-          <option value="rintisan">Rintisan ({tierCounts.rintisan})</option>
-          <option value="berkembang">Berkembang ({tierCounts.berkembang})</option>
-          <option value="maju">Maju ({tierCounts.maju})</option>
-          <option value="mandiri">Mandiri ({tierCounts.mandiri})</option>
-          <option value="unclassified">Belum ({tierCounts.unclassified})</option>
+          <option value="all">Semua Tier · {tierCounts.all}</option>
+          <option value="rintisan">Rintisan · {tierCounts.rintisan}</option>
+          <option value="berkembang">Berkembang · {tierCounts.berkembang}</option>
+          <option value="maju">Maju · {tierCounts.maju}</option>
+          <option value="mandiri">Mandiri · {tierCounts.mandiri}</option>
+          <option value="unclassified">Belum · {tierCounts.unclassified}</option>
+        </select>
+        <select
+          value={provinsiFilter}
+          onChange={(e) => {
+            setProvinsiFilter(e.target.value);
+            setPage(1);
+          }}
+          className="h-10 rounded-md border border-atr-outline bg-white px-2 text-sm outline-none focus:border-atr-purple"
+        >
+          <option value="all">Semua Provinsi</option>
+          {provinsiOptions.map((p) => (
+            <option key={p} value={p}>
+              {p}
+            </option>
+          ))}
         </select>
         <select
           value={hubFilter}
@@ -135,12 +198,27 @@ export function DesaTable({
         <table className="w-full text-sm">
           <thead className="bg-atr-bg-soft text-left text-xs font-bold uppercase tracking-wide text-atr-fg-muted">
             <tr>
-              <th className="px-4 py-3">Desa</th>
-              <th className="px-4 py-3">Lokasi</th>
-              <th className="px-4 py-3">Klasifikasi</th>
+              <SortableTh active={sortKey === "name"} dir={sortDir} onClick={() => toggleSort("name")}>
+                Desa
+              </SortableTh>
+              <SortableTh active={sortKey === "lokasi"} dir={sortDir} onClick={() => toggleSort("lokasi")}>
+                Lokasi
+              </SortableTh>
+              <SortableTh active={sortKey === "tier"} dir={sortDir} onClick={() => toggleSort("tier")}>
+                Klasifikasi
+              </SortableTh>
               <th className="px-4 py-3 text-center">Baseline</th>
               <th className="px-4 py-3 text-center">Self-Assessment</th>
-              {scope === "atourin" && <th className="px-4 py-3 text-center">Project</th>}
+              {scope === "atourin" && (
+                <SortableTh
+                  align="center"
+                  active={sortKey === "project_count"}
+                  dir={sortDir}
+                  onClick={() => toggleSort("project_count")}
+                >
+                  Project
+                </SortableTh>
+              )}
               <th className="px-4 py-3 text-center">Aksi</th>
             </tr>
           </thead>
@@ -224,7 +302,7 @@ export function DesaTable({
       </div>
 
       {/* Pagination */}
-      {totalPages > 1 && (
+      {totalPages > 1 ? (
         <nav className="flex items-center justify-between gap-3">
           <button
             type="button"
@@ -248,7 +326,41 @@ export function DesaTable({
             <ChevronRight className="h-3.5 w-3.5" />
           </button>
         </nav>
-      )}
+      ) : null}
     </div>
+  );
+}
+
+function SortableTh({
+  children,
+  active,
+  dir,
+  onClick,
+  align = "left",
+}: {
+  children: React.ReactNode;
+  active: boolean;
+  dir: "asc" | "desc";
+  onClick: () => void;
+  align?: "left" | "center";
+}) {
+  const Icon = !active
+    ? ChevronsUpDown
+    : dir === "asc"
+      ? ChevronUp
+      : ChevronDown;
+  return (
+    <th className={`px-4 py-3 ${align === "center" ? "text-center" : ""}`}>
+      <button
+        type="button"
+        onClick={onClick}
+        className={`inline-flex items-center gap-1 transition hover:text-atr-fg ${
+          active ? "text-atr-purple-600" : ""
+        }`}
+      >
+        {children}
+        <Icon className="h-3 w-3" />
+      </button>
+    </th>
   );
 }

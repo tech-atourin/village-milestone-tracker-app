@@ -497,7 +497,7 @@ function PlanForm({
           >
             {desaOptions.map((d) => (
               <option key={d.project_desa_id} value={d.project_desa_id}>
-                {d.desa_name} — {d.project_name}
+                {d.desa_name} · {d.project_name}
               </option>
             ))}
           </select>

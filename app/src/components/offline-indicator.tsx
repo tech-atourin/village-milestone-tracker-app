@@ -48,7 +48,7 @@ export function OfflineIndicator() {
     return (
       <div className="fixed bottom-4 left-1/2 z-50 -translate-x-1/2 rounded-full border border-atr-yellow/40 bg-atr-yellow/90 px-4 py-2 text-xs font-bold text-atr-fg shadow-atr-2">
         <WifiOff className="mr-1.5 inline h-3 w-3" />
-        Offline — {queued > 0 ? `${queued} item akan disinkronkan` : "perubahan disimpan lokal"}
+        Offline · {queued > 0 ? `${queued} item akan disinkronkan` : "perubahan disimpan lokal"}
       </div>
     );
   }

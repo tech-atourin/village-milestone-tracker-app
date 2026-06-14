@@ -8,7 +8,6 @@ import {
   Save,
   Send,
   Award,
-  TrendingUp,
 } from "lucide-react";
 import { saveHubAssessment } from "@/server/actions/hub-assessment";
 import type {
@@ -34,6 +33,7 @@ export function HubAssessmentForm({
   commentsByQuestion,
   currentUserId,
   currentUserRole,
+  forceReadOnly = false,
 }: {
   desaId: string;
   template: HubAssessmentTemplate;
@@ -41,6 +41,11 @@ export function HubAssessmentForm({
   commentsByQuestion?: Map<string, AssessmentComment[]>;
   currentUserId?: string;
   currentUserRole?: string;
+  /**
+   * When true, disable all inputs and hide Save/Submit regardless of status.
+   * Used by admin/mitra read-only viewer at /atourin/klasifikasi/v2/[id].
+   */
+  forceReadOnly?: boolean;
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -58,7 +63,7 @@ export function HubAssessmentForm({
       : null,
   );
 
-  const isReadOnly = existing?.status === "verified";
+  const isReadOnly = forceReadOnly || existing?.status === "verified";
 
   function setAns(qid: string, v: unknown) {
     setAnswers((a) => ({ ...a, [qid]: v }));
@@ -253,7 +258,7 @@ export function HubAssessmentForm({
       )}
 
       {/* Save actions */}
-      {!isReadOnly && (
+      {!isReadOnly && !forceReadOnly && (
         <div className="flex flex-col gap-2 rounded-2xl border border-atr-outline bg-white p-5 shadow-atr-1 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-xs text-atr-fg-muted">
             Simpan draft kapan saja. Submit untuk verifikasi oleh tim Atourin.

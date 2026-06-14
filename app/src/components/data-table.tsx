@@ -17,7 +17,6 @@ import {
   ChevronDown,
   ChevronsUpDown,
   Search,
-  ListFilter,
   X,
   ChevronLeft,
   ChevronRight,
@@ -26,8 +25,15 @@ import {
 export type DataTableFilter<T> = {
   key: keyof T & string;
   label: string;
-  options: { value: string; label: string }[];
-};
+} & (
+  | { type?: "select"; options: { value: string; label: string }[] }
+  | {
+      type: "dateRange";
+      // Optional ISO date string min/max for the date input
+      min?: string;
+      max?: string;
+    }
+);
 
 export interface DataTableProps<T> {
   columns: ColumnDef<T, unknown>[];
@@ -56,7 +62,6 @@ export function DataTable<T>({
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [globalFilter, setGlobalFilter] = useState("");
-  const [filterDrawerOpen, setFilterDrawerOpen] = useState(false);
 
   // Custom global filter — case-insensitive contains across searchKeys.
   const globalFilterFn = useMemo(
@@ -111,26 +116,6 @@ export function DataTable<T>({
             />
           </div>
 
-          {filters && filters.length > 0 && (
-            <button
-              type="button"
-              onClick={() => setFilterDrawerOpen((s) => !s)}
-              className={`relative inline-flex h-10 items-center gap-1.5 rounded-lg border px-3 text-sm font-bold transition ${
-                filterDrawerOpen || activeFilterCount > 0
-                  ? "border-atr-purple bg-atr-purple-50 text-atr-purple-600"
-                  : "border-atr-outline bg-white text-atr-fg hover:bg-atr-bg-soft"
-              }`}
-            >
-              <ListFilter className="h-4 w-4" />
-              Filter
-              {activeFilterCount > 0 && (
-                <span className="ml-1 inline-flex h-5 min-w-[20px] items-center justify-center rounded-full bg-atr-purple px-1.5 text-[10px] font-bold text-white">
-                  {activeFilterCount}
-                </span>
-              )}
-            </button>
-          )}
-
           {(activeFilterCount > 0 || sorting.length > 0) && (
             <button
               type="button"
@@ -153,12 +138,60 @@ export function DataTable<T>({
         </div>
       </div>
 
-      {/* Filter chips drawer */}
-      {filterDrawerOpen && filters && filters.length > 0 && (
+      {/* Filter chips — always visible (no toggle) */}
+      {filters && filters.length > 0 && (
         <div className="grid gap-3 rounded-2xl border border-atr-outline bg-atr-bg-soft p-4 sm:grid-cols-2 lg:grid-cols-3">
           {filters.map((f) => {
             const column = table.getColumn(f.key);
             if (!column) return null;
+            if (f.type === "dateRange") {
+              const value = (column.getFilterValue() as
+                | [string | null, string | null]
+                | undefined) ?? [null, null];
+              return (
+                <div key={f.key} className="flex flex-col gap-1.5">
+                  <span className="text-xs font-bold text-atr-fg">{f.label}</span>
+                  <div className="grid grid-cols-2 gap-2">
+                    <input
+                      type="date"
+                      value={value[0] ?? ""}
+                      min={f.min}
+                      max={f.max}
+                      onChange={(e) => {
+                        const v = e.target.value || null;
+                        const next: [string | null, string | null] = [
+                          v,
+                          value[1],
+                        ];
+                        column.setFilterValue(
+                          next[0] || next[1] ? next : undefined,
+                        );
+                      }}
+                      className="h-9 rounded-lg border border-atr-outline bg-white px-2 text-xs outline-none focus:border-atr-purple"
+                      aria-label={`${f.label} dari`}
+                    />
+                    <input
+                      type="date"
+                      value={value[1] ?? ""}
+                      min={f.min}
+                      max={f.max}
+                      onChange={(e) => {
+                        const v = e.target.value || null;
+                        const next: [string | null, string | null] = [
+                          value[0],
+                          v,
+                        ];
+                        column.setFilterValue(
+                          next[0] || next[1] ? next : undefined,
+                        );
+                      }}
+                      className="h-9 rounded-lg border border-atr-outline bg-white px-2 text-xs outline-none focus:border-atr-purple"
+                      aria-label={`${f.label} sampai`}
+                    />
+                  </div>
+                </div>
+              );
+            }
             const value = (column.getFilterValue() as string) ?? "";
             return (
               <label key={f.key} className="flex flex-col gap-1.5">

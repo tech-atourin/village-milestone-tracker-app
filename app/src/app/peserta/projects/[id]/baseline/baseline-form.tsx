@@ -190,7 +190,7 @@ function Field({
             onChange={(e) => onChange(e.target.value)}
             className={baseInput}
           >
-            <option value="">— Pilih —</option>
+            <option value="">Pilih…</option>
             {field.options?.map((o) => (
               <option key={o} value={o}>
                 {o}

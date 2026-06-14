@@ -237,7 +237,7 @@ export function ItemDetailForm({
             {pending ? "Mengupload…" : "Klik atau drag file ke sini"}
           </span>
           <span className="text-xs text-atr-fg-muted">
-            JPG / PNG / PDF / MP4 — maks 50 MB
+            JPG / PNG / PDF / MP4 · maks 50 MB
           </span>
           <input
             type="file"

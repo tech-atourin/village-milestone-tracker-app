@@ -15,7 +15,7 @@ export default async function TemplatesPage() {
             Templates
           </h1>
           <p className="text-sm text-atr-fg-muted">
-            Template kurasi Atourin — dipakai saat membuat project baru.
+            Template kurasi Atourin. Dipakai saat membuat project baru.
             Project meng-snapshot topik+checklist saat dibuat, jadi edit
             template tidak mengubah project yang sudah jalan.
           </p>

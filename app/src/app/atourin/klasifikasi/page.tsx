@@ -1,48 +1,11 @@
 export const metadata = { title: "Verifikasi Klasifikasi" };
 
 import { createClient } from "@/lib/supabase/server";
-import { requireRole, getCurrentUser } from "@/lib/auth/rbac";
-import { VerificationQueue } from "./verification-queue";
+import { requireRole } from "@/lib/auth/rbac";
 import { HubVerifyQueue, type HubSubmissionRow } from "./hub-verify-queue";
 import { listCommentsForHubAssessment } from "@/server/queries/assessment-comments";
-
-type QueueItem = {
-  progress_id: string;
-  status: "submitted";
-  submitted_at: string | null;
-  desa: { id: string; name: string };
-  criteria: { title: string; category: string; tier: string; required: boolean };
-};
-
-async function loadV1Queue(): Promise<QueueItem[]> {
-  const supabase = createClient();
-  const { data } = await supabase
-    .from("national_criteria_progress")
-    .select(
-      `
-      id, status, submitted_at,
-      desa:desa(id, name),
-      criteria:national_criteria_item(title, category, tier, required)
-    `,
-    )
-    .eq("status", "submitted")
-    .order("submitted_at", { ascending: false })
-    .limit(200);
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  return ((data ?? []) as any[]).map((r) => ({
-    progress_id: r.id,
-    status: r.status,
-    submitted_at: r.submitted_at,
-    desa: { id: r.desa?.id, name: r.desa?.name },
-    criteria: {
-      title: r.criteria?.title,
-      category: r.criteria?.category,
-      tier: r.criteria?.tier,
-      required: r.criteria?.required,
-    },
-  })) as QueueItem[];
-}
+import { listV1QueueByDesa } from "@/server/queries/self-assessment";
+import { V1DesaList } from "./v1-desa-list";
 
 async function loadV2Queue(): Promise<HubSubmissionRow[]> {
   const supabase = createClient();
@@ -67,7 +30,8 @@ async function loadV2Queue(): Promise<HubSubmissionRow[]> {
 
 export default async function KlasifikasiQueuePage() {
   const user = await requireRole("superadmin");
-  const [v1, v2] = await Promise.all([loadV1Queue(), loadV2Queue()]);
+  const [v1Desa, v2] = await Promise.all([listV1QueueByDesa(), loadV2Queue()]);
+  const v1PendingTotal = v1Desa.reduce((sum, r) => sum + r.pending_count, 0);
 
   // Preload comments map for all submitted V2 assessments (one Map per assessment)
   const commentsByAssessment = new Map<
@@ -98,7 +62,7 @@ export default async function KlasifikasiQueuePage() {
         </h1>
         <p className="text-sm text-atr-fg-muted">
           Self-assessment dari desa wisata yang menunggu verifikasi Atourin.
-          Tersedia 2 jenis: V1 Permenparekraf (per kriteria) dan V2 Hub
+          Tersedia 2 jenis: V1 Permenpar (per kriteria) dan V2 Hub
           (full submission).
         </p>
       </header>
@@ -106,7 +70,7 @@ export default async function KlasifikasiQueuePage() {
       <section className="space-y-3">
         <div className="flex items-center justify-between">
           <h2 className="text-sm font-bold uppercase tracking-wide text-atr-fg-muted">
-            V2 Hub Submissions ({v2.length})
+            Assessment Desa V2 ({v2.length})
           </h2>
           {v2.length > 0 && (
             <p className="text-[11px] text-atr-arti">
@@ -121,10 +85,17 @@ export default async function KlasifikasiQueuePage() {
       </section>
 
       <section className="space-y-3">
-        <h2 className="text-sm font-bold uppercase tracking-wide text-atr-fg-muted">
-          V1 Per-Kriteria ({v1.length})
-        </h2>
-        <VerificationQueue items={v1} />
+        <div className="flex items-center justify-between">
+          <h2 className="text-sm font-bold uppercase tracking-wide text-atr-fg-muted">
+            V1 Permenpar · per Desa ({v1Desa.length})
+          </h2>
+          {v1PendingTotal > 0 && (
+            <p className="text-[11px] text-atr-yellow">
+              ⏳ {v1PendingTotal} kriteria menunggu review di seluruh desa
+            </p>
+          )}
+        </div>
+        <V1DesaList rows={v1Desa} />
       </section>
     </div>
   );

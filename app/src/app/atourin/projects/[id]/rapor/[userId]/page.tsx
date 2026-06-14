@@ -133,7 +133,7 @@ export default async function RaporPage({
             Periode
           </div>
           <div className="mt-1 font-bold text-atr-fg">
-            {project.period_start} — {project.period_end}
+            {project.period_start} – {project.period_end}
           </div>
         </div>
       </section>

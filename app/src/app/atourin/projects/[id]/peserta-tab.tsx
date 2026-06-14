@@ -2,7 +2,8 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, Loader2, Users as UsersIcon, X } from "lucide-react";
+import Link from "next/link";
+import { Plus, Loader2, Users as UsersIcon, X, GraduationCap } from "lucide-react";
 import {
   addProjectMember,
   removeProjectMember,
@@ -196,7 +197,7 @@ export function PesertaTab({
                     onChange={(e) => setSelDesa(e.target.value)}
                     className="h-10 rounded-lg border border-atr-outline px-3 text-sm outline-none focus:border-atr-purple focus:ring-2 focus:ring-atr-purple/15"
                   >
-                    <option value="">— Pilih desa —</option>
+                    <option value="">Pilih desa…</option>
                     {desa.map((p) => (
                       <option key={p.desa.id} value={p.desa.id}>
                         {p.desa.name}
@@ -251,7 +252,11 @@ export function PesertaTab({
           <p className="text-sm font-bold text-atr-fg">Belum ada anggota</p>
         </div>
       ) : (
-        <MembersTable members={activeMembers} onRemove={remove} />
+        <MembersTable
+          projectId={projectId}
+          members={activeMembers}
+          onRemove={remove}
+        />
       )}
     </div>
   );
@@ -261,9 +266,11 @@ import { DataTable as MembersDataTable } from "@/components/data-table";
 import type { ColumnDef as MembersColumnDef } from "@tanstack/react-table";
 
 function MembersTable({
+  projectId,
   members,
   onRemove,
 }: {
+  projectId: string;
   members: ProjectMemberRow[];
   onRemove: (id: string) => void;
 }) {
@@ -320,14 +327,26 @@ function MembersTable({
       header: "",
       enableSorting: false,
       cell: ({ row }) => (
-        <button
-          type="button"
-          onClick={() => onRemove(row.original.id)}
-          className="inline-flex h-7 items-center gap-1 rounded-md border border-atr-outline bg-white px-2 text-xs font-bold text-atr-fg-muted transition hover:border-atr-red/30 hover:text-atr-red"
-        >
-          <X className="h-3 w-3" />
-          Hapus
-        </button>
+        <div className="flex justify-end gap-1.5">
+          {row.original.role === "peserta" && (
+            <Link
+              href={`/atourin/projects/${projectId}/rapor/${row.original.user.id}`}
+              className="inline-flex h-7 items-center gap-1 rounded-md border border-atr-purple/40 bg-atr-purple-50 px-2 text-xs font-bold text-atr-purple-600 transition hover:bg-atr-purple-light/40"
+              title="Lihat rapor peserta (printable)"
+            >
+              <GraduationCap className="h-3 w-3" />
+              Rapor
+            </Link>
+          )}
+          <button
+            type="button"
+            onClick={() => onRemove(row.original.id)}
+            className="inline-flex h-7 items-center gap-1 rounded-md border border-atr-outline bg-white px-2 text-xs font-bold text-atr-fg-muted transition hover:border-atr-red/30 hover:text-atr-red"
+          >
+            <X className="h-3 w-3" />
+            Hapus
+          </button>
+        </div>
       ),
     },
   ];

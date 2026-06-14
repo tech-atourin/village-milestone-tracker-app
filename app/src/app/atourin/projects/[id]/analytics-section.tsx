@@ -1,40 +1,15 @@
-export const metadata = { title: "Analytics Project" };
-
-import Link from "next/link";
-import { ArrowLeft, Users, MapPin, CalendarDays, ListChecks } from "lucide-react";
-import { requireRole } from "@/lib/auth/rbac";
+import { Users, MapPin, CalendarDays, ListChecks } from "lucide-react";
 import { getProjectAnalytics } from "@/server/queries/project-analytics";
-import { AnalyticsCharts } from "./charts";
+import { AnalyticsCharts } from "./analytics/charts";
 
-export default async function ProjectAnalyticsPage({
-  params,
-}: {
-  params: { id: string };
-}) {
-  await requireRole("superadmin");
-  const data = await getProjectAnalytics(params.id);
-
+/**
+ * Renders the full analytics block (top stats + charts) for a project.
+ * Used both on the standalone /analytics route and inline in the Overview tab.
+ */
+export async function AnalyticsSection({ projectId }: { projectId: string }) {
+  const data = await getProjectAnalytics(projectId);
   return (
     <div className="space-y-6">
-      <Link
-        href={`/atourin/projects/${params.id}`}
-        className="inline-flex items-center gap-1.5 text-sm text-atr-fg-muted hover:text-atr-fg"
-      >
-        <ArrowLeft className="h-4 w-4" />
-        Kembali ke project
-      </Link>
-
-      <header>
-        <h1 className="text-2xl font-bold tracking-tight text-atr-fg">
-          Analytics · {data.project.name}
-        </h1>
-        <p className="text-sm text-atr-fg-muted">
-          Ringkasan demografi, klasifikasi desa, materi pendampingan, dan
-          progress rencana aksi.
-        </p>
-      </header>
-
-      {/* Top stats */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Stat
           icon={Users}
@@ -61,7 +36,6 @@ export default async function ProjectAnalyticsPage({
           hint={`${data.action_plans_by_status.selesai} selesai`}
         />
       </div>
-
       <AnalyticsCharts data={data} />
     </div>
   );

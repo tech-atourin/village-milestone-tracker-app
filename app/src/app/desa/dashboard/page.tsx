@@ -199,7 +199,7 @@ export default async function DesaDashboardPage() {
       <p className="rounded-lg border border-atr-outline bg-atr-bg-soft p-3 text-xs text-atr-fg-muted">
         <Sparkles className="mr-1 inline h-3 w-3" />
         Kriteria yang tampil adalah versi <strong>placeholder</strong> sambil
-        menunggu Permenparekraf resmi terbit. Bisa berubah saat regulasi final
+        menunggu Permenpar resmi terbit. Bisa berubah saat regulasi final
         diumumkan.
       </p>
     </div>

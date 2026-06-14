@@ -1,7 +1,9 @@
 import type { Metadata, Viewport } from "next";
+import { Suspense } from "react";
 import "./globals.css";
 import { ServiceWorkerRegister } from "@/components/sw-register";
 import { OfflineIndicator } from "@/components/offline-indicator";
+import { RouteProgress } from "@/components/route-progress";
 
 export const metadata: Metadata = {
   title: {
@@ -34,6 +36,9 @@ export default function RootLayout({
   return (
     <html lang="id">
       <body className="antialiased">
+        <Suspense fallback={null}>
+          <RouteProgress />
+        </Suspense>
         {children}
         <OfflineIndicator />
         <ServiceWorkerRegister />

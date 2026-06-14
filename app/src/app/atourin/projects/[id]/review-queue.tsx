@@ -71,7 +71,7 @@ export function ReviewQueue({
 
   function decide(id: string, decision: "approved" | "rejected") {
     if (decision === "rejected" && note.trim().length === 0) {
-      alert("Tambahkan catatan untuk reject — peserta perlu tahu apa yang harus diperbaiki.");
+      alert("Tambahkan catatan untuk reject. Peserta perlu tahu apa yang harus diperbaiki.");
       return;
     }
     startTransition(async () => {

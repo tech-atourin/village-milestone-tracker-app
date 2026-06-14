@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
-import { requireRole } from "@/lib/auth/rbac";
+import { requireRole, getCurrentUser } from "@/lib/auth/rbac";
 
 const createProjectSchema = z.object({
   name: z.string().min(2, "Nama project minimal 2 karakter").max(200),
@@ -49,7 +49,7 @@ export type CreateProjectResult = {
 export async function createProjectAction(
   input: CreateProjectInput,
 ): Promise<CreateProjectResult> {
-  await requireRole("superadmin");
+  const user = await requireRole("superadmin", "mitra_admin");
 
   const parsed = createProjectSchema.safeParse(input);
   if (!parsed.success) {
@@ -62,6 +62,15 @@ export async function createProjectAction(
   }
 
   const data = parsed.data;
+
+  // Mitra can only create projects under their own organization
+  if (
+    user.global_role === "mitra_admin" &&
+    data.organization_id !== user.organization_id
+  ) {
+    return { error: "Mitra hanya bisa buat project untuk organisasinya sendiri" };
+  }
+
   const supabase = createClient();
 
   const { data: projectId, error } = await supabase.rpc(
@@ -84,6 +93,7 @@ export async function createProjectAction(
   }
 
   revalidatePath("/atourin/projects");
+  revalidatePath("/mitra/projects");
   return { projectId: projectId as string };
 }
 

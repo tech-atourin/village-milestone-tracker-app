@@ -36,7 +36,7 @@ export default function ForgotPasswordPage() {
             </div>
           </div>
           <p className="mb-6 text-sm text-atr-fg-muted">
-            Masukkan email yang terdaftar — kami akan kirim link reset password
+            Masukkan email yang terdaftar. Kami akan kirim link reset password
             ke kotak masuk Anda.
           </p>
           <ForgotPasswordForm />

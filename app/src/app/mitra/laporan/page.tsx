@@ -43,7 +43,7 @@ export default async function MitraLaporanPage() {
                   <div className="mt-0.5 text-xs text-atr-fg-muted">
                     {p.organization?.name ?? "—"}
                     {p.period_start && p.period_end && (
-                      <> · {p.period_start} — {p.period_end}</>
+                      <> · {p.period_start} – {p.period_end}</>
                     )}
                   </div>
                 </div>

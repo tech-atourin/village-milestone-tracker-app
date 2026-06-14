@@ -121,6 +121,72 @@ export async function listCriteriaForDesa(
   });
 }
 
+export type V1DesaQueueRow = {
+  desa_id: string;
+  desa_name: string;
+  kabupaten: string | null;
+  provinsi: string | null;
+  current_classification: Tier | "unclassified";
+  pending_count: number;
+  verified_count: number;
+  rejected_count: number;
+  last_submitted_at: string | null;
+};
+
+/**
+ * List V1 self-assessment queue grouped by desa.
+ * Returns one row per desa that has at least one criteria progress entry
+ * (any status), ordered so desa with most pending reviews bubble up first.
+ */
+export async function listV1QueueByDesa(): Promise<V1DesaQueueRow[]> {
+  const supabase = createClient();
+  const { data } = await supabase
+    .from("national_criteria_progress")
+    .select(
+      "desa_id, status, submitted_at, desa:desa(id, name, kabupaten, provinsi, current_classification)",
+    )
+    .limit(2000);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const rows = (data ?? []) as any[];
+  const byDesa = new Map<string, V1DesaQueueRow>();
+  for (const r of rows) {
+    if (!r.desa) continue;
+    const key = r.desa_id as string;
+    const existing =
+      byDesa.get(key) ??
+      ({
+        desa_id: key,
+        desa_name: r.desa.name as string,
+        kabupaten: (r.desa.kabupaten as string) ?? null,
+        provinsi: (r.desa.provinsi as string) ?? null,
+        current_classification:
+          (r.desa.current_classification as Tier) ?? "unclassified",
+        pending_count: 0,
+        verified_count: 0,
+        rejected_count: 0,
+        last_submitted_at: null,
+      } as V1DesaQueueRow);
+    if (r.status === "submitted") existing.pending_count += 1;
+    else if (r.status === "verified") existing.verified_count += 1;
+    else if (r.status === "rejected") existing.rejected_count += 1;
+    if (
+      r.submitted_at &&
+      (!existing.last_submitted_at || r.submitted_at > existing.last_submitted_at)
+    ) {
+      existing.last_submitted_at = r.submitted_at as string;
+    }
+    byDesa.set(key, existing);
+  }
+  return Array.from(byDesa.values()).sort((a, b) => {
+    // pending desc, then last_submitted_at desc
+    if (a.pending_count !== b.pending_count)
+      return b.pending_count - a.pending_count;
+    const aT = a.last_submitted_at ?? "";
+    const bT = b.last_submitted_at ?? "";
+    return bT.localeCompare(aT);
+  });
+}
+
 export async function computeClassification(desaId: string) {
   const supabase = createClient();
   const { data, error } = await supabase.rpc("compute_desa_classification", {

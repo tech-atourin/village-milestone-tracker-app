@@ -15,7 +15,7 @@ export default async function OrgsPage() {
             Organisasi
           </h1>
           <p className="text-sm text-atr-fg-muted">
-            Atourin + mitra (Kemenparekraf, BUMN, Pemda, dll). Upload logo +
+            Atourin + mitra (Kemenpar, BUMN, Pemda, dll). Upload logo +
             atur brand color untuk branded report.
           </p>
         </div>

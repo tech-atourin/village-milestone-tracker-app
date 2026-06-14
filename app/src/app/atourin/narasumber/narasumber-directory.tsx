@@ -2,8 +2,20 @@
 
 import { useState, useMemo } from "react";
 import Link from "next/link";
-import { GraduationCap, Mail, Phone, MapPin, Search } from "lucide-react";
+import {
+  GraduationCap,
+  Mail,
+  Phone,
+  MapPin,
+  Search,
+  Plus,
+  Pencil,
+} from "lucide-react";
 import type { NarasumberRow } from "@/server/queries/narasumber";
+import {
+  NarasumberFormDialog,
+  type NarasumberFormValue,
+} from "./narasumber-form";
 
 const KATEGORI_LABEL: Record<string, string> = {
   praktisi: "Praktisi",
@@ -21,10 +33,24 @@ const KATEGORI_COLOR: Record<string, string> = {
   lainnya: "bg-atr-bg-soft text-atr-fg-muted",
 };
 
-export function NarasumberDirectory({ rows }: { rows: NarasumberRow[] }) {
+export function NarasumberDirectory({
+  rows,
+  kategoriOptions,
+  kompetensiOptions,
+  canManage = false,
+  detailHrefBase = "/atourin/narasumber",
+}: {
+  rows: NarasumberRow[];
+  kategoriOptions: string[];
+  kompetensiOptions: string[];
+  canManage?: boolean;
+  detailHrefBase?: string;
+}) {
   const [search, setSearch] = useState("");
   const [katFilter, setKatFilter] = useState<string>("all");
   const [kompFilter, setKompFilter] = useState<string>("all");
+  const [formOpen, setFormOpen] = useState(false);
+  const [formValue, setFormValue] = useState<NarasumberFormValue | null>(null);
 
   const kategori = useMemo(() => {
     const set = new Set<string>();
@@ -52,9 +78,41 @@ export function NarasumberDirectory({ rows }: { rows: NarasumberRow[] }) {
     });
   }, [rows, search, katFilter, kompFilter]);
 
+  function openAdd() {
+    setFormValue(null);
+    setFormOpen(true);
+  }
+  function openEdit(r: NarasumberRow) {
+    setFormValue({
+      id: r.id,
+      full_name: r.full_name,
+      email: r.email,
+      phone: r.phone,
+      jabatan: r.jabatan,
+      instansi: r.instansi,
+      kota: r.kota,
+      gender: r.gender,
+      kategori_narasumber: r.kategori_narasumber,
+      kompetensi: r.kompetensi,
+    });
+    setFormOpen(true);
+  }
+
   return (
     <div className="space-y-5">
-      <div className="flex flex-col gap-3 rounded-2xl border border-atr-outline bg-white p-4 shadow-atr-1 sm:flex-row">
+      {canManage && (
+        <div className="flex justify-end">
+          <button
+            type="button"
+            onClick={openAdd}
+            className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-atr-purple px-3 text-sm font-bold text-white transition hover:bg-atr-purple-600"
+          >
+            <Plus className="h-4 w-4" />
+            Tambah Narasumber
+          </button>
+        </div>
+      )}
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-atr-fg-muted" />
           <input
@@ -107,11 +165,25 @@ export function NarasumberDirectory({ rows }: { rows: NarasumberRow[] }) {
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {filtered.map((r) => (
-            <Link
+            <div
               key={r.id}
-              href={`/atourin/narasumber/${r.id}`}
-              className="block rounded-2xl border border-atr-outline bg-white p-5 shadow-atr-1 transition hover:border-atr-purple/40 hover:bg-atr-purple-50/30"
+              className="relative block rounded-2xl border border-atr-outline bg-white p-5 shadow-atr-1 transition hover:border-atr-purple/40 hover:bg-atr-purple-50/30"
             >
+              {canManage && (
+                <button
+                  type="button"
+                  onClick={() => openEdit(r)}
+                  className="absolute right-3 top-3 inline-flex h-7 items-center gap-1 rounded-md border border-atr-outline bg-white px-2 text-[11px] font-bold text-atr-fg-muted hover:border-atr-purple/40 hover:text-atr-purple-600"
+                  title="Edit narasumber"
+                >
+                  <Pencil className="h-3 w-3" />
+                  Edit
+                </button>
+              )}
+              <Link
+                href={`${detailHrefBase}/${r.id}`}
+                className="block"
+              >
               <div className="flex items-start gap-3">
                 <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-atr-yellow/25 text-atr-fg">
                   <GraduationCap className="h-6 w-6" />
@@ -188,10 +260,19 @@ export function NarasumberDirectory({ rows }: { rows: NarasumberRow[] }) {
                   <div className="text-atr-fg-muted">Sesi</div>
                 </div>
               </div>
-            </Link>
+              </Link>
+            </div>
           ))}
         </div>
       )}
+
+      <NarasumberFormDialog
+        open={formOpen}
+        onClose={() => setFormOpen(false)}
+        value={formValue}
+        kategoriOptions={kategoriOptions}
+        kompetensiOptions={kompetensiOptions}
+      />
     </div>
   );
 }

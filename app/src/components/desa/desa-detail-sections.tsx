@@ -1,3 +1,4 @@
+import Link from "next/link";
 import {
   MapPin,
   Award,
@@ -13,6 +14,7 @@ import {
   ClipboardCheck,
   Image as ImageIcon,
   Handshake,
+  Eye,
 } from "lucide-react";
 import type { DesaDetail } from "@/server/queries/desa-master";
 import { HubExtrasSections } from "@/components/desa/hub-extras-sections";
@@ -44,9 +46,11 @@ function fmtDate(iso: string | null) {
 export function DesaDetailSections({
   data,
   hubSyncSlot,
+  viewerRole,
 }: {
   data: DesaDetail;
   hubSyncSlot?: React.ReactNode;
+  viewerRole?: "superadmin" | "mitra" | "desa" | string;
 }) {
   const { base, profile, pengelola, baseline, baseline_submitted_at, hub_assessment, projects } = data;
   const tier = base.current_classification ?? "unclassified";
@@ -426,10 +430,10 @@ export function DesaDetailSections({
         events={profile?.events ?? null}
       />
 
-      {/* Self-Assessment Hub V2 */}
-      <Section title="Self-Assessment Hub (V2)" icon={FileText}>
+      {/* Assessment Desa V2 */}
+      <Section title="Assessment Desa V2" icon={FileText}>
         {hub_assessment ? (
-          <div className="flex items-center justify-between gap-4">
+          <div className="flex flex-wrap items-center justify-between gap-4">
             <div>
               <div className="text-3xl font-bold text-atr-fg">
                 {hub_assessment.skor_total ?? "—"}%
@@ -441,15 +445,27 @@ export function DesaDetailSections({
                 )}
               </div>
             </div>
-            {hub_assessment.level_hasil && (
-              <span className="inline-flex items-center gap-1 rounded-full bg-atr-purple-50 px-3 py-1 text-sm font-bold text-atr-purple-600">
-                <Award className="h-3 w-3" />
-                {hub_assessment.level_hasil}
-              </span>
-            )}
+            <div className="flex items-center gap-2">
+              {hub_assessment.level_hasil && (
+                <span className="inline-flex items-center gap-1 rounded-full bg-atr-purple-50 px-3 py-1 text-sm font-bold text-atr-purple-600">
+                  <Award className="h-3 w-3" />
+                  {hub_assessment.level_hasil}
+                </span>
+              )}
+              {(viewerRole === "superadmin" || viewerRole === "mitra") && (
+                <Link
+                  href={`/atourin/klasifikasi/v2/${hub_assessment.id}`}
+                  className="inline-flex h-9 items-center gap-1.5 rounded-md border border-atr-outline bg-white px-3 text-xs font-bold text-atr-fg hover:bg-atr-bg-soft"
+                  title="Lihat detail jawaban + thread feedback per pertanyaan"
+                >
+                  <Eye className="h-3.5 w-3.5" />
+                  Lihat Detail
+                </Link>
+              )}
+            </div>
           </div>
         ) : (
-          <EmptySection message="Desa belum mengisi self-assessment Hub V2" />
+          <EmptySection message="Desa belum mengisi assessment V2" />
         )}
       </Section>
 

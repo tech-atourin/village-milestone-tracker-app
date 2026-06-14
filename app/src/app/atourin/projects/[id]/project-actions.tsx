@@ -3,7 +3,6 @@
 import { useState, useTransition } from "react";
 import Link from "next/link";
 import {
-  Download,
   Globe,
   Loader2,
   Check,
@@ -12,21 +11,21 @@ import {
   GraduationCap,
   FileText,
   MapPin,
-  BarChart3,
-  ListChecks,
 } from "lucide-react";
 import { togglePublicDashboard } from "@/server/actions/public-dashboard";
-import { exportProjectExcel } from "@/server/actions/export";
 
 export function ProjectActions({
   projectId,
   initialEnabled,
   initialSlug,
+  scope = "atourin",
 }: {
   projectId: string;
   initialEnabled: boolean;
   initialSlug: string | null;
+  scope?: "atourin" | "mitra";
 }) {
+  void scope;
   const [enabled, setEnabled] = useState(initialEnabled);
   const [slug, setSlug] = useState(initialSlug);
   const [pending, startTransition] = useTransition();
@@ -51,26 +50,6 @@ export function ProjectActions({
     await navigator.clipboard.writeText(url);
     setCopied(true);
     setTimeout(() => setCopied(false), 1500);
-  }
-
-  function exportXlsx() {
-    startTransition(async () => {
-      const r = await exportProjectExcel(projectId);
-      if ("error" in r) {
-        alert(r.error);
-        return;
-      }
-      const bytes = Uint8Array.from(atob(r.base64), (c) => c.charCodeAt(0));
-      const blob = new Blob([bytes], {
-        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-      });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = r.filename;
-      a.click();
-      URL.revokeObjectURL(url);
-    });
   }
 
   return (
@@ -132,20 +111,6 @@ export function ProjectActions({
         Rapor Desa
       </Link>
       <Link
-        href={`/atourin/projects/${projectId}/rencana-aksi`}
-        className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-atr-outline bg-white px-3 text-sm font-bold text-atr-fg transition hover:bg-atr-bg-soft"
-      >
-        <ListChecks className="h-3.5 w-3.5" />
-        Rencana Aksi
-      </Link>
-      <Link
-        href={`/atourin/projects/${projectId}/analytics`}
-        className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-atr-outline bg-white px-3 text-sm font-bold text-atr-fg transition hover:bg-atr-bg-soft"
-      >
-        <BarChart3 className="h-3.5 w-3.5" />
-        Analytics
-      </Link>
-      <Link
         href={`/atourin/projects/${projectId}/report`}
         target="_blank"
         className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-atr-outline bg-white px-3 text-sm font-bold text-atr-fg transition hover:bg-atr-bg-soft"
@@ -153,19 +118,6 @@ export function ProjectActions({
         <FileText className="h-3.5 w-3.5" />
         Final Report
       </Link>
-      <button
-        type="button"
-        onClick={exportXlsx}
-        disabled={pending}
-        className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-atr-outline bg-white px-3 text-sm font-bold text-atr-fg transition hover:bg-atr-bg-soft disabled:opacity-50"
-      >
-        {pending ? (
-          <Loader2 className="h-3.5 w-3.5 animate-spin" />
-        ) : (
-          <Download className="h-3.5 w-3.5" />
-        )}
-        Export Excel
-      </button>
     </div>
   );
 }

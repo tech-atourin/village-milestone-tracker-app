@@ -141,7 +141,7 @@ export function BulkImportFlow() {
               Klik untuk pilih file, atau drag &amp; drop di sini
             </span>
             <span className="text-xs text-atr-fg-muted">
-              .xlsx — kolom: full_name, email, phone, nik, gender, birthdate,
+              .xlsx · kolom: full_name, email, phone, nik, gender, birthdate,
               desa_name, role
             </span>
             <input
@@ -250,7 +250,7 @@ export function BulkImportFlow() {
                               {e.message}
                             </div>
                           ))}
-                        {isDup && "User dengan kontak ini sudah ada — di-skip"}
+                        {isDup && "User dengan kontak ini sudah ada, di-skip"}
                       </td>
                     </tr>
                   );

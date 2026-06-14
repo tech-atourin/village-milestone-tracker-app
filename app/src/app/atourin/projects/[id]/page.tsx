@@ -15,7 +15,12 @@ import { TopikTab } from "./topik-tab";
 import { EvidenceTab } from "./evidence-tab";
 import { ProjectActions } from "./project-actions";
 import { SettingsTab } from "./settings-tab";
-import { GformsPanel, type GformRow } from "./gforms-panel";
+import { type GformRow } from "./gforms-panel";
+import { GformsTab, type TestResultRow } from "./gforms-tab";
+import { AnalyticsSection } from "./analytics-section";
+import { SummaryTab } from "./summary-tab";
+import { ActionPlanBoard } from "@/components/action-plans/action-plan-board";
+import { listActionPlans } from "@/server/queries/action-plans";
 
 async function getPublicState(projectId: string) {
   const supabase = createClient();
@@ -50,10 +55,13 @@ const STATUS_LABEL = {
 
 const TABS = [
   { key: "overview", label: "Overview" },
+  { key: "summary", label: "Summary" },
   { key: "desa", label: "Desa" },
   { key: "topik", label: "Topik" },
   { key: "peserta", label: "Peserta" },
+  { key: "rencana-aksi", label: "Rencana Aksi" },
   { key: "evidence", label: "Evidence" },
+  { key: "gforms", label: "Test Results" },
   { key: "settings", label: "Settings" },
 ] as const;
 
@@ -143,26 +151,32 @@ export default async function ProjectDetailPage({
       </nav>
 
       {/* Tab content */}
-      {activeTab === "overview" && <OverviewTab project={project} />}
+      {activeTab === "overview" && (
+        <OverviewTab project={project} projectId={project.id} />
+      )}
+      {activeTab === "summary" && (
+        <SummaryTab projectId={project.id} scope="atourin" />
+      )}
       {activeTab === "desa" && <DesaTabLoader projectId={project.id} />}
       {activeTab === "topik" && <TopikTabLoader projectId={project.id} />}
       {activeTab === "peserta" && <PesertaTabLoader projectId={project.id} />}
+      {activeTab === "rencana-aksi" && (
+        <RencanaAksiTabLoader projectId={project.id} />
+      )}
       {activeTab === "evidence" && <EvidenceTabLoader projectId={project.id} />}
+      {activeTab === "gforms" && <GformsAndResultsLoader projectId={project.id} />}
       {activeTab === "settings" && (
-        <div className="space-y-6">
-          <SettingsTab
-            project={{
-              id: project.id,
-              name: project.name,
-              description: project.description,
-              period_start: project.period_start,
-              period_end: project.period_end,
-              status: project.status,
-              enabled_modules: project.enabled_modules,
-            }}
-          />
-          <GformsTabLoader projectId={project.id} />
-        </div>
+        <SettingsTab
+          project={{
+            id: project.id,
+            name: project.name,
+            description: project.description,
+            period_start: project.period_start,
+            period_end: project.period_end,
+            status: project.status,
+            enabled_modules: project.enabled_modules,
+          }}
+        />
       )}
     </div>
   );
@@ -201,65 +215,131 @@ async function EvidenceTabLoader({ projectId }: { projectId: string }) {
   return <EvidenceTab projectId={projectId} />;
 }
 
-async function GformsTabLoader({ projectId }: { projectId: string }) {
+async function RencanaAksiTabLoader({ projectId }: { projectId: string }) {
   const supabase = createClient();
-  const { data } = await supabase
+  const [rows, { data: pd }] = await Promise.all([
+    listActionPlans({ projectId }),
+    supabase
+      .from("project_desa")
+      .select("id, project_id, desa:desa(name), project:projects(name)")
+      .eq("project_id", projectId),
+  ]);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const desaOptions = ((pd ?? []) as any[]).map((r) => ({
+    project_desa_id: r.id,
+    project_id: r.project_id,
+    project_name: r.project?.name ?? "—",
+    desa_name: r.desa?.name ?? "—",
+  }));
+  return <ActionPlanBoard rows={rows} desaOptions={desaOptions} canEdit />;
+}
+
+async function GformsAndResultsLoader({ projectId }: { projectId: string }) {
+  const supabase = createClient();
+  const { data: gformsData } = await supabase
     .from("project_gforms")
     .select(
       "id, form_type, form_label, gform_id, sheet_id, identifier_field, sync_status, last_sync_at, last_sync_error",
     )
     .eq("project_id", projectId)
     .order("created_at", { ascending: false });
-  const gforms = (data ?? []) as unknown as GformRow[];
-  return <GformsPanel projectId={projectId} gforms={gforms} />;
+  const gforms = (gformsData ?? []) as unknown as GformRow[];
+  const gformIds = gforms.map((g) => g.id);
+
+  let testResults: TestResultRow[] = [];
+  if (gformIds.length > 0) {
+    const { data: trData } = await supabase
+      .from("peserta_test_results")
+      .select(
+        "id, project_gform_id, user_id, raw_response, score, max_score, submitted_at, matched_status, user:users(full_name, email), gform:project_gforms(form_type, form_label)",
+      )
+      .in("project_gform_id", gformIds)
+      .order("submitted_at", { ascending: false })
+      .limit(500);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    testResults = ((trData ?? []) as any[]).map((r) => ({
+      id: r.id,
+      project_gform_id: r.project_gform_id,
+      user_id: r.user_id,
+      user_name: r.user?.full_name ?? null,
+      user_email: r.user?.email ?? null,
+      form_type: r.gform?.form_type,
+      form_label: r.gform?.form_label ?? null,
+      raw_response: r.raw_response,
+      score: r.score,
+      max_score: r.max_score,
+      submitted_at: r.submitted_at,
+      matched_status: r.matched_status,
+    }));
+  }
+
+  return (
+    <GformsTab
+      projectId={projectId}
+      gforms={gforms}
+      testResults={testResults}
+    />
+  );
 }
 
 function OverviewTab({
   project,
+  projectId,
 }: {
   project: Awaited<ReturnType<typeof getProject>> & object;
+  projectId: string;
 }) {
   return (
-    <div className="grid gap-6 lg:grid-cols-3">
-      <div className="space-y-4 lg:col-span-2">
-        <Card title="Deskripsi">
-          {project.description ? (
-            <p className="whitespace-pre-line text-sm text-atr-fg">
-              {project.description}
-            </p>
-          ) : (
-            <p className="text-sm italic text-atr-fg-muted">
-              Tidak ada deskripsi.
-            </p>
-          )}
-        </Card>
+    <div className="space-y-6">
+      <div className="grid gap-6 lg:grid-cols-3">
+        <div className="space-y-4 lg:col-span-2">
+          <Card title="Deskripsi">
+            {project.description ? (
+              <p className="whitespace-pre-line text-sm text-atr-fg">
+                {project.description}
+              </p>
+            ) : (
+              <p className="text-sm italic text-atr-fg-muted">
+                Tidak ada deskripsi.
+              </p>
+            )}
+          </Card>
 
-        <Card title="Modul aktif">
-          <ul className="space-y-1.5 text-sm text-atr-fg">
-            {Object.entries(project.enabled_modules).map(([k, v]) => (
-              <li key={k} className="flex items-center justify-between">
-                <span className="capitalize">{k.replace(/_/g, " ")}</span>
-                <span
-                  className={`rounded-full px-2 py-0.5 text-xs font-bold ${
-                    v
-                      ? "bg-atr-arti/15 text-atr-arti"
-                      : "bg-atr-bg-soft text-atr-fg-muted"
-                  }`}
-                >
-                  {v ? "Aktif" : "Off"}
-                </span>
-              </li>
-            ))}
-          </ul>
-        </Card>
+          <Card title="Modul aktif">
+            <ul className="space-y-1.5 text-sm text-atr-fg">
+              {Object.entries(project.enabled_modules).map(([k, v]) => (
+                <li key={k} className="flex items-center justify-between">
+                  <span className="capitalize">{k.replace(/_/g, " ")}</span>
+                  <span
+                    className={`rounded-full px-2 py-0.5 text-xs font-bold ${
+                      v
+                        ? "bg-atr-arti/15 text-atr-arti"
+                        : "bg-atr-bg-soft text-atr-fg-muted"
+                    }`}
+                  >
+                    {v ? "Aktif" : "Off"}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </Card>
+        </div>
+
+        <div className="space-y-4">
+          <Stat label="Topik" value={project.topik_count} />
+          <Stat label="Checklist items" value={project.checklist_count} />
+          <Stat label="Desa" value={project.desa_count} />
+          <Stat label="Anggota project" value={project.member_count} />
+        </div>
       </div>
 
-      <div className="space-y-4">
-        <Stat label="Topik" value={project.topik_count} />
-        <Stat label="Checklist items" value={project.checklist_count} />
-        <Stat label="Desa" value={project.desa_count} />
-        <Stat label="Anggota project" value={project.member_count} />
-      </div>
+      {/* Analytics merged into Overview */}
+      <section className="space-y-3">
+        <h3 className="text-sm font-bold uppercase tracking-wide text-atr-fg-muted">
+          Analytics
+        </h3>
+        <AnalyticsSection projectId={projectId} />
+      </section>
     </div>
   );
 }

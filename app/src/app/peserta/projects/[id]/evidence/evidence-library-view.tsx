@@ -217,7 +217,7 @@ function TagDialog({
               Tag ke checklist
             </h3>
             <p className="text-xs text-atr-fg-muted">
-              Centang topik yang relevan — 1 file bisa di-tag ke banyak.
+              Centang topik yang relevan. 1 file bisa di-tag ke banyak.
             </p>
           </div>
           <button

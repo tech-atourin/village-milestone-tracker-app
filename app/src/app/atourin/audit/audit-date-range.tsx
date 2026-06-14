@@ -32,31 +32,26 @@ export function AuditDateRange({
   }
 
   return (
-    <div className="flex flex-wrap items-end gap-3 rounded-2xl border border-atr-outline bg-white p-4 shadow-atr-1">
-      <div className="flex items-center gap-2">
+    <div className="flex flex-wrap items-center gap-2">
+      <div className="inline-flex h-9 items-center gap-1.5 text-xs font-bold uppercase tracking-wide text-atr-fg-muted">
         <Calendar className="h-4 w-4 text-atr-purple" />
-        <span className="text-xs font-bold uppercase tracking-wide text-atr-fg-muted">
-          Filter tanggal
-        </span>
+        Filter tanggal
       </div>
-      <label className="flex flex-col gap-1 text-xs">
-        <span className="font-bold text-atr-fg">Dari</span>
-        <input
-          type="date"
-          value={fromVal}
-          onChange={(e) => setFromVal(e.target.value)}
-          className="h-9 rounded-lg border border-atr-outline px-3 text-sm outline-none focus:border-atr-purple focus:ring-2 focus:ring-atr-purple/15"
-        />
-      </label>
-      <label className="flex flex-col gap-1 text-xs">
-        <span className="font-bold text-atr-fg">Sampai</span>
-        <input
-          type="date"
-          value={toVal}
-          onChange={(e) => setToVal(e.target.value)}
-          className="h-9 rounded-lg border border-atr-outline px-3 text-sm outline-none focus:border-atr-purple focus:ring-2 focus:ring-atr-purple/15"
-        />
-      </label>
+      <input
+        type="date"
+        value={fromVal}
+        onChange={(e) => setFromVal(e.target.value)}
+        aria-label="Dari"
+        className="h-9 rounded-lg border border-atr-outline bg-white px-3 text-sm outline-none focus:border-atr-purple focus:ring-2 focus:ring-atr-purple/15"
+      />
+      <span className="text-xs text-atr-fg-muted">s.d.</span>
+      <input
+        type="date"
+        value={toVal}
+        onChange={(e) => setToVal(e.target.value)}
+        aria-label="Sampai"
+        className="h-9 rounded-lg border border-atr-outline bg-white px-3 text-sm outline-none focus:border-atr-purple focus:ring-2 focus:ring-atr-purple/15"
+      />
       <button
         type="button"
         onClick={apply}

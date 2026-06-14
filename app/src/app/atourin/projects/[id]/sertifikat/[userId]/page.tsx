@@ -186,7 +186,7 @@ export default async function SertifikatPage({
             <strong className="text-atr-purple-600">{project.name}</strong>
             <br />
             yang diselenggarakan oleh {project.organization?.name ?? "—"} bersama Atourin
-            pada periode {project.period_start} — {project.period_end}.
+            pada periode {project.period_start} – {project.period_end}.
           </p>
 
           {/* Achievement metrics */}

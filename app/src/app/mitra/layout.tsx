@@ -7,6 +7,7 @@ const NAV_ITEMS: SidebarItem[] = [
   { href: "/mitra/projects", label: "Project Saya", icon: "Folder" },
   { href: "/mitra/desa", label: "Desa", icon: "MapPin" },
   { href: "/mitra/peserta", label: "Peserta", icon: "Users" },
+  { href: "/mitra/narasumber", label: "Narasumber", icon: "GraduationCap" },
   { href: "/mitra/laporan", label: "Laporan", icon: "BarChart3" },
 ];
 

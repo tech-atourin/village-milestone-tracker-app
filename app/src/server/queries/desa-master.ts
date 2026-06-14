@@ -175,6 +175,7 @@ export type DesaDetail = {
   baseline: Record<string, unknown> | null;
   baseline_submitted_at: string | null;
   hub_assessment: {
+    id: string;
     skor_total: number | null;
     level_hasil: string | null;
     status: string;
@@ -245,7 +246,7 @@ export async function getDesaDetail(
   // Hub assessment
   const { data: hubA } = await supabase
     .from("hub_assessment")
-    .select("skor_total, level_hasil, status, submitted_at")
+    .select("id, skor_total, level_hasil, status, submitted_at")
     .eq("desa_id", desaId)
     .maybeSingle();
 

@@ -89,7 +89,7 @@ export default async function FinalReportPage({
           Laporan akhir program pendampingan
         </p>
         <p className="mt-2 text-xs text-atr-fg-muted">
-          {project.period_start} — {project.period_end}
+          {project.period_start} – {project.period_end}
         </p>
       </section>
 
@@ -190,7 +190,7 @@ export default async function FinalReportPage({
               className="page-break mb-10 rounded-2xl border border-atr-purple/20 p-6"
             >
               <h3 className="mb-3 text-base font-bold text-atr-fg">
-                Insight AI — {d.desa.name}
+                Insight AI · {d.desa.name}
               </h3>
               <p className="mb-4 text-sm leading-relaxed text-atr-fg">
                 {s.overview}

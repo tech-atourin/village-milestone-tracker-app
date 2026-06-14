@@ -28,6 +28,7 @@ export default async function AtourinDesaDetailPage({
       </Link>
       <DesaDetailSections
         data={data}
+        viewerRole="superadmin"
         hubSyncSlot={
           <HubSyncButton
             desaId={data.base.id}

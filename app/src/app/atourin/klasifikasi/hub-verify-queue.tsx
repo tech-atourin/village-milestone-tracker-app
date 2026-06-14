@@ -88,7 +88,7 @@ export function HubVerifyQueue({
     return (
       <div className="rounded-2xl border border-dashed border-atr-outline bg-atr-bg-soft p-8 text-center">
         <p className="text-sm font-bold text-atr-fg">
-          Tidak ada submission Hub V2 menunggu verifikasi
+          Tidak ada submission Assessment Desa V2 menunggu verifikasi
         </p>
       </div>
     );
@@ -140,12 +140,12 @@ export function HubVerifyQueue({
                 Detail Desa
               </Link>
               <Link
-                href={`/desa/self-assessment?v=v2`}
+                href={`/atourin/klasifikasi/v2/${r.id}`}
                 className="inline-flex h-7 items-center gap-1 rounded-md border border-atr-outline bg-white px-2 text-[11px] font-bold text-atr-fg hover:bg-atr-bg-soft"
-                title="Buka untuk balas comment per question (login sebagai admin sudah cukup)"
+                title="Lihat jawaban + balas comment per pertanyaan"
               >
                 <MessageSquare className="h-3 w-3" />
-                Thread ({commentCountByAssessment?.[r.id] ?? 0})
+                Thread · {commentCountByAssessment?.[r.id] ?? 0}
               </Link>
             </div>
           </div>
@@ -184,7 +184,7 @@ export function HubVerifyQueue({
                   className="inline-flex h-8 items-center gap-1 rounded-md border border-atr-red/30 bg-white px-3 text-xs font-bold text-atr-red hover:bg-atr-red/5 disabled:opacity-50"
                 >
                   {pending ? <Loader2 className="h-3 w-3 animate-spin" /> : <XCircle className="h-3 w-3" />}
-                  Tolak — Revisi
+                  Tolak & Minta Revisi
                 </button>
                 <button
                   type="button"
