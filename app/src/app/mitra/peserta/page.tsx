@@ -20,7 +20,7 @@ async function loadPeserta(): Promise<Row[]> {
   const { data } = await supabase
     .from("project_memberships")
     .select(
-      "user_id, project_id, user:users(full_name, email), desa:desa(name), project:projects(name)",
+      "user_id, project_id, user:users!project_memberships_user_id_fkey(full_name, email), desa:desa(name), project:projects(name)",
     )
     .eq("role", "peserta")
     .eq("status", "active")

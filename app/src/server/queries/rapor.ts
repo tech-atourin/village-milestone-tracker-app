@@ -20,7 +20,7 @@ export async function listProjectRapor(projectId: string): Promise<RaporRow[]> {
   const { data: members } = await supabase
     .from("project_memberships")
     .select(
-      "user_id, user:users(id, full_name, email), desa:desa(name)",
+      "user_id, user:users!project_memberships_user_id_fkey(id, full_name, email), desa:desa(name)",
     )
     .eq("project_id", projectId)
     .eq("role", "peserta")

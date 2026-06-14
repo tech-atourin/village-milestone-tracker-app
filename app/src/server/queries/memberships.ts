@@ -18,7 +18,7 @@ export async function listProjectMembers(
   const { data, error } = await supabase
     .from("project_memberships")
     .select(
-      "id, role, status, invited_at, user:users(id, full_name, email), desa:desa(id, name)",
+      "id, role, status, invited_at, user:users!project_memberships_user_id_fkey(id, full_name, email), desa:desa(id, name)",
     )
     .eq("project_id", projectId)
     .order("invited_at", { ascending: false });

@@ -64,7 +64,7 @@ export async function getProjectAnalytics(
   // Peserta
   const { data: memberships } = await supabase
     .from("project_memberships")
-    .select("user_id, role, desa_id, user:users(gender)")
+    .select("user_id, role, desa_id, user:users!project_memberships_user_id_fkey(gender)")
     .eq("project_id", projectId)
     .eq("status", "active");
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

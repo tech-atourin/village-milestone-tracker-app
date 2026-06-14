@@ -152,7 +152,7 @@ export async function getSessionDetail(
 
   const { data: attRaw } = await supabase
     .from("pendampingan_attendance")
-    .select("user_id, status, note, user:users(full_name, jabatan, gender)")
+    .select("user_id, status, note, user:users!pendampingan_attendance_user_id_fkey(full_name, jabatan, gender)")
     .eq("session_id", sessionId);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const attendance = ((attRaw ?? []) as any[]).map((a) => ({

@@ -21,7 +21,7 @@ async function loadCandidatePeserta(projectDesaId: string) {
   const row = pd as { project_id: string; desa_id: string };
   const { data } = await supabase
     .from("project_memberships")
-    .select("user_id, user:users(id, full_name, jabatan, gender)")
+    .select("user_id, user:users!project_memberships_user_id_fkey(id, full_name, jabatan, gender)")
     .eq("project_id", row.project_id)
     .eq("desa_id", row.desa_id)
     .in("role", ["peserta", "pendamping"])

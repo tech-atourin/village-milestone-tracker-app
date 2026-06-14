@@ -240,7 +240,7 @@ export async function getRaporDesaDetail(
   // Peserta list with their individual rapor
   const { data: members } = await supabase
     .from("project_memberships")
-    .select("user_id, user:users(id, full_name, email)")
+    .select("user_id, user:users!project_memberships_user_id_fkey(id, full_name, email)")
     .eq("project_id", projectId)
     .eq("desa_id", desaId)
     .eq("role", "peserta")

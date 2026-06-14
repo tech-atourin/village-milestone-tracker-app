@@ -80,7 +80,7 @@ export async function exportProjectExcel(projectId: string) {
   const { data: members } = await admin
     .from("project_memberships")
     .select(
-      "role, status, invited_at, user:users(full_name, email, phone), desa:desa(name)",
+      "role, status, invited_at, user:users!project_memberships_user_id_fkey(full_name, email, phone), desa:desa(name)",
     )
     .eq("project_id", projectId);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
