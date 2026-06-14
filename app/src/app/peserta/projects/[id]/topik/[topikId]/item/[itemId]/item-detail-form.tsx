@@ -177,6 +177,14 @@ export function ItemDetailForm({
         {statusCfg.label}
       </div>
 
+      <div className="rounded-lg border border-atr-purple/30 bg-atr-purple-50/40 p-3 text-xs text-atr-fg">
+        <strong>Tugas Pendampingan Project.</strong> Bukti yang Anda upload di
+        sini bisa di-link oleh pengelola desa sebagai pendukung Assessment
+        Klasifikasi (tier Rintisan → Mandiri). Jadi upload sekali, dipakai
+        dua tujuan. Direview oleh tim Atourin, mitra penyelenggara, atau
+        narasumber project.
+      </div>
+
       <section className="space-y-3">
         <h2 className="text-sm font-bold uppercase tracking-wide text-atr-fg-muted">
           Evidence ({existingEvidence.length})

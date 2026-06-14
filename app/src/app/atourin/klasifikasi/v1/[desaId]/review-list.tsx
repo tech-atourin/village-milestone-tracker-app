@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition, useMemo } from "react";
+import { useState, useTransition, useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
   CheckCircle2,
@@ -8,10 +8,18 @@ import {
   Loader2,
   Filter,
   Image as ImageIcon,
+  Link2,
+  Paperclip,
+  ExternalLink,
 } from "lucide-react";
 import type { CriteriaItemRow } from "@/server/queries/self-assessment";
 import type { AssessmentComment } from "@/server/queries/assessment-comments";
-import { verifyCriteriaItem, signCriteriaEvidence } from "@/server/actions/self-assessment";
+import {
+  verifyCriteriaItem,
+  signCriteriaEvidence,
+  listCriteriaEvidence,
+  type CriteriaProgressEvidence,
+} from "@/server/actions/self-assessment";
 import { CommentThread } from "@/components/assessment/comment-thread";
 
 const TIER_COLOR: Record<string, string> = {
@@ -208,6 +216,7 @@ export function V1ReviewList({
                           </p>
                         </div>
                       )}
+                      {/* Legacy single-file evidence (demo / old submissions) */}
                       {it.evidence_path && (
                         <button
                           type="button"
@@ -218,8 +227,12 @@ export function V1ReviewList({
                           className="inline-flex h-7 items-center gap-1 rounded-md border border-atr-outline bg-white px-2 text-[11px] font-bold text-atr-fg hover:bg-atr-bg-soft"
                         >
                           <ImageIcon className="h-3 w-3" />
-                          Buka evidence
+                          Buka evidence (lama)
                         </button>
+                      )}
+                      {/* Multi-file + cross-linked evidence */}
+                      {it.progress_id && (
+                        <CriteriaEvidenceList progressId={it.progress_id} />
                       )}
                     </div>
                     {it.status === "submitted" && it.progress_id && (
@@ -273,6 +286,79 @@ export function V1ReviewList({
           </section>
         );
       })}
+    </div>
+  );
+}
+
+// Lazy-loads evidence tagged to a criteria progress row — both files
+// uploaded directly by the desa and files cross-linked from peserta
+// project evidence. Auto-loads on mount.
+function CriteriaEvidenceList({ progressId }: { progressId: string }) {
+  const [items, setItems] = useState<CriteriaProgressEvidence[] | null>(null);
+  const [signing, setSigning] = useState<string | null>(null);
+
+  useEffect(() => {
+    let alive = true;
+    listCriteriaEvidence(progressId).then((rows) => {
+      if (alive) setItems(rows);
+    });
+    return () => {
+      alive = false;
+    };
+  }, [progressId]);
+
+  async function open(fileUrl: string) {
+    setSigning(fileUrl);
+    const url = await signCriteriaEvidence(fileUrl);
+    setSigning(null);
+    if (url) window.open(url, "_blank", "noopener");
+  }
+
+  if (items === null)
+    return (
+      <div className="inline-flex items-center gap-1 text-[11px] text-atr-fg-muted">
+        <Loader2 className="h-3 w-3 animate-spin" />
+        Memuat bukti…
+      </div>
+    );
+  if (items.length === 0) return null;
+
+  return (
+    <div className="space-y-1.5">
+      <div className="text-[10px] font-bold uppercase tracking-wide text-atr-fg-muted">
+        Bukti pendukung ({items.length})
+      </div>
+      <ul className="flex flex-wrap gap-1.5">
+        {items.map((ev) => (
+          <li key={ev.evidence_id}>
+            <button
+              type="button"
+              onClick={() => open(ev.file_url)}
+              disabled={signing === ev.file_url}
+              className={`inline-flex h-7 items-center gap-1 rounded-md border px-2 text-[11px] font-bold transition ${
+                ev.source === "linked"
+                  ? "border-atr-yellow/40 bg-atr-yellow/10 text-atr-fg hover:bg-atr-yellow/20"
+                  : "border-atr-outline bg-white text-atr-fg hover:bg-atr-bg-soft"
+              }`}
+              title={
+                ev.source === "linked"
+                  ? `Dari project ${ev.source_project_name ?? "—"}`
+                  : "Upload langsung oleh desa"
+              }
+            >
+              {signing === ev.file_url ? (
+                <Loader2 className="h-3 w-3 animate-spin" />
+              ) : ev.source === "linked" ? (
+                <Link2 className="h-3 w-3" />
+              ) : (
+                <Paperclip className="h-3 w-3" />
+              )}
+              <span className="max-w-[160px] truncate">{ev.filename}</span>
+              <ExternalLink className="h-2.5 w-2.5 opacity-60" />
+            </button>
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }

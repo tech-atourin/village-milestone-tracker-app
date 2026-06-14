@@ -165,6 +165,8 @@ export function AnalyticsCharts({ data }: { data: ProjectAnalytics }) {
                     innerRadius={45}
                     outerRadius={75}
                     paddingAngle={3}
+                    label={renderSliceCount}
+                    labelLine={false}
                   >
                     {genderData.map((d, i) => (
                       <Cell key={i} fill={d.color} />
@@ -294,6 +296,8 @@ export function AnalyticsCharts({ data }: { data: ProjectAnalytics }) {
                     nameKey="name"
                     cx="35%"
                     outerRadius={75}
+                    label={renderSliceCount}
+                    labelLine={false}
                   >
                     {apData.map((d, i) => (
                       <Cell key={i} fill={d.color} />
@@ -416,6 +420,30 @@ export function AnalyticsCharts({ data }: { data: ProjectAnalytics }) {
         </section>
       )}
     </div>
+  );
+}
+
+// Render count INSIDE the slice (radial midpoint). Hides labels for
+// zero-value slices so we don't draw stray "0" markers in empty space.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function renderSliceCount(props: any) {
+  const { cx, cy, midAngle, innerRadius, outerRadius, value } = props;
+  if (!value) return null;
+  const RAD = Math.PI / 180;
+  const r = innerRadius + (outerRadius - innerRadius) * 0.55;
+  const x = cx + r * Math.cos(-midAngle * RAD);
+  const y = cy + r * Math.sin(-midAngle * RAD);
+  return (
+    <text
+      x={x}
+      y={y}
+      fill="#fff"
+      textAnchor="middle"
+      dominantBaseline="central"
+      style={{ fontSize: 12, fontWeight: 700 }}
+    >
+      {value}
+    </text>
   );
 }
 

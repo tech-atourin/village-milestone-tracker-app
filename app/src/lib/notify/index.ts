@@ -6,9 +6,15 @@ import nodemailer from "nodemailer";
 export type NotifyTemplateKey =
   | "checklist_approved"
   | "checklist_rejected"
+  | "checklist_submitted"
   | "evidence_submitted"
+  | "evidence_linked"
   | "baseline_submitted"
-  | "project_invitation";
+  | "project_invitation"
+  | "criteria_submitted"
+  | "criteria_verified"
+  | "criteria_rejected"
+  | "comment_added";
 
 export type NotifyPayload = {
   user_id: string;
@@ -46,7 +52,128 @@ const TEMPLATES: Record<
     inAppText: `Anda diundang ke project ${p.project_name}.`,
     html: `<p>Anda telah ditambahkan ke project <b>${p.project_name}</b> di Village Milestone Tracker.</p>`,
   }),
+  checklist_submitted: (p) => ({
+    subject: `Bukti baru menunggu review: ${p.checklist_title}`,
+    inAppText: `${p.peserta_name ?? "Peserta"} dari ${p.desa_name} submit bukti untuk "${p.checklist_title}".`,
+    html: `<p>Peserta <b>${p.peserta_name ?? "—"}</b> dari desa <b>${p.desa_name}</b> baru saja submit bukti untuk checklist <b>${p.checklist_title}</b>. Buka VMT untuk review.</p>`,
+  }),
+  evidence_linked: (p) => ({
+    subject: `Bukti Anda dipakai untuk assessment ${p.desa_name}`,
+    inAppText: `Bukti "${p.evidence_filename}" dipakai pengelola desa untuk kriteria klasifikasi.`,
+    html: `<p>Pengelola desa <b>${p.desa_name}</b> mencantumkan bukti yang Anda upload (<b>${p.evidence_filename}</b>) sebagai pendukung kriteria klasifikasi: <b>${p.criteria_title}</b>. Tidak ada tindakan yang diperlukan — cuma info bahwa kontribusi Anda dipakai dua kali.</p>`,
+  }),
+  criteria_submitted: (p) => ({
+    subject: `Assessment baru menunggu verifikasi: ${p.desa_name}`,
+    inAppText: `Desa ${p.desa_name} submit kriteria "${p.criteria_title}" (tier ${p.tier}).`,
+    html: `<p>Desa <b>${p.desa_name}</b> mengirim kriteria <b>${p.criteria_title}</b> (tier ${p.tier}) untuk diverifikasi. Buka halaman Klasifikasi.</p>`,
+  }),
+  criteria_verified: (p) => ({
+    subject: `✓ Kriteria diverifikasi: ${p.criteria_title}`,
+    inAppText: `Kriteria "${p.criteria_title}" telah diverifikasi tim Atourin.`,
+    html: `<p>Selamat! Kriteria <b>${p.criteria_title}</b> telah diverifikasi oleh tim Atourin. 🎉</p>`,
+  }),
+  criteria_rejected: (p) => ({
+    subject: `Perlu revisi kriteria: ${p.criteria_title}`,
+    inAppText: `Kriteria "${p.criteria_title}" perlu direvisi. ${p.note ?? ""}`,
+    html: `<p>Kriteria <b>${p.criteria_title}</b> perlu direvisi.</p><p><b>Feedback:</b> ${p.note ?? "—"}</p>`,
+  }),
+  comment_added: (p) => ({
+    subject: `Komentar baru di ${p.context_title}`,
+    inAppText: `${p.author_name ?? "Seseorang"} berkomentar di ${p.context_title}.`,
+    html: `<p><b>${p.author_name ?? "Seseorang"}</b> menambahkan komentar di <b>${p.context_title}</b>:</p><blockquote>${p.body_excerpt ?? ""}</blockquote>`,
+  }),
 };
+
+// =====================================================
+// notifyMany — fan-out helper that sends the same template to
+// multiple users (deduplicated). Channel defaults to in_app + email
+// when applicable. Failures are isolated per recipient.
+// =====================================================
+export async function notifyMany(opts: {
+  user_ids: string[];
+  template_key: NotifyTemplateKey;
+  payload: Record<string, unknown>;
+  channels?: Array<"in_app" | "email">;
+}): Promise<void> {
+  const channels = opts.channels ?? ["in_app", "email"];
+  const unique = Array.from(new Set(opts.user_ids.filter(Boolean)));
+  for (const uid of unique) {
+    for (const ch of channels) {
+      try {
+        await notify({
+          user_id: uid,
+          template_key: opts.template_key,
+          channel: ch,
+          payload: opts.payload,
+        });
+      } catch (e) {
+        console.warn("notifyMany failed:", uid, ch, (e as Error).message);
+      }
+    }
+  }
+}
+
+// =====================================================
+// projectReviewers — return user IDs that should be notified when a
+// peserta submits a checklist or a desa submits an assessment item:
+//   - All superadmins
+//   - The mitra_admin(s) of the project's organization
+//   - All narasumber that are active members of the project
+// =====================================================
+export async function projectReviewers(
+  projectId: string,
+): Promise<string[]> {
+  const admin = createAdminClient();
+  const ids: string[] = [];
+
+  // Superadmins
+  const { data: supers } = await admin
+    .from("users")
+    .select("id")
+    .eq("global_role", "superadmin")
+    .is("deleted_at", null);
+  for (const u of (supers ?? []) as Array<{ id: string }>) ids.push(u.id);
+
+  // Mitra admins of project org
+  const { data: proj } = await admin
+    .from("projects")
+    .select("organization_id")
+    .eq("id", projectId)
+    .maybeSingle();
+  const orgId = (proj as { organization_id: string | null } | null)
+    ?.organization_id;
+  if (orgId) {
+    const { data: mitras } = await admin
+      .from("users")
+      .select("id")
+      .eq("global_role", "mitra_admin")
+      .eq("organization_id", orgId)
+      .is("deleted_at", null);
+    for (const u of (mitras ?? []) as Array<{ id: string }>) ids.push(u.id);
+  }
+
+  // Narasumber project members
+  const { data: nars } = await admin
+    .from("project_memberships")
+    .select("user_id")
+    .eq("project_id", projectId)
+    .eq("role", "narasumber")
+    .eq("status", "active");
+  for (const r of (nars ?? []) as Array<{ user_id: string }>) ids.push(r.user_id);
+
+  return Array.from(new Set(ids));
+}
+
+// All superadmin user IDs — used as reviewers for V1/V2 assessment.
+export async function assessmentReviewers(): Promise<string[]> {
+  const admin = createAdminClient();
+  const { data } = await admin
+    .from("users")
+    .select("id")
+    .eq("global_role", "superadmin")
+    .is("deleted_at", null);
+  return ((data ?? []) as Array<{ id: string }>).map((u) => u.id);
+}
 
 // =====================================================
 // notify() — fire-and-forget. Always writes the in_app row;

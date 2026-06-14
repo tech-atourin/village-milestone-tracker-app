@@ -2,7 +2,7 @@ import Link from "next/link";
 import Image from "next/image";
 import type { SessionUser } from "@/lib/auth/rbac";
 import { NotificationBell } from "@/components/notification-bell";
-import { listUserNotifications } from "@/server/queries/notifications";
+import { countUnreadNotifications } from "@/server/queries/notifications";
 import { UserMenu } from "@/components/user-menu";
 
 const ROLE_LABELS: Record<SessionUser["global_role"], string> = {
@@ -23,7 +23,7 @@ export async function Topbar({
   showBrand?: "auto" | "always" | "never";
 }) {
   const renderBrand = !title && showBrand !== "never";
-  const notifications = await listUserNotifications(user.id, 15);
+  const unreadCount = await countUnreadNotifications(user.id);
 
   return (
     <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-atr-outline bg-white px-4 sm:px-6">
@@ -59,7 +59,7 @@ export async function Topbar({
       </div>
 
       <div className="flex items-center gap-3">
-        <NotificationBell items={notifications} />
+        <NotificationBell unreadCount={unreadCount} />
         <UserMenu
           variant="topbar-down"
           user={{

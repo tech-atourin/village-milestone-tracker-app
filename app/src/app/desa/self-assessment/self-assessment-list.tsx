@@ -1,22 +1,18 @@
 "use client";
 
-import { useRef, useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
+import { useState } from "react";
 import {
   CheckCircle2,
   Circle,
   Clock,
   AlertCircle,
-  Loader2,
-  Upload,
   Paperclip,
-  X,
-  FileText,
+  ListChecks,
 } from "lucide-react";
-import { submitCriteriaItem } from "@/server/actions/self-assessment";
 import type { CriteriaItemRow, Tier } from "@/server/queries/self-assessment";
 import { CommentThread } from "@/components/assessment/comment-thread";
 import type { AssessmentComment } from "@/server/queries/assessment-comments";
+import { CriteriaEvidenceManager } from "./criteria-evidence-manager";
 
 const TIER_LABEL: Record<Tier, string> = {
   rintisan: "Rintisan",
@@ -39,18 +35,6 @@ const STATUS_STYLE = {
   rejected: { icon: AlertCircle, color: "text-atr-red", label: "Perlu revisi" },
 } as const;
 
-function fileToBase64(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => {
-      const r = reader.result as string;
-      resolve(r.split(",")[1] ?? "");
-    };
-    reader.onerror = () => reject(reader.error);
-    reader.readAsDataURL(file);
-  });
-}
-
 export function SelfAssessmentList({
   desaId,
   items,
@@ -64,13 +48,7 @@ export function SelfAssessmentList({
   currentUserId: string;
   currentUserRole: string;
 }) {
-  const router = useRouter();
-  const [pending, startTransition] = useTransition();
-  const [openItemId, setOpenItemId] = useState<string | null>(null);
-  const [files, setFiles] = useState<Record<string, File | null>>({});
-  const [notes, setNotes] = useState<Record<string, string>>({});
-  const [errorByItem, setErrorByItem] = useState<Record<string, string | null>>({});
-  const fileInputs = useRef<Record<string, HTMLInputElement | null>>({});
+  const [openItem, setOpenItem] = useState<CriteriaItemRow | null>(null);
 
   const [activeTier, setActiveTier] = useState<Tier>(() => {
     const tiers: Tier[] = ["rintisan", "berkembang", "maju", "mandiri"];
@@ -83,35 +61,6 @@ export function SelfAssessmentList({
     }
     return "rintisan";
   });
-
-  async function submit(item: CriteriaItemRow) {
-    const file = files[item.id];
-    const note = notes[item.id]?.trim() ?? "";
-    if (!file) {
-      setErrorByItem((e) => ({ ...e, [item.id]: "Wajib upload file evidence" }));
-      return;
-    }
-    setErrorByItem((e) => ({ ...e, [item.id]: null }));
-    const base64 = await fileToBase64(file);
-    startTransition(async () => {
-      const r = await submitCriteriaItem({
-        desa_id: desaId,
-        criteria_item_id: item.id,
-        evidence_filename: file.name,
-        evidence_mime: file.type || "application/octet-stream",
-        evidence_base64: base64,
-        evidence_note: note || null,
-      });
-      if (r.error) {
-        setErrorByItem((e) => ({ ...e, [item.id]: r.error ?? "Gagal submit" }));
-      } else {
-        setFiles((f) => ({ ...f, [item.id]: null }));
-        setNotes((n) => ({ ...n, [item.id]: "" }));
-        setOpenItemId(null);
-        router.refresh();
-      }
-    });
-  }
 
   const tierStats: Record<
     Tier,
@@ -168,10 +117,16 @@ export function SelfAssessmentList({
         })}
       </nav>
 
-      <div className="rounded-lg border border-atr-yellow/40 bg-atr-yellow/10 p-3 text-xs text-atr-fg">
-        <strong>Catatan:</strong> Setiap kriteria yang diklaim WAJIB disertai
-        bukti (foto/dokumen) + catatan singkat. Tanpa evidence, kriteria
-        tidak bisa disubmit untuk verifikasi.
+      <div className="rounded-lg border border-atr-purple/30 bg-atr-purple-50/40 p-3 text-xs text-atr-fg">
+        <strong className="inline-flex items-center gap-1.5">
+          <ListChecks className="h-3.5 w-3.5 text-atr-purple" />
+          Assessment Klasifikasi — beda dengan tugas pendampingan project.
+        </strong>{" "}
+        Checklist ini menentukan tier desa (Rintisan → Mandiri). Setiap
+        kriteria wajib disertai bukti. <em>Tip:</em> kalau bukti sudah pernah
+        di-upload peserta saat kegiatan project, klik
+        &quot;Lampirkan&quot; → tab &quot;Pilih dari Peserta&quot; — gak perlu
+        upload dua kali.
       </div>
 
       <div className="space-y-4">
@@ -191,10 +146,6 @@ export function SelfAssessmentList({
                 const Icon = cfg.icon;
                 const canEdit =
                   it.status === "not_started" || it.status === "rejected";
-                const isOpen = openItemId === it.id;
-                const file = files[it.id];
-                const note = notes[it.id] ?? "";
-                const err = errorByItem[it.id];
 
                 return (
                   <li key={it.id} className="px-5 py-4">
@@ -223,132 +174,45 @@ export function SelfAssessmentList({
                           <span className="text-atr-fg-muted">
                             Bobot: {it.weight}
                           </span>
-                          {it.evidence_path && (
+                          {(it.evidence_path || it.progress_id) && (
                             <span className="inline-flex items-center gap-1 rounded-full bg-atr-purple-50 px-2 py-0.5 text-atr-purple-600">
                               <Paperclip className="h-3 w-3" />
-                              Evidence terlampir
+                              Bukti terlampir
                             </span>
                           )}
                         </div>
 
-                        {/* Evidence panel — visible when open or status==submitted/verified */}
-                        {(isOpen ||
-                          (it.status === "submitted" && it.evidence_note)) && (
-                          <div className="mt-3 rounded-lg border border-atr-outline bg-atr-bg-soft p-3 space-y-3">
-                            {it.evidence_note && !isOpen && (
-                              <div className="text-xs">
-                                <div className="font-bold text-atr-fg-muted">
-                                  Catatan tersimpan
-                                </div>
-                                <p className="mt-0.5 text-atr-fg">
-                                  {it.evidence_note}
-                                </p>
-                              </div>
-                            )}
-
-                            {isOpen && canEdit && (
-                              <>
-                                <div>
-                                  <label className="block text-xs font-bold text-atr-fg">
-                                    Upload bukti (foto/dokumen) <span className="text-atr-red">*</span>
-                                  </label>
-                                  <input
-                                    ref={(el) => {
-                                      fileInputs.current[it.id] = el;
-                                    }}
-                                    type="file"
-                                    accept="image/*,application/pdf"
-                                    onChange={(e) =>
-                                      setFiles((f) => ({
-                                        ...f,
-                                        [it.id]: e.target.files?.[0] ?? null,
-                                      }))
-                                    }
-                                    className="mt-1 block w-full text-xs file:mr-3 file:rounded-md file:border-0 file:bg-atr-purple file:px-3 file:py-1.5 file:text-xs file:font-bold file:text-white hover:file:bg-atr-purple-600"
-                                  />
-                                  {file && (
-                                    <div className="mt-1.5 inline-flex items-center gap-1.5 rounded-md bg-atr-purple-50 px-2 py-1 text-[11px] text-atr-purple-600">
-                                      <FileText className="h-3 w-3" />
-                                      {file.name}{" "}
-                                      <button
-                                        type="button"
-                                        onClick={() => {
-                                          setFiles((f) => ({
-                                            ...f,
-                                            [it.id]: null,
-                                          }));
-                                          if (fileInputs.current[it.id])
-                                            fileInputs.current[it.id]!.value = "";
-                                        }}
-                                        className="ml-0.5 text-atr-fg-muted hover:text-atr-red"
-                                        aria-label="Hapus file"
-                                      >
-                                        <X className="h-3 w-3" />
-                                      </button>
-                                    </div>
-                                  )}
-                                </div>
-
-                                <div>
-                                  <label className="block text-xs font-bold text-atr-fg">
-                                    Catatan singkat
-                                  </label>
-                                  <textarea
-                                    value={note}
-                                    onChange={(e) =>
-                                      setNotes((n) => ({
-                                        ...n,
-                                        [it.id]: e.target.value,
-                                      }))
-                                    }
-                                    rows={2}
-                                    placeholder="Jelaskan singkat bagaimana kriteria ini dipenuhi…"
-                                    className="mt-1 w-full rounded-md border border-atr-outline bg-white p-2 text-xs outline-none focus:border-atr-purple focus:ring-2 focus:ring-atr-purple/15"
-                                  />
-                                </div>
-
-                                {err && (
-                                  <div className="text-xs font-bold text-atr-red">
-                                    {err}
-                                  </div>
-                                )}
-
-                                <div className="flex justify-end gap-2">
-                                  <button
-                                    type="button"
-                                    onClick={() => setOpenItemId(null)}
-                                    className="inline-flex h-8 items-center rounded-md border border-atr-outline bg-white px-3 text-xs font-bold text-atr-fg hover:bg-white"
-                                  >
-                                    Batal
-                                  </button>
-                                  <button
-                                    type="button"
-                                    onClick={() => submit(it)}
-                                    disabled={pending || !file}
-                                    className="inline-flex h-8 items-center gap-1 rounded-md bg-atr-purple px-3 text-xs font-bold text-white hover:bg-atr-purple-600 disabled:opacity-50"
-                                  >
-                                    {pending ? (
-                                      <Loader2 className="h-3 w-3 animate-spin" />
-                                    ) : (
-                                      <Upload className="h-3 w-3" />
-                                    )}
-                                    Submit untuk verifikasi
-                                  </button>
-                                </div>
-                              </>
-                            )}
+                        {it.evidence_note && it.status === "submitted" && (
+                          <div className="mt-3 rounded-lg border border-atr-outline bg-atr-bg-soft p-3 text-xs">
+                            <div className="font-bold text-atr-fg-muted">
+                              Catatan tersimpan
+                            </div>
+                            <p className="mt-0.5 text-atr-fg">
+                              {it.evidence_note}
+                            </p>
                           </div>
                         )}
                       </div>
 
-                      {canEdit && !isOpen && (
+                      {canEdit && (
                         <button
                           type="button"
-                          onClick={() => setOpenItemId(it.id)}
+                          onClick={() => setOpenItem(it)}
                           className="inline-flex h-8 shrink-0 items-center gap-1 rounded-md border border-atr-outline bg-white px-2.5 text-xs font-bold text-atr-fg hover:bg-atr-bg-soft"
                         >
-                          <Upload className="h-3 w-3" />
+                          <Paperclip className="h-3 w-3" />
                           {it.status === "rejected" ? "Submit ulang" : "Lampirkan bukti"}
+                        </button>
+                      )}
+                      {(it.status === "submitted" ||
+                        it.status === "verified") && (
+                        <button
+                          type="button"
+                          onClick={() => setOpenItem(it)}
+                          className="inline-flex h-8 shrink-0 items-center gap-1 rounded-md border border-atr-outline bg-white px-2.5 text-xs font-bold text-atr-fg-muted hover:bg-atr-bg-soft"
+                        >
+                          <Paperclip className="h-3 w-3" />
+                          Lihat bukti
                         </button>
                       )}
                     </div>
@@ -367,6 +231,21 @@ export function SelfAssessmentList({
           </section>
         ))}
       </div>
+
+      {openItem && (
+        <CriteriaEvidenceManager
+          open={true}
+          onClose={() => setOpenItem(null)}
+          desaId={desaId}
+          criteriaItemId={openItem.id}
+          criteriaTitle={openItem.title}
+          progressId={openItem.progress_id}
+          initialNote={openItem.evidence_note}
+        />
+      )}
     </div>
   );
 }
+
+// Quiet lint
+void CheckCircle2;

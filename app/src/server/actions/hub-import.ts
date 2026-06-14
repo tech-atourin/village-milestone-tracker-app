@@ -112,3 +112,68 @@ export async function importHubDesaToProject(
   revalidatePath(`/atourin/projects/${parsed.data.project_id}`);
   return { ok: true, vmt_desa_id: vmtDesaId, pre_filled_baseline: true };
 }
+
+// =====================================================
+// importHubDesaToMaster — adds a Hub desa into the master
+// vmt.desa table without attaching it to any project.
+// Used by /atourin/desa "Import dari Hub" flow.
+// =====================================================
+const importMasterSchema = z.object({
+  hub_desa_id: z.string().uuid(),
+});
+
+export async function importHubDesaToMaster(
+  input: z.input<typeof importMasterSchema>,
+): Promise<
+  | { ok: true; vmt_desa_id: string; already_existed: boolean }
+  | { error: string }
+> {
+  await requireRole("superadmin");
+  const parsed = importMasterSchema.safeParse(input);
+  if (!parsed.success) return { error: "Input tidak valid" };
+
+  const profile = await getHubDesaProfile(parsed.data.hub_desa_id);
+  if (!profile) return { error: "Desa di Hub tidak ditemukan" };
+
+  const supabase = createClient();
+  const tier =
+    KATEGORI_TO_TIER[profile.desa.kategori ?? ""] ?? "unclassified";
+
+  const { data: existing } = await supabase
+    .from("desa")
+    .select("id")
+    .eq("name", profile.desa.nama)
+    .eq("kabupaten", profile.desa.kabupaten ?? "")
+    .maybeSingle();
+  if (existing) {
+    revalidatePath("/atourin/desa");
+    return {
+      ok: true,
+      vmt_desa_id: (existing as { id: string }).id,
+      already_existed: true,
+    };
+  }
+
+  const { data: created, error } = await supabase
+    .from("desa")
+    .insert({
+      name: profile.desa.nama,
+      desa_kelurahan: profile.desa.desa_kel,
+      kecamatan: profile.desa.kecamatan,
+      kabupaten: profile.desa.kabupaten,
+      provinsi: profile.desa.provinsi,
+      current_classification: tier,
+      jadesta_id: profile.desa.slug,
+    })
+    .select("id")
+    .single();
+  if (error || !created)
+    return { error: error?.message ?? "Gagal create desa" };
+
+  revalidatePath("/atourin/desa");
+  return {
+    ok: true,
+    vmt_desa_id: (created as { id: string }).id,
+    already_existed: false,
+  };
+}

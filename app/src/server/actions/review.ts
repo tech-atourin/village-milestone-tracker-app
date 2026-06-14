@@ -2,11 +2,48 @@
 
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-import { createClient, createAdminClient } from "@/lib/supabase/server";
-import { requireRole } from "@/lib/auth/rbac";
+import { createAdminClient } from "@/lib/supabase/server";
 import { notify } from "@/lib/notify";
 import { audit } from "@/lib/audit";
 import { getCurrentUser } from "@/lib/auth/rbac";
+
+/**
+ * Project checklist review is open to:
+ *   - superadmin (Atourin global)
+ *   - mitra_admin whose organization owns the project
+ *   - narasumber who is a member of the project
+ * Returns the actor or an error.
+ */
+async function ensureCanReviewProject(projectId: string) {
+  const user = await getCurrentUser();
+  if (!user) return { error: "Tidak terautentikasi" } as const;
+  if (user.global_role === "superadmin") return { user } as const;
+  const admin = createAdminClient();
+  if (user.global_role === "mitra_admin") {
+    const { data: proj } = await admin
+      .from("projects")
+      .select("organization_id")
+      .eq("id", projectId)
+      .maybeSingle();
+    const orgId = (proj as { organization_id: string | null } | null)
+      ?.organization_id;
+    if (orgId && orgId === user.organization_id) return { user } as const;
+    return { error: "Project bukan milik organisasi Anda" } as const;
+  }
+  if (user.global_role === "narasumber") {
+    const { data: m } = await admin
+      .from("project_memberships")
+      .select("id")
+      .eq("project_id", projectId)
+      .eq("user_id", user.id)
+      .eq("role", "narasumber")
+      .eq("status", "active")
+      .maybeSingle();
+    if (m) return { user } as const;
+    return { error: "Anda bukan narasumber project ini" } as const;
+  }
+  return { error: "Tidak diizinkan" } as const;
+}
 
 const reviewSchema = z.object({
   checklist_progress_id: z.string().uuid(),
@@ -26,10 +63,13 @@ const bulkSchema = z.object({
 export async function bulkReviewChecklistItems(
   input: z.input<typeof bulkSchema>,
 ) {
-  await requireRole("superadmin");
   const parsed = bulkSchema.safeParse(input);
   if (!parsed.success) return { error: "Input tidak valid" };
-  const supabase = createClient();
+  const guard = await ensureCanReviewProject(parsed.data.project_id);
+  if ("error" in guard) return { error: guard.error };
+  // Use admin client so narasumber/mitra (who lack RPC grants under RLS)
+  // can still execute the review RPC. Ownership already verified above.
+  const supabase = createAdminClient();
   let approved = 0;
   let failed = 0;
   for (const id of parsed.data.ids) {
@@ -46,10 +86,11 @@ export async function bulkReviewChecklistItems(
 }
 
 export async function reviewChecklistItem(input: z.input<typeof reviewSchema>) {
-  await requireRole("superadmin");
   const parsed = reviewSchema.safeParse(input);
   if (!parsed.success) return { error: "Input tidak valid" };
-  const supabase = createClient();
+  const guard = await ensureCanReviewProject(parsed.data.project_id);
+  if ("error" in guard) return { error: guard.error };
+  const supabase = createAdminClient();
   const { error } = await supabase.rpc("review_checklist_item", {
     p_checklist_progress_id: parsed.data.checklist_progress_id,
     p_decision: parsed.data.decision,

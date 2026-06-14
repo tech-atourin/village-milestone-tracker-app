@@ -12,6 +12,7 @@ export type NotificationRow = {
   status: string;
   created_at: string;
   sent_at: string | null;
+  read_at: string | null;
 };
 
 export async function listUserNotifications(
@@ -21,9 +22,21 @@ export async function listUserNotifications(
   const supabase = createClient();
   const { data } = await supabase
     .from("notifications")
-    .select("id, channel, template_key, payload, status, created_at, sent_at")
+    .select(
+      "id, channel, template_key, payload, status, created_at, sent_at, read_at",
+    )
     .eq("user_id", userId)
     .order("created_at", { ascending: false })
     .limit(limit);
   return (data ?? []) as unknown as NotificationRow[];
+}
+
+export async function countUnreadNotifications(userId: string): Promise<number> {
+  const supabase = createClient();
+  const { count } = await supabase
+    .from("notifications")
+    .select("id", { count: "exact", head: true })
+    .eq("user_id", userId)
+    .is("read_at", null);
+  return count ?? 0;
 }

@@ -10,6 +10,7 @@ export type SessionUser = {
   full_name: string;
   global_role: GlobalRole;
   organization_id: string | null;
+  representing_desa_id: string | null;
   avatar_url: string | null;
 };
 
@@ -33,7 +34,9 @@ export async function getCurrentUser(): Promise<SessionUser | null> {
 
   const { data: profile } = await supabase
     .from("users")
-    .select("id, email, full_name, global_role, organization_id, avatar_url")
+    .select(
+      "id, email, full_name, global_role, organization_id, representing_desa_id, avatar_url",
+    )
     .eq("id", user.id)
     .maybeSingle();
 

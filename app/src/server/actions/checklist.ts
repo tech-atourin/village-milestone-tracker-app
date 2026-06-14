@@ -2,8 +2,9 @@
 
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { getCurrentUser } from "@/lib/auth/rbac";
+import { notifyMany, projectReviewers } from "@/lib/notify";
 
 // =====================================================
 // Peserta submits a checklist item (creates desa_topik_instance
@@ -58,6 +59,41 @@ export async function submitChecklistItem(
   });
 
   if (error) return { error: error.message };
+
+  // Notify project reviewers (superadmin + mitra_admin of org + narasumber)
+  // best-effort. Don't block the submit on notification failure.
+  try {
+    const cpId = cp as string;
+    const admin = createAdminClient();
+    const { data: ctx } = await admin
+      .from("checklist_progress")
+      .select(
+        "id, project_checklist_item:project_checklist_item(title, project_topik:project_topik(name, project_id)), desa_topik_instance:desa_topik_instance(project_desa:project_desa(project_id, desa:desa(name)))",
+      )
+      .eq("id", cpId)
+      .maybeSingle();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const c = ctx as any;
+    const projectId =
+      c?.project_checklist_item?.project_topik?.project_id ??
+      c?.desa_topik_instance?.project_desa?.project_id;
+    if (projectId) {
+      const reviewers = await projectReviewers(projectId);
+      const filtered = reviewers.filter((id) => id !== user.id);
+      await notifyMany({
+        user_ids: filtered,
+        template_key: "checklist_submitted",
+        payload: {
+          checklist_title: c?.project_checklist_item?.title,
+          topik_name: c?.project_checklist_item?.project_topik?.name,
+          desa_name: c?.desa_topik_instance?.project_desa?.desa?.name,
+          peserta_name: user.full_name,
+        },
+      });
+    }
+  } catch (e) {
+    console.warn("submitChecklistItem notify failed:", e);
+  }
 
   revalidatePath(`/peserta/projects/${parsed.data.project_desa_id}`);
   revalidatePath(

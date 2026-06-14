@@ -2,8 +2,9 @@
 
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { getCurrentUser } from "@/lib/auth/rbac";
+import { notifyMany } from "@/lib/notify";
 
 const schema = z.object({
   target_type: z.enum(["criteria_progress", "criteria_item", "hub_question"]),
@@ -36,55 +37,84 @@ export async function addAssessmentComment(input: z.input<typeof schema>) {
   });
   if (error) return { error: error.message };
 
-  // In-app notification (skip for internal admin notes)
+  // In-app notification (skip for internal admin notes). Notify all
+  // stakeholders of this assessment thread *except* the author:
+  //   - the desa_wisata user(s) representing this desa
+  //   - all superadmins
+  //   - mitra_admin(s) whose org runs a project that includes this desa
+  // so the conversation reaches every relevant role.
   if (!parsed.data.is_internal) {
     try {
-      if (user.global_role === "superadmin") {
-        // Admin → notify desa_wisata user who represents this desa
-        const { data: desaUser } = await supabase
+      const admin = createAdminClient();
+      const recipients = new Set<string>();
+
+      // Desa representatives
+      const { data: desaUsers } = await admin
+        .from("users")
+        .select("id")
+        .eq("representing_desa_id", parsed.data.desa_id)
+        .eq("global_role", "desa_wisata")
+        .is("deleted_at", null);
+      for (const d of (desaUsers ?? []) as Array<{ id: string }>)
+        recipients.add(d.id);
+
+      // Superadmins
+      const { data: admins } = await admin
+        .from("users")
+        .select("id")
+        .eq("global_role", "superadmin")
+        .is("deleted_at", null);
+      for (const a of (admins ?? []) as Array<{ id: string }>)
+        recipients.add(a.id);
+
+      // Mitra admins of orgs whose project includes this desa
+      const { data: pd } = await admin
+        .from("project_desa")
+        .select("project:projects(organization_id)")
+        .eq("desa_id", parsed.data.desa_id);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const orgIds = Array.from(
+        new Set(
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          ((pd ?? []) as any[])
+            .map((r) => r.project?.organization_id)
+            .filter(Boolean),
+        ),
+      );
+      if (orgIds.length > 0) {
+        const { data: mitras } = await admin
           .from("users")
           .select("id")
-          .eq("representing_desa_id", parsed.data.desa_id)
-          .eq("global_role", "desa_wisata")
-          .maybeSingle();
-        const target = (desaUser as { id: string } | null)?.id;
-        if (target) {
-          await supabase.from("notifications").insert({
-            user_id: target,
-            channel: "in_app",
-            template_key: "assessment_comment",
-            payload: {
-              _rendered: {
-                subject: "Tanggapan dari Atourin",
-                inAppText: `${user.full_name} memberi tanggapan pada self-assessment Anda`,
-                html: "",
-              },
-            },
-            status: "pending",
-          });
-        }
-      } else if (user.global_role === "desa_wisata") {
-        // Desa → notify all superadmins
-        const { data: admins } = await supabase
-          .from("users")
-          .select("id")
-          .eq("global_role", "superadmin");
-        for (const a of (admins ?? []) as Array<{ id: string }>) {
-          await supabase.from("notifications").insert({
-            user_id: a.id,
-            channel: "in_app",
-            template_key: "assessment_comment",
-            payload: {
-              _rendered: {
-                subject: "Pertanyaan dari desa wisata",
-                inAppText: `${user.full_name} bertanya/berbalas pada self-assessment`,
-                html: "",
-              },
-            },
-            status: "pending",
-          });
-        }
+          .eq("global_role", "mitra_admin")
+          .in("organization_id", orgIds as string[])
+          .is("deleted_at", null);
+        for (const m of (mitras ?? []) as Array<{ id: string }>)
+          recipients.add(m.id);
       }
+
+      recipients.delete(user.id); // don't notify the author
+
+      // Resolve desa name for context
+      const { data: desaRow } = await admin
+        .from("desa")
+        .select("name")
+        .eq("id", parsed.data.desa_id)
+        .maybeSingle();
+      const desaName = (desaRow as { name: string } | null)?.name ?? "desa";
+
+      await notifyMany({
+        user_ids: Array.from(recipients),
+        template_key: "comment_added",
+        channels: ["in_app"],
+        payload: {
+          context_title: `Self-Assessment ${desaName}`,
+          author_name: user.full_name,
+          body_excerpt:
+            parsed.data.body.length > 140
+              ? parsed.data.body.slice(0, 140) + "…"
+              : parsed.data.body,
+        },
+      });
     } catch {
       // best-effort; ignore notif errors
     }

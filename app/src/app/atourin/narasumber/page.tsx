@@ -5,6 +5,7 @@ import { Upload } from "lucide-react";
 import { listNarasumbersWithStats } from "@/server/queries/narasumber";
 import { listNarasumberTaxonomies } from "@/server/actions/narasumber";
 import { NarasumberDirectory } from "./narasumber-directory";
+import { AddNarasumberButton } from "./add-narasumber-button";
 
 export default async function NarasumberPage() {
   const [rows, taxonomies] = await Promise.all([
@@ -25,13 +26,19 @@ export default async function NarasumberPage() {
               : `${rows.length} narasumber terdaftar. Filter berdasarkan kompetensi atau kategori, klik untuk lihat riwayat program.`}
           </p>
         </div>
-        <Link
-          href="/atourin/users/bulk-import?mode=narasumber"
-          className="inline-flex h-10 items-center gap-2 rounded-lg border border-atr-outline bg-white px-4 text-sm font-bold text-atr-fg transition hover:bg-atr-bg-soft"
-        >
-          <Upload className="h-4 w-4" />
-          Bulk Import
-        </Link>
+        <div className="flex items-center gap-2">
+          <AddNarasumberButton
+            kategoriOptions={taxonomies.kategori}
+            kompetensiOptions={taxonomies.kompetensi}
+          />
+          <Link
+            href="/atourin/users/bulk-import?mode=narasumber"
+            className="inline-flex h-10 items-center gap-2 rounded-lg border border-atr-outline bg-white px-4 text-sm font-bold text-atr-fg transition hover:bg-atr-bg-soft"
+          >
+            <Upload className="h-4 w-4" />
+            Bulk Import
+          </Link>
+        </div>
       </header>
       <NarasumberDirectory
         rows={rows}

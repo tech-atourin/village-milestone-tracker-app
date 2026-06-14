@@ -59,12 +59,20 @@ export default async function NarasumberProjectsPage() {
                     ))}
                   </div>
                 </div>
-                <Link
-                  href={`/narasumber/sesi/baru?project=${p.id}`}
-                  className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-md bg-atr-purple px-3 text-xs font-bold text-white hover:bg-atr-purple-600"
-                >
-                  Catat sesi
-                </Link>
+                <div className="flex shrink-0 flex-col items-end gap-2 sm:flex-row">
+                  <Link
+                    href={`/narasumber/projects/${p.id}/review`}
+                    className="inline-flex h-9 items-center gap-1.5 rounded-md border border-atr-outline bg-white px-3 text-xs font-bold text-atr-fg hover:bg-atr-bg-soft"
+                  >
+                    Review bukti peserta
+                  </Link>
+                  <Link
+                    href={`/narasumber/sesi/baru?project=${p.id}`}
+                    className="inline-flex h-9 items-center gap-1.5 rounded-md bg-atr-purple px-3 text-xs font-bold text-white hover:bg-atr-purple-600"
+                  >
+                    Catat sesi
+                  </Link>
+                </div>
               </div>
             </li>
           ))}
