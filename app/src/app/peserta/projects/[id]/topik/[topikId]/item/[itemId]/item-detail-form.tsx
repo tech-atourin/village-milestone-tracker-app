@@ -15,8 +15,9 @@ import {
   AlertCircle,
   Circle,
   ExternalLink,
+  Trash2,
 } from "lucide-react";
-import { uploadEvidence } from "@/server/actions/evidence";
+import { uploadEvidence, deleteEvidence } from "@/server/actions/evidence";
 import { submitChecklistItem } from "@/server/actions/checklist";
 import { compressIfImage } from "@/lib/image-compress";
 
@@ -84,6 +85,7 @@ export function ItemDetailForm({
     current: number;
     total: number;
   } | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const status = existingProgress?.status ?? "not_started";
   const statusCfg = STATUS_BAR[status];
@@ -156,6 +158,25 @@ export function ItemDetailForm({
     });
   }
 
+  function removeEvidence(ev: Evidence) {
+    if (
+      !confirm(
+        `Hapus evidence "${ev.filename}"? Tindakan ini tidak bisa dibatalkan.`,
+      )
+    )
+      return;
+    setDeletingId(ev.id);
+    startTransition(async () => {
+      const r = await deleteEvidence({
+        evidence_id: ev.id,
+        project_desa_id: projectDesaId,
+      });
+      setDeletingId(null);
+      if (r.error) setError(r.error);
+      else router.refresh();
+    });
+  }
+
   function submitForReview() {
     startTransition(async () => {
       const r = await submitChecklistItem({
@@ -224,17 +245,35 @@ export function ItemDetailForm({
                       }).format(new Date(ev.uploaded_at))}
                     </div>
                   </div>
-                  {ev.signed_url && (
-                    <a
-                      href={ev.signed_url}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="inline-flex h-8 shrink-0 items-center gap-1 rounded-md border border-atr-outline bg-white px-2 text-xs font-bold text-atr-fg transition hover:bg-atr-bg-soft"
-                    >
-                      <ExternalLink className="h-3 w-3" />
-                      Buka
-                    </a>
-                  )}
+                  <div className="flex shrink-0 items-center gap-1.5">
+                    {ev.signed_url && (
+                      <a
+                        href={ev.signed_url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex h-8 items-center gap-1 rounded-md border border-atr-outline bg-white px-2 text-xs font-bold text-atr-fg transition hover:bg-atr-bg-soft"
+                      >
+                        <ExternalLink className="h-3 w-3" />
+                        Buka
+                      </a>
+                    )}
+                    {status !== "approved" && (
+                      <button
+                        type="button"
+                        onClick={() => removeEvidence(ev)}
+                        disabled={deletingId === ev.id}
+                        title="Hapus evidence"
+                        className="inline-flex h-8 items-center gap-1 rounded-md border border-atr-outline bg-white px-2 text-xs font-bold text-atr-fg-muted transition hover:border-atr-red/30 hover:text-atr-red disabled:opacity-50"
+                      >
+                        {deletingId === ev.id ? (
+                          <Loader2 className="h-3 w-3 animate-spin" />
+                        ) : (
+                          <Trash2 className="h-3 w-3" />
+                        )}
+                        Hapus
+                      </button>
+                    )}
+                  </div>
                 </li>
               );
             })}

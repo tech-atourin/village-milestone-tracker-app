@@ -52,7 +52,7 @@ export function DesaDetailSections({
   hubSyncSlot?: React.ReactNode;
   viewerRole?: "superadmin" | "mitra" | "desa" | string;
 }) {
-  const { base, profile, pengelola, baseline, baseline_submitted_at, hub_assessment, projects } = data;
+  const { base, profile, pengelola, baseline, baseline_submitted_at, hub_assessment, v1_assessment, projects } = data;
   const tier = base.current_classification ?? "unclassified";
 
   const b = (baseline ?? {}) as Record<string, unknown>;
@@ -429,6 +429,42 @@ export function DesaDetailSections({
         awards={profile?.awards ?? null}
         events={profile?.events ?? null}
       />
+
+      {/* Assessment V1 Permenpar */}
+      <Section title="Assessment Klasifikasi V1 (Permenpar)" icon={ClipboardCheck}>
+        {v1_assessment ? (
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div className="flex flex-wrap gap-2 text-xs">
+              <span className="inline-flex items-center gap-1 rounded-lg bg-atr-yellow/15 px-2.5 py-1.5 font-bold text-atr-fg">
+                {v1_assessment.submitted} menunggu review
+              </span>
+              <span className="inline-flex items-center gap-1 rounded-lg bg-atr-arti/10 px-2.5 py-1.5 font-bold text-atr-arti">
+                {v1_assessment.verified} terverifikasi
+              </span>
+              {v1_assessment.rejected > 0 && (
+                <span className="inline-flex items-center gap-1 rounded-lg bg-atr-red/10 px-2.5 py-1.5 font-bold text-atr-red">
+                  {v1_assessment.rejected} ditolak
+                </span>
+              )}
+              <span className="inline-flex items-center gap-1 rounded-lg bg-atr-bg-soft px-2.5 py-1.5 text-atr-fg-muted">
+                {v1_assessment.total_progress} kriteria dikerjakan
+              </span>
+            </div>
+            {(viewerRole === "superadmin" || viewerRole === "mitra") && (
+              <Link
+                href={`/atourin/klasifikasi/v1/${base.id}`}
+                className="inline-flex h-9 items-center gap-1.5 rounded-md border border-atr-outline bg-white px-3 text-xs font-bold text-atr-fg hover:bg-atr-bg-soft"
+                title="Review per kriteria Permenpar"
+              >
+                <Eye className="h-3.5 w-3.5" />
+                Review Kriteria
+              </Link>
+            )}
+          </div>
+        ) : (
+          <EmptySection message="Desa belum mengerjakan assessment V1 Permenpar" />
+        )}
+      </Section>
 
       {/* Assessment Desa V2 */}
       <Section title="Assessment Desa V2" icon={FileText}>

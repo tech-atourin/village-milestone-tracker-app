@@ -100,115 +100,118 @@ export function DataTable<T>({
     columnFilters.filter((f) => f.value !== "" && f.value != null).length +
     (globalFilter ? 1 : 0);
 
+  const selectFilters = (filters ?? []).filter((f) => f.type !== "dateRange");
+  const dateRangeFilters = (filters ?? []).filter(
+    (f) => f.type === "dateRange",
+  );
+
   return (
     <div className="space-y-3">
-      {/* Toolbar */}
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex flex-1 items-center gap-2">
-          <div className="relative max-w-sm flex-1">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-atr-fg-muted" />
-            <input
-              type="search"
-              value={globalFilter}
-              onChange={(e) => setGlobalFilter(e.target.value)}
-              placeholder={searchPlaceholder}
-              className="h-10 w-full rounded-lg border border-atr-outline bg-white pl-10 pr-3 text-sm outline-none transition focus:border-atr-purple focus:ring-2 focus:ring-atr-purple/15"
-            />
-          </div>
-
-          {(activeFilterCount > 0 || sorting.length > 0) && (
-            <button
-              type="button"
-              onClick={() => {
-                setGlobalFilter("");
-                setColumnFilters([]);
-                setSorting([]);
-              }}
-              className="inline-flex h-10 items-center gap-1 rounded-lg border border-atr-outline bg-white px-3 text-xs font-bold text-atr-fg-muted transition hover:bg-atr-bg-soft"
-              title="Reset semua filter & sort"
-            >
-              <X className="h-3.5 w-3.5" />
-              Reset
-            </button>
-          )}
+      {/* Toolbar — search + select filters all on one row */}
+      <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
+        <div className="relative min-w-[220px] flex-1">
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-atr-fg-muted" />
+          <input
+            type="search"
+            value={globalFilter}
+            onChange={(e) => setGlobalFilter(e.target.value)}
+            placeholder={searchPlaceholder}
+            className="h-10 w-full rounded-lg border border-atr-outline bg-white pl-10 pr-3 text-sm outline-none transition focus:border-atr-purple focus:ring-2 focus:ring-atr-purple/15"
+          />
         </div>
 
-        <div className="text-xs text-atr-fg-muted">
+        {/* Inline select filters — label folded into the default option */}
+        {selectFilters.map((f) => {
+          const column = table.getColumn(f.key);
+          if (!column) return null;
+          const value = (column.getFilterValue() as string) ?? "";
+          return (
+            <select
+              key={f.key}
+              value={value}
+              onChange={(e) =>
+                column.setFilterValue(e.target.value || undefined)
+              }
+              aria-label={f.label}
+              className={`h-10 rounded-lg border bg-white px-3 text-sm outline-none transition focus:border-atr-purple focus:ring-2 focus:ring-atr-purple/15 ${
+                value
+                  ? "border-atr-purple/50 text-atr-fg"
+                  : "border-atr-outline text-atr-fg-muted"
+              }`}
+            >
+              <option value="">{f.label}: Semua</option>
+              {f.options.map((opt) => (
+                <option key={opt.value} value={opt.value}>
+                  {f.label}: {opt.label}
+                </option>
+              ))}
+            </select>
+          );
+        })}
+
+        {(activeFilterCount > 0 || sorting.length > 0) && (
+          <button
+            type="button"
+            onClick={() => {
+              setGlobalFilter("");
+              setColumnFilters([]);
+              setSorting([]);
+            }}
+            className="inline-flex h-10 items-center gap-1 rounded-lg border border-atr-outline bg-white px-3 text-xs font-bold text-atr-fg-muted transition hover:bg-atr-bg-soft"
+            title="Reset semua filter & sort"
+          >
+            <X className="h-3.5 w-3.5" />
+            Reset
+          </button>
+        )}
+
+        <div className="text-xs text-atr-fg-muted sm:ml-auto">
           {table.getFilteredRowModel().rows.length} dari {data.length} baris
         </div>
       </div>
 
-      {/* Filter chips — always visible (no toggle) */}
-      {filters && filters.length > 0 && (
-        <div className="grid gap-3 rounded-2xl border border-atr-outline bg-atr-bg-soft p-4 sm:grid-cols-2 lg:grid-cols-3">
-          {filters.map((f) => {
+      {/* Date-range filters — separate compact row (two inputs each) */}
+      {dateRangeFilters.length > 0 && (
+        <div className="flex flex-wrap items-center gap-3">
+          {dateRangeFilters.map((f) => {
             const column = table.getColumn(f.key);
-            if (!column) return null;
-            if (f.type === "dateRange") {
-              const value = (column.getFilterValue() as
-                | [string | null, string | null]
-                | undefined) ?? [null, null];
-              return (
-                <div key={f.key} className="flex flex-col gap-1.5">
-                  <span className="text-xs font-bold text-atr-fg">{f.label}</span>
-                  <div className="grid grid-cols-2 gap-2">
-                    <input
-                      type="date"
-                      value={value[0] ?? ""}
-                      min={f.min}
-                      max={f.max}
-                      onChange={(e) => {
-                        const v = e.target.value || null;
-                        const next: [string | null, string | null] = [
-                          v,
-                          value[1],
-                        ];
-                        column.setFilterValue(
-                          next[0] || next[1] ? next : undefined,
-                        );
-                      }}
-                      className="h-9 rounded-lg border border-atr-outline bg-white px-2 text-xs outline-none focus:border-atr-purple"
-                      aria-label={`${f.label} dari`}
-                    />
-                    <input
-                      type="date"
-                      value={value[1] ?? ""}
-                      min={f.min}
-                      max={f.max}
-                      onChange={(e) => {
-                        const v = e.target.value || null;
-                        const next: [string | null, string | null] = [
-                          value[0],
-                          v,
-                        ];
-                        column.setFilterValue(
-                          next[0] || next[1] ? next : undefined,
-                        );
-                      }}
-                      className="h-9 rounded-lg border border-atr-outline bg-white px-2 text-xs outline-none focus:border-atr-purple"
-                      aria-label={`${f.label} sampai`}
-                    />
-                  </div>
-                </div>
-              );
-            }
-            const value = (column.getFilterValue() as string) ?? "";
+            if (!column || f.type !== "dateRange") return null;
+            const value = (column.getFilterValue() as
+              | [string | null, string | null]
+              | undefined) ?? [null, null];
             return (
-              <label key={f.key} className="flex flex-col gap-1.5">
-                <span className="text-xs font-bold text-atr-fg">{f.label}</span>
-                <select
-                  value={value}
-                  onChange={(e) => column.setFilterValue(e.target.value || undefined)}
-                  className="h-9 rounded-lg border border-atr-outline bg-white px-3 text-sm outline-none focus:border-atr-purple focus:ring-2 focus:ring-atr-purple/15"
-                >
-                  <option value="">Semua</option>
-                  {f.options.map((opt) => (
-                    <option key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </option>
-                  ))}
-                </select>
-              </label>
+              <div key={f.key} className="flex items-center gap-2">
+                <span className="text-xs font-bold text-atr-fg-muted">
+                  {f.label}
+                </span>
+                <input
+                  type="date"
+                  value={value[0] ?? ""}
+                  min={f.min}
+                  max={f.max}
+                  onChange={(e) => {
+                    const v = e.target.value || null;
+                    const next: [string | null, string | null] = [v, value[1]];
+                    column.setFilterValue(next[0] || next[1] ? next : undefined);
+                  }}
+                  className="h-9 rounded-lg border border-atr-outline bg-white px-2 text-xs outline-none focus:border-atr-purple"
+                  aria-label={`${f.label} dari`}
+                />
+                <span className="text-xs text-atr-fg-muted">s.d.</span>
+                <input
+                  type="date"
+                  value={value[1] ?? ""}
+                  min={f.min}
+                  max={f.max}
+                  onChange={(e) => {
+                    const v = e.target.value || null;
+                    const next: [string | null, string | null] = [value[0], v];
+                    column.setFilterValue(next[0] || next[1] ? next : undefined);
+                  }}
+                  className="h-9 rounded-lg border border-atr-outline bg-white px-2 text-xs outline-none focus:border-atr-purple"
+                  aria-label={`${f.label} sampai`}
+                />
+              </div>
             );
           })}
         </div>

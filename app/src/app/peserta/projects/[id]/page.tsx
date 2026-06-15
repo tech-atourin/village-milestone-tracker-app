@@ -5,6 +5,8 @@ import { ArrowLeft, CheckCircle2, AlertCircle, Clock } from "lucide-react";
 import { notFound } from "next/navigation";
 import { listPesertaTopik } from "@/server/queries/peserta";
 import { createClient } from "@/lib/supabase/server";
+import { listNarasumberToRate } from "@/server/actions/narasumber-rating";
+import { NarasumberRatingSection } from "./narasumber-rating-section";
 
 const STATUS_STYLE: Record<
   "not_started" | "in_progress" | "completed" | "needs_revision",
@@ -56,6 +58,7 @@ export default async function PesertaProjectPage({
   if (!header) notFound();
 
   const topik = await listPesertaTopik(params.id);
+  const narasumberToRate = await listNarasumberToRate(header.project.id);
   const overall =
     topik.length > 0
       ? topik.reduce((acc, t) => acc + t.completion_percent, 0) / topik.length
@@ -198,6 +201,11 @@ export default async function PesertaProjectPage({
           ))}
         </ul>
       </section>
+
+      <NarasumberRatingSection
+        projectId={header.project.id}
+        narasumber={narasumberToRate}
+      />
     </div>
   );
 }

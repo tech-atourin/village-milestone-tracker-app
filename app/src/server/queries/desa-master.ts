@@ -181,6 +181,13 @@ export type DesaDetail = {
     status: string;
     submitted_at: string | null;
   } | null;
+  v1_assessment: {
+    submitted: number;
+    verified: number;
+    rejected: number;
+    total_progress: number;
+    last_submitted_at: string | null;
+  } | null;
   projects: Array<{
     project_id: string;
     project_name: string;
@@ -243,12 +250,46 @@ export async function getDesaDetail(
     }
   }
 
-  // Hub assessment
+  // Hub assessment (V2)
   const { data: hubA } = await supabase
     .from("hub_assessment")
     .select("id, skor_total, level_hasil, status, submitted_at")
     .eq("desa_id", desaId)
     .maybeSingle();
+
+  // V1 Permenpar assessment progress summary
+  const { data: v1Rows } = await supabase
+    .from("national_criteria_progress")
+    .select("status, submitted_at")
+    .eq("desa_id", desaId);
+  let v1_assessment: DesaDetail["v1_assessment"] = null;
+  if (v1Rows && v1Rows.length > 0) {
+    const rows = v1Rows as Array<{
+      status: string;
+      submitted_at: string | null;
+    }>;
+    let submitted = 0,
+      verified = 0,
+      rejected = 0,
+      lastSubmitted: string | null = null;
+    for (const r of rows) {
+      if (r.status === "submitted") submitted++;
+      else if (r.status === "verified") verified++;
+      else if (r.status === "rejected") rejected++;
+      if (
+        r.submitted_at &&
+        (!lastSubmitted || r.submitted_at > lastSubmitted)
+      )
+        lastSubmitted = r.submitted_at;
+    }
+    v1_assessment = {
+      submitted,
+      verified,
+      rejected,
+      total_progress: rows.length,
+      last_submitted_at: lastSubmitted,
+    };
+  }
 
   // Project list with peserta count
   const projectIds = pds.map((p) => p.project_id);
@@ -285,6 +326,7 @@ export async function getDesaDetail(
     baseline,
     baseline_submitted_at,
     hub_assessment: hubA as DesaDetail["hub_assessment"],
+    v1_assessment,
     projects,
   };
 }

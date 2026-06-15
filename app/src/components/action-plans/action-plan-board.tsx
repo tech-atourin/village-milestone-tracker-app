@@ -91,7 +91,7 @@ export function ActionPlanBoard({
       <div className="flex flex-wrap items-center justify-between gap-3">
         <nav className="flex flex-wrap gap-1.5">
           <FilterPill
-            label={`Semua (${rows.length})`}
+            label={`Semua · ${rows.length}`}
             active={filter === "all"}
             onClick={() => setFilter("all")}
           />
@@ -100,7 +100,7 @@ export function ActionPlanBoard({
             return (
               <FilterPill
                 key={s.key}
-                label={`${s.label} (${count})`}
+                label={`${s.label} · ${count}`}
                 active={filter === s.key}
                 onClick={() => setFilter(s.key)}
               />

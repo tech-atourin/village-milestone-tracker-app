@@ -6,10 +6,10 @@ import { ArrowLeft } from "lucide-react";
 import { getCurrentUser, requireRole } from "@/lib/auth/rbac";
 import { getProject } from "@/server/queries/projects";
 import { listProjectDesa, listDesa } from "@/server/queries/desa";
-import { listProjectMembers } from "@/server/queries/memberships";
-import { listUsers } from "@/server/queries/users";
+import type { ProjectMemberRow } from "@/server/queries/memberships";
+import type { UserListRow } from "@/server/queries/users";
 import { listProjectTopikWithItems } from "@/server/queries/topik";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { DesaTab } from "@/app/atourin/projects/[id]/desa-tab";
 import { PesertaTab } from "@/app/atourin/projects/[id]/peserta-tab";
 import { TopikTab } from "@/app/atourin/projects/[id]/topik-tab";
@@ -171,7 +171,12 @@ export default async function MitraProjectDetailPage({
       )}
       {activeTab === "desa" && <DesaTabLoader projectId={project.id} />}
       {activeTab === "topik" && <TopikTabLoader projectId={project.id} />}
-      {activeTab === "peserta" && <PesertaTabLoader projectId={project.id} />}
+      {activeTab === "peserta" && (
+        <PesertaTabLoader
+          projectId={project.id}
+          organizationId={user.organization_id ?? null}
+        />
+      )}
       {activeTab === "rencana-aksi" && (
         <RencanaAksiTabLoader projectId={project.id} />
       )}
@@ -202,18 +207,51 @@ async function DesaTabLoader({ projectId }: { projectId: string }) {
   return <DesaTab projectId={projectId} attached={attached} allDesa={all} />;
 }
 
-async function PesertaTabLoader({ projectId }: { projectId: string }) {
-  const [members, candidates, desa] = await Promise.all([
-    listProjectMembers(projectId),
-    listUsers(),
+async function PesertaTabLoader({
+  projectId,
+  organizationId,
+}: {
+  projectId: string;
+  organizationId: string | null;
+}) {
+  // Mitra anon role can't read other users' rows under RLS, which makes the
+  // embedded user join null and crashes the client. Use the admin client and
+  // scope explicitly (ownership already verified on the page).
+  const admin = createAdminClient();
+  const [{ data: memberData }, { data: candData }, desa] = await Promise.all([
+    admin
+      .from("project_memberships")
+      .select(
+        "id, role, status, invited_at, user:users!project_memberships_user_id_fkey(id, full_name, email), desa:desa(id, name)",
+      )
+      .eq("project_id", projectId)
+      .order("invited_at", { ascending: false }),
+    admin
+      .from("users")
+      .select(
+        "id, full_name, email, email_artificial, phone, global_role, created_at, last_login_at, organization:organizations(id, name)",
+      )
+      .is("deleted_at", null)
+      .order("created_at", { ascending: false })
+      .limit(500),
     listProjectDesa(projectId),
   ]);
+  const members = (memberData ?? []) as unknown as ProjectMemberRow[];
+  // Candidates: users in mitra's org plus unaffiliated users (peserta/desa
+  // accounts usually have no organization), so manual add has someone to pick.
+  const allCandidates = (candData ?? []) as unknown as UserListRow[];
+  const candidates = organizationId
+    ? allCandidates.filter(
+        (u) => !u.organization || u.organization.id === organizationId,
+      )
+    : allCandidates;
   return (
     <PesertaTab
       projectId={projectId}
       members={members}
       candidates={candidates}
       desa={desa}
+      raporBasePath="/mitra"
     />
   );
 }

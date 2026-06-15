@@ -7,6 +7,7 @@ import { getCurrentUser } from "@/lib/auth/rbac";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { HubAssessmentForm } from "@/components/hub-assessment/hub-form";
+import { HubVerifyBar } from "./verify-bar";
 import { listCommentsForHubAssessment } from "@/server/queries/assessment-comments";
 import type {
   HubAssessmentTemplate,
@@ -158,6 +159,15 @@ export default async function HubAssessmentViewerPage({
         )}
       </header>
 
+      {/* Verify / reject — superadmin only, when awaiting review */}
+      {user.global_role === "superadmin" && a.status === "submitted" && (
+        <HubVerifyBar
+          assessmentId={a.id}
+          desaName={desa?.name ?? "desa"}
+          levelHasil={a.level_hasil}
+        />
+      )}
+
       <article className="rounded-2xl border border-atr-purple/30 bg-atr-purple-50/30 p-4 shadow-atr-1">
         <div className="flex items-center gap-2 text-xs text-atr-fg">
           <MessageSquare className="h-3.5 w-3.5 text-atr-purple" />
@@ -170,6 +180,12 @@ export default async function HubAssessmentViewerPage({
           )}
         </div>
       </article>
+      <p className="-mt-2 px-1 text-[11px] text-atr-fg-muted">
+        ℹ️ Assessment V2 berbasis kuesioner ber-skor (single/multi/slider),
+        jadi verifikasi dilakukan di tingkat submission — bukan upload bukti
+        per item seperti V1 Permenpar. Diskusi per pertanyaan tetap bisa lewat
+        thread di bawah.
+      </p>
 
       <HubAssessmentForm
         desaId={a.desa_id}

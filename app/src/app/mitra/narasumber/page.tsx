@@ -47,7 +47,7 @@ export default async function MitraNarasumberPage() {
         kategoriOptions={taxonomies.kategori}
         kompetensiOptions={taxonomies.kompetensi}
         canManage
-        detailHrefBase="/atourin/narasumber"
+        detailHrefBase="/mitra/narasumber"
       />
     </div>
   );

@@ -30,8 +30,14 @@ type Summary = {
 
 export function BulkImportFlow({
   mode = "peserta",
+  projectId,
+  onDone,
 }: {
   mode?: "peserta" | "narasumber";
+  /** When set, imported users are attached to this project as members. */
+  projectId?: string;
+  /** Called after a successful commit (e.g. to close a dialog + refresh). */
+  onDone?: () => void;
 }) {
   const [stage, setStage] = useState<Stage>("upload");
   const [error, setError] = useState<string | null>(null);
@@ -81,26 +87,31 @@ export function BulkImportFlow({
 
   async function handleCommit() {
     setError(null);
-    const validNewRows = rows
-      .filter((r) => r.ok && !duplicates.has(r.rowNumber))
-      .map((r) => ({
-        full_name: r.data!.full_name,
-        email: r.data!.email || null,
-        phone: r.data!.normalized_phone,
-        nik: r.data!.nik || null,
-        gender: r.data!.gender || null,
-        birthdate: r.data!.normalized_birthdate,
-        desa_name: r.data!.desa_name || null,
-        role: r.data!.role,
-      }));
+    // For project import, include existing users too so they get attached
+    // to the project. For global import, only brand-new users.
+    const sourceRows = projectId
+      ? rows.filter((r) => r.ok)
+      : rows.filter((r) => r.ok && !duplicates.has(r.rowNumber));
+    const payloadRows = sourceRows.map((r) => ({
+      full_name: r.data!.full_name,
+      email: r.data!.email || null,
+      phone: r.data!.normalized_phone,
+      nik: r.data!.nik || null,
+      gender: r.data!.gender || null,
+      birthdate: r.data!.normalized_birthdate,
+      desa_name: r.data!.desa_name || null,
+      role: r.data!.role,
+    }));
 
     startTransition(async () => {
       const result = await commitBulkImport({
-        rows: validNewRows,
+        rows: payloadRows,
         send_invites: sendInvites,
+        project_id: projectId ?? null,
       });
       setCommitResult(result);
       setStage("done");
+      if (!result.error) onDone?.();
     });
   }
 

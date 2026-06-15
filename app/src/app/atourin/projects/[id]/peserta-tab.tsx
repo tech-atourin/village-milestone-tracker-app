@@ -11,6 +11,7 @@ import {
 import type { ProjectMemberRow } from "@/server/queries/memberships";
 import type { UserListRow } from "@/server/queries/users";
 import type { ProjectDesaRow } from "@/server/queries/desa";
+import { PesertaBulkImportButton } from "./peserta-bulk-import";
 
 const ROLE_OPTIONS = [
   { value: "peserta", label: "Peserta" },
@@ -31,11 +32,13 @@ export function PesertaTab({
   members,
   candidates,
   desa,
+  raporBasePath = "/atourin",
 }: {
   projectId: string;
   members: ProjectMemberRow[];
   candidates: UserListRow[];
   desa: ProjectDesaRow[];
+  raporBasePath?: string;
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -48,7 +51,11 @@ export function PesertaTab({
   const [selDesa, setSelDesa] = useState<string>("");
   const [error, setError] = useState<string | null>(null);
 
-  const memberUserIds = new Set(members.filter((m) => m.status === "active").map((m) => m.user.id));
+  // Guard against rows whose embedded user couldn't be read (RLS) — never crash.
+  const safeMembers = members.filter((m) => m.user);
+  const memberUserIds = new Set(
+    safeMembers.filter((m) => m.status === "active").map((m) => m.user.id),
+  );
   const filtered = candidates
     .filter((u) => !memberUserIds.has(u.id))
     .filter(
@@ -88,7 +95,7 @@ export function PesertaTab({
     });
   }
 
-  const activeMembers = members.filter((m) => m.status === "active");
+  const activeMembers = safeMembers.filter((m) => m.status === "active");
 
   return (
     <div className="space-y-4">
@@ -101,14 +108,17 @@ export function PesertaTab({
             {activeMembers.length} anggota aktif
           </p>
         </div>
-        <button
-          type="button"
-          onClick={() => setShowAdd((s) => !s)}
-          className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-atr-purple px-3 text-sm font-bold text-white transition hover:bg-atr-purple-600"
-        >
-          <Plus className="h-4 w-4" />
-          Tambah Anggota
-        </button>
+        <div className="flex items-center gap-2">
+          <PesertaBulkImportButton projectId={projectId} />
+          <button
+            type="button"
+            onClick={() => setShowAdd((s) => !s)}
+            className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-atr-purple px-3 text-sm font-bold text-white transition hover:bg-atr-purple-600"
+          >
+            <Plus className="h-4 w-4" />
+            Tambah Anggota
+          </button>
+        </div>
       </div>
 
       <div className="rounded-lg border border-atr-purple/30 bg-atr-purple-50/50 px-3.5 py-2.5 text-xs text-atr-fg">
@@ -256,6 +266,7 @@ export function PesertaTab({
           projectId={projectId}
           members={activeMembers}
           onRemove={remove}
+          raporBasePath={raporBasePath}
         />
       )}
     </div>
@@ -269,10 +280,12 @@ function MembersTable({
   projectId,
   members,
   onRemove,
+  raporBasePath = "/atourin",
 }: {
   projectId: string;
   members: ProjectMemberRow[];
   onRemove: (id: string) => void;
+  raporBasePath?: string;
 }) {
   const rows = members.map((m) => ({
     ...m,
@@ -312,15 +325,22 @@ function MembersTable({
     {
       accessorKey: "invited_at",
       header: "Diundang",
-      cell: ({ getValue }) => (
-        <span className="text-xs text-atr-fg-muted">
-          {new Intl.DateTimeFormat("id-ID", {
-            day: "numeric",
-            month: "short",
-            year: "numeric",
-          }).format(new Date(getValue() as string))}
-        </span>
-      ),
+      cell: ({ getValue }) => {
+        const raw = getValue() as string | null;
+        const d = raw ? new Date(raw) : null;
+        const valid = d && !Number.isNaN(d.getTime());
+        return (
+          <span className="text-xs text-atr-fg-muted">
+            {valid
+              ? new Intl.DateTimeFormat("id-ID", {
+                  day: "numeric",
+                  month: "short",
+                  year: "numeric",
+                }).format(d)
+              : "—"}
+          </span>
+        );
+      },
     },
     {
       id: "actions",
@@ -330,7 +350,7 @@ function MembersTable({
         <div className="flex justify-end gap-1.5">
           {row.original.role === "peserta" && (
             <Link
-              href={`/atourin/projects/${projectId}/rapor/${row.original.user.id}`}
+              href={`${raporBasePath}/projects/${projectId}/rapor/${row.original.user.id}`}
               className="inline-flex h-7 items-center gap-1 rounded-md border border-atr-purple/40 bg-atr-purple-50 px-2 text-xs font-bold text-atr-purple-600 transition hover:bg-atr-purple-light/40"
               title="Lihat rapor peserta (printable)"
             >

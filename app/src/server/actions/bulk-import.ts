@@ -4,7 +4,7 @@ import * as XLSX from "xlsx";
 import nodemailer from "nodemailer";
 import { z } from "zod";
 import { createAdminClient } from "@/lib/supabase/server";
-import { requireRole } from "@/lib/auth/rbac";
+import { getCurrentUser } from "@/lib/auth/rbac";
 import {
   parseBulkRows,
   type BulkRowResult,
@@ -13,10 +13,18 @@ import {
 // =====================================================
 // Generate Excel template
 // =====================================================
+async function requireImporter() {
+  const u = await getCurrentUser();
+  if (!u) throw new Error("Tidak terautentikasi");
+  if (u.global_role !== "superadmin" && u.global_role !== "mitra_admin")
+    throw new Error("Tidak diizinkan");
+  return u;
+}
+
 export async function generateTemplateBase64(
   mode: "peserta" | "narasumber" = "peserta",
 ): Promise<string> {
-  await requireRole("superadmin");
+  await requireImporter();
 
   const pesertaHeaders = [
     "full_name",
@@ -128,7 +136,7 @@ export type ParseResult = {
 export async function parseBulkFile(input: {
   base64: string;
 }): Promise<ParseResult | { error: string }> {
-  await requireRole("superadmin");
+  await requireImporter();
 
   const parsed = parseInputSchema.safeParse(input);
   if (!parsed.success) return { error: "File tidak valid." };
@@ -267,6 +275,7 @@ export type CommitResult = {
   error?: string;
   created?: number;
   skipped?: number;
+  attached?: number;
   invites_sent?: number;
   invites_failed?: number;
   errors?: string[];
@@ -275,19 +284,78 @@ export type CommitResult = {
 export async function commitBulkImport(
   input: CommitInput,
 ): Promise<CommitResult> {
-  await requireRole("superadmin");
-
   const parsed = commitSchema.safeParse(input);
   if (!parsed.success) {
     return { error: "Payload tidak valid." };
+  }
+
+  // Auth: superadmin always; mitra_admin only when importing INTO a project
+  // owned by their organization (project-scoped peserta import).
+  const actor = await getCurrentUser();
+  if (!actor) return { error: "Tidak terautentikasi" };
+  const adminGuard = createAdminClient();
+  if (actor.global_role !== "superadmin") {
+    if (actor.global_role !== "mitra_admin" || !parsed.data.project_id)
+      return {
+        error: "Hanya superadmin, atau mitra untuk project sendiri, yang bisa bulk import.",
+      };
+    const { data: proj } = await adminGuard
+      .from("projects")
+      .select("organization_id")
+      .eq("id", parsed.data.project_id)
+      .maybeSingle();
+    const orgId = (proj as { organization_id: string | null } | null)
+      ?.organization_id;
+    if (!orgId || orgId !== actor.organization_id)
+      return { error: "Project bukan milik organisasi Anda." };
   }
 
   const admin = createAdminClient();
   const errors: string[] = [];
   let created = 0;
   let skipped = 0;
+  let attached = 0;
   let invitesSent = 0;
   let invitesFailed = 0;
+
+  // Pre-resolve project's desa (name → id) for membership attachment
+  const projectId = parsed.data.project_id ?? null;
+  const desaByName = new Map<string, string>();
+  if (projectId) {
+    const { data: pdRows } = await admin
+      .from("project_desa")
+      .select("desa_id, desa:desa(name)")
+      .eq("project_id", projectId);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    for (const r of ((pdRows ?? []) as any[])) {
+      if (r.desa?.name) desaByName.set(r.desa.name.toLowerCase().trim(), r.desa_id);
+    }
+  }
+
+  async function attachToProject(
+    userId: string,
+    role: string,
+    desaName: string | null | undefined,
+  ) {
+    if (!projectId) return;
+    const desaId =
+      role === "peserta" && desaName
+        ? desaByName.get(desaName.toLowerCase().trim()) ?? null
+        : null;
+    // Upsert membership — a peserta can belong to multiple projects, and
+    // re-import shouldn't duplicate. (project_id,user_id,role) is unique.
+    const { error } = await admin.from("project_memberships").upsert(
+      {
+        project_id: projectId,
+        user_id: userId,
+        role,
+        desa_id: desaId,
+        status: "active",
+      },
+      { onConflict: "project_id,user_id,role" },
+    );
+    if (!error) attached++;
+  }
 
   const smtpUser = process.env.SMTP_USER;
   const smtpPass = process.env.SMTP_PASSWORD;
@@ -322,7 +390,8 @@ export async function commitBulkImport(
       emailArtificial = true;
     }
 
-    // 2. Skip duplicates
+    // 2. Existing user → attach to project (multi-project membership)
+    //    instead of silently skipping, so re-using a peserta works.
     const { data: existing } = await admin
       .from("users")
       .select("id")
@@ -330,6 +399,11 @@ export async function commitBulkImport(
       .maybeSingle();
     if (existing) {
       skipped++;
+      await attachToProject(
+        (existing as { id: string }).id,
+        row.role,
+        row.desa_name,
+      );
       continue;
     }
 
@@ -382,6 +456,7 @@ export async function commitBulkImport(
     }
 
     created++;
+    await attachToProject(authResult.user.id, row.role, row.desa_name);
 
     // 5. Send invite email (best-effort)
     if (parsed.data.send_invites && !emailArtificial && transporter && fromEmail) {
@@ -402,6 +477,7 @@ export async function commitBulkImport(
   return {
     created,
     skipped,
+    attached,
     invites_sent: invitesSent,
     invites_failed: invitesFailed,
     errors: errors.slice(0, 20),

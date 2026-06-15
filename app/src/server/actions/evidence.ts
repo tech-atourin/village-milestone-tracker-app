@@ -109,6 +109,64 @@ export async function uploadEvidence(input: UploadEvidenceInput) {
 }
 
 // =====================================================
+// Delete an evidence file (uploader or superadmin only).
+// Removes evidence_tags, the storage object, and the row.
+// =====================================================
+const deleteSchema = z.object({
+  evidence_id: z.string().uuid(),
+  project_desa_id: z.string().uuid().optional().nullable(),
+});
+
+export async function deleteEvidence(input: z.input<typeof deleteSchema>) {
+  const user = await getCurrentUser();
+  if (!user) return { error: "Tidak terautentikasi" };
+
+  const parsed = deleteSchema.safeParse(input);
+  if (!parsed.success) return { error: "Input tidak valid" };
+
+  const supabase = createClient();
+
+  // Fetch the row to verify ownership and get the storage path.
+  const { data: ev, error: fetchErr } = await supabase
+    .from("evidence_files")
+    .select("id, file_url, uploaded_by, project_desa_id")
+    .eq("id", parsed.data.evidence_id)
+    .maybeSingle();
+  if (fetchErr || !ev) return { error: "Evidence tidak ditemukan" };
+
+  const row = ev as {
+    id: string;
+    file_url: string;
+    uploaded_by: string;
+    project_desa_id: string | null;
+  };
+
+  const isOwner = row.uploaded_by === user.id;
+  const isAdmin = user.global_role === "superadmin";
+  if (!isOwner && !isAdmin) {
+    return { error: "Hanya pengunggah yang bisa menghapus evidence ini" };
+  }
+
+  // Remove tags first (FK), then storage object, then the row.
+  await supabase.from("evidence_tags").delete().eq("evidence_id", row.id);
+  if (row.file_url) {
+    await supabase.storage.from("vmt-evidence").remove([row.file_url]);
+  }
+  const { error: delErr } = await supabase
+    .from("evidence_files")
+    .delete()
+    .eq("id", row.id);
+  if (delErr) {
+    console.error("deleteEvidence:", delErr);
+    return { error: delErr.message };
+  }
+
+  const pdId = parsed.data.project_desa_id ?? row.project_desa_id;
+  if (pdId) revalidatePath(`/peserta/projects/${pdId}`);
+  return { ok: true };
+}
+
+// =====================================================
 // List evidence for a checklist_progress (peserta detail view)
 // =====================================================
 export async function listEvidenceForChecklist(checklistProgressId: string) {

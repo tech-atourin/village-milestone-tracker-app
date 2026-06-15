@@ -16,6 +16,8 @@ export type NarasumberRow = {
   sessions_count: number;
   projects_count: number;
   desa_count: number;
+  avg_rating: number | null;
+  rating_count: number;
 };
 
 export async function listNarasumbersWithStats(): Promise<NarasumberRow[]> {
@@ -63,12 +65,32 @@ export async function listNarasumbersWithStats(): Promise<NarasumberRow[]> {
     dSet.get(s.narasumber_id)!.add(s.project_desa_id);
   }
 
-  return rows.map((r) => ({
-    ...r,
-    sessions_count: sCount.get(r.id) ?? 0,
-    projects_count: pSet.get(r.id)?.size ?? 0,
-    desa_count: dSet.get(r.id)?.size ?? 0,
-  }));
+  // Ratings: avg + count per narasumber
+  const { data: ratings } = await supabase
+    .from("narasumber_ratings")
+    .select("narasumber_id, rating")
+    .in("narasumber_id", ids);
+  const rSum = new Map<string, number>();
+  const rCount = new Map<string, number>();
+  for (const r of (ratings ?? []) as Array<{
+    narasumber_id: string;
+    rating: number;
+  }>) {
+    rSum.set(r.narasumber_id, (rSum.get(r.narasumber_id) ?? 0) + r.rating);
+    rCount.set(r.narasumber_id, (rCount.get(r.narasumber_id) ?? 0) + 1);
+  }
+
+  return rows.map((r) => {
+    const cnt = rCount.get(r.id) ?? 0;
+    return {
+      ...r,
+      sessions_count: sCount.get(r.id) ?? 0,
+      projects_count: pSet.get(r.id)?.size ?? 0,
+      desa_count: dSet.get(r.id)?.size ?? 0,
+      avg_rating: cnt > 0 ? Math.round((rSum.get(r.id)! / cnt) * 10) / 10 : null,
+      rating_count: cnt,
+    };
+  });
 }
 
 export type NarasumberRiwayatEntry = {

@@ -1,11 +1,10 @@
 export const metadata = { title: "Peserta" };
 
 import Link from "next/link";
-import { Users, MapPin } from "lucide-react";
+import { Users, MapPin, FolderOpen } from "lucide-react";
 import { requireRole } from "@/lib/auth/rbac";
 import { createAdminClient } from "@/lib/supabase/server";
 import { EmptyState } from "@/components/ui/empty-state";
-import { AddPesertaButton } from "./add-peserta-button";
 
 type Row = {
   user_id: string;
@@ -60,16 +59,27 @@ export default async function MitraPesertaPage() {
             desa & project.
           </p>
         </div>
-        {user.organization_id && (
-          <AddPesertaButton orgId={user.organization_id} />
-        )}
+        <Link
+          href="/mitra/projects"
+          className="inline-flex h-10 items-center gap-2 rounded-lg bg-atr-purple px-4 text-sm font-bold text-white transition hover:bg-atr-purple-600"
+        >
+          <FolderOpen className="h-4 w-4" />
+          Tambah Peserta via Project
+        </Link>
       </header>
+
+      <div className="rounded-lg border border-atr-purple/30 bg-atr-purple-50/40 px-3.5 py-2.5 text-xs text-atr-fg">
+        💡 Peserta selalu terikat ke sebuah project. Buka project di menu
+        <strong> Project Saya</strong> → tab <strong>Peserta</strong> untuk
+        tambah satuan atau <strong>Bulk Import</strong> puluhan/ratusan
+        sekaligus. Satu orang bisa jadi peserta di beberapa project.
+      </div>
 
       {rows.length === 0 ? (
         <EmptyState
           icon={Users}
           title="Belum ada peserta"
-          description="Peserta akan muncul di sini ketika sudah ditambahkan ke project oleh tim Atourin."
+          description="Tambahkan peserta lewat halaman project (Project Saya → pilih project → tab Peserta)."
         />
       ) : (
         <div className="overflow-hidden rounded-2xl border border-atr-outline bg-white shadow-atr-1">

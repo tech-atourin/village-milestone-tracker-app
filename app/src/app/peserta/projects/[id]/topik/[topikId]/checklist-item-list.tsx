@@ -1,6 +1,6 @@
 "use client";
 
-import { useTransition } from "react";
+import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
@@ -48,7 +48,9 @@ export function ChecklistItemList({
   items: ChecklistItemRow[];
 }) {
   const router = useRouter();
-  const [pending, startTransition] = useTransition();
+  const [, startTransition] = useTransition();
+  // Track which item is submitting so only its button spins (not all of them).
+  const [busyId, setBusyId] = useState<string | null>(null);
 
   function submit(item: ChecklistItemRow) {
     if (
@@ -64,12 +66,14 @@ export function ChecklistItemList({
       )
     )
       return;
+    setBusyId(item.project_checklist_item_id);
     startTransition(async () => {
       const r = await submitChecklistItem({
         project_desa_id: projectDesaId,
         project_topik_id: projectTopikId,
         project_checklist_item_id: item.project_checklist_item_id,
       });
+      setBusyId(null);
       if (r.error) alert(r.error);
       else router.refresh();
     });
@@ -157,10 +161,12 @@ export function ChecklistItemList({
                   <button
                     type="button"
                     onClick={() => submit(item)}
-                    disabled={pending}
+                    disabled={busyId === item.project_checklist_item_id}
                     className="inline-flex h-9 items-center justify-center gap-1 rounded-lg bg-atr-purple px-3 text-xs font-bold text-white transition hover:bg-atr-purple-600 disabled:opacity-50"
                   >
-                    {pending && <Loader2 className="h-3 w-3 animate-spin" />}
+                    {busyId === item.project_checklist_item_id && (
+                      <Loader2 className="h-3 w-3 animate-spin" />
+                    )}
                     Tandai diserahkan
                   </button>
                 )}

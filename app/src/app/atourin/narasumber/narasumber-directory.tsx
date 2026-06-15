@@ -10,6 +10,7 @@ import {
   Search,
   Plus,
   Pencil,
+  Star,
 } from "lucide-react";
 import type { NarasumberRow } from "@/server/queries/narasumber";
 import {
@@ -217,6 +218,15 @@ export function NarasumberDirectory({
                   <span className="inline-flex items-center gap-1 text-[10px] text-atr-fg-muted">
                     <MapPin className="h-2.5 w-2.5" />
                     {r.kota}
+                  </span>
+                )}
+                {r.avg_rating != null && (
+                  <span className="inline-flex items-center gap-0.5 rounded-full bg-atr-yellow/20 px-2 py-0.5 text-[10px] font-bold text-atr-fg">
+                    <Star className="h-2.5 w-2.5 fill-atr-yellow text-atr-yellow" />
+                    {r.avg_rating.toFixed(1)}
+                    <span className="font-normal text-atr-fg-muted">
+                      ({r.rating_count})
+                    </span>
                   </span>
                 )}
               </div>

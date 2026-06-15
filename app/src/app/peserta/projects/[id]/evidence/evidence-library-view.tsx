@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import {
   FileText,
@@ -12,8 +12,10 @@ import {
   Loader2,
   X,
   Paperclip,
+  Trash2,
 } from "lucide-react";
 import { toggleEvidenceTag } from "@/server/actions/evidence-tagging";
+import { deleteEvidence } from "@/server/actions/evidence";
 import type { EvidenceLibraryItem } from "@/server/queries/evidence";
 
 function fileIcon(t: string) {
@@ -39,6 +41,32 @@ export function EvidenceLibraryView({
   items: EvidenceLibraryItem[];
 }) {
   const [openTagger, setOpenTagger] = useState<string | null>(null);
+  const router = useRouter();
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [, startTransition] = useTransition();
+
+  function remove(it: EvidenceLibraryItem) {
+    const tagWarn =
+      it.tag_count > 0
+        ? `\n\nFile ini ter-tag ke ${it.tag_count} checklist; tag tersebut juga akan dilepas.`
+        : "";
+    if (
+      !confirm(
+        `Hapus "${it.original_filename ?? "evidence ini"}"? Tindakan ini tidak bisa dibatalkan.${tagWarn}`,
+      )
+    )
+      return;
+    setDeletingId(it.id);
+    startTransition(async () => {
+      const r = await deleteEvidence({
+        evidence_id: it.id,
+        project_desa_id: projectDesaId,
+      });
+      setDeletingId(null);
+      if (r.error) alert(r.error);
+      else router.refresh();
+    });
+  }
 
   if (items.length === 0) {
     return (
@@ -119,6 +147,19 @@ export function EvidenceLibraryView({
                     <Tag className="h-3 w-3" />
                     Tag
                   </button>
+                  <button
+                    type="button"
+                    onClick={() => remove(it)}
+                    disabled={deletingId === it.id}
+                    title="Hapus evidence"
+                    className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-atr-outline bg-white text-atr-fg-muted transition hover:border-atr-red/30 hover:text-atr-red disabled:opacity-50"
+                  >
+                    {deletingId === it.id ? (
+                      <Loader2 className="h-3 w-3 animate-spin" />
+                    ) : (
+                      <Trash2 className="h-3 w-3" />
+                    )}
+                  </button>
                 </div>
               </div>
             </article>
@@ -162,17 +203,33 @@ function TagDialog({
   const [loaded, setLoaded] = useState(false);
   const [search, setSearch] = useState("");
 
-  // Lazy load options
-  if (!loaded) {
-    startTransition(async () => {
+  // Lazy load options once on mount. (Doing this during render is a React
+  // anti-pattern — it can wedge the transition and leave this fixed overlay
+  // stuck on top of the page, swallowing clicks like the "Kembali" link.)
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
       const res = await fetch(
         `/api/evidence/${evidenceId}/options?projectDesaId=${projectDesaId}`,
       );
       const data = await res.json();
+      if (cancelled) return;
       setOptions(data.options ?? []);
       setLoaded(true);
-    });
-  }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [evidenceId, projectDesaId]);
+
+  // Close on Escape for keyboard users.
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") onClose();
+    }
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [onClose]);
 
   function toggle(opt: (typeof options)[number]) {
     startTransition(async () => {
@@ -209,7 +266,12 @@ function TagDialog({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/30 p-2 sm:items-center">
+    <div
+      className="fixed inset-0 z-50 flex items-end justify-center bg-black/30 p-2 sm:items-center"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
       <div className="max-h-[85vh] w-full max-w-lg overflow-hidden rounded-2xl bg-white shadow-atr-4">
         <header className="flex items-center justify-between border-b border-atr-outline px-5 py-3">
           <div>

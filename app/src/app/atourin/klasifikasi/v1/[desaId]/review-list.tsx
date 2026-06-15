@@ -59,7 +59,12 @@ export function V1ReviewList({
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
-  const [busyId, setBusyId] = useState<string | null>(null);
+  // Track BOTH the item and which decision is in-flight, so only the
+  // clicked button (Tolak vs Verifikasi) shows a spinner.
+  const [busy, setBusy] = useState<{
+    id: string;
+    decision: "verified" | "rejected";
+  } | null>(null);
   const [tierFilter, setTierFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("submitted");
   const [signedUrls, setSignedUrls] = useState<Record<string, string>>({});
@@ -92,12 +97,12 @@ export function V1ReviewList({
   }, [items]);
 
   function decide(progressId: string, decision: "verified" | "rejected") {
-    setBusyId(progressId);
+    setBusy({ id: progressId, decision });
     startTransition(async () => {
       const r = await verifyCriteriaItem({ progress_id: progressId, decision });
       if (r.error) alert(r.error);
       else router.refresh();
-      setBusyId(null);
+      setBusy(null);
     });
   }
 
@@ -132,19 +137,27 @@ export function V1ReviewList({
         <select
           value={tierFilter}
           onChange={(e) => setTierFilter(e.target.value)}
+          aria-label="Filter kriteria berdasarkan tingkat Permenpar"
+          title="Kriteria Permenpar bertingkat: untuk naik ke Maju, desa harus penuhi kriteria Rintisan + Berkembang + Maju. Filter ini menyaring item per tingkat."
           className="h-9 rounded-md border border-atr-outline bg-white px-2 text-xs outline-none focus:border-atr-purple"
         >
-          <option value="all">Semua Tier</option>
-          <option value="rintisan">Rintisan</option>
-          <option value="berkembang">Berkembang</option>
-          <option value="maju">Maju</option>
-          <option value="mandiri">Mandiri</option>
+          <option value="all">Semua Tingkat Kriteria</option>
+          <option value="rintisan">Kriteria Rintisan</option>
+          <option value="berkembang">Kriteria Berkembang</option>
+          <option value="maju">Kriteria Maju</option>
+          <option value="mandiri">Kriteria Mandiri</option>
         </select>
         <span className="ml-auto text-xs text-atr-fg-muted">
           Menampilkan <strong className="text-atr-fg">{filtered.length}</strong>{" "}
           kriteria
         </span>
       </div>
+      <p className="-mt-2 px-1 text-[11px] text-atr-fg-muted">
+        💡 Kriteria Permenpar bertingkat. Desa naik klasifikasi (Rintisan →
+        Mandiri) dengan memenuhi kriteria wajib di tiap tingkat secara
+        bertahap. Filter di atas menyaring <em>item kriteria</em> per
+        tingkat, bukan tier desa.
+      </p>
 
       {grouped.length === 0 && (
         <div className="rounded-2xl border border-dashed border-atr-outline bg-atr-bg-soft p-12 text-center">
@@ -245,7 +258,8 @@ export function V1ReviewList({
                           disabled={pending}
                           className="inline-flex h-9 items-center gap-1 rounded-md border border-atr-red/30 bg-white px-3 text-xs font-bold text-atr-red transition hover:bg-atr-red/10 disabled:opacity-50"
                         >
-                          {busyId === it.progress_id && pending ? (
+                          {busy?.id === it.progress_id &&
+                          busy?.decision === "rejected" ? (
                             <Loader2 className="h-3.5 w-3.5 animate-spin" />
                           ) : (
                             <XCircle className="h-3.5 w-3.5" />
@@ -260,7 +274,8 @@ export function V1ReviewList({
                           disabled={pending}
                           className="inline-flex h-9 items-center gap-1 rounded-md bg-atr-arti px-3 text-xs font-bold text-white transition hover:opacity-90 disabled:opacity-50"
                         >
-                          {busyId === it.progress_id && pending ? (
+                          {busy?.id === it.progress_id &&
+                          busy?.decision === "verified" ? (
                             <Loader2 className="h-3.5 w-3.5 animate-spin" />
                           ) : (
                             <CheckCircle2 className="h-3.5 w-3.5" />
