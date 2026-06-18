@@ -319,7 +319,7 @@ export async function sendCredentialsEmail(
     return { error: "SMTP belum dikonfigurasi" };
 
   const nodemailer = await import("nodemailer");
-  const { invitationHtml } = await import("./bulk-import");
+  const { invitationHtml } = await import("@/lib/email/invitation-template");
   const transporter = nodemailer.default.createTransport({
     host: process.env.SMTP_HOST ?? "smtp.gmail.com",
     port: Number(process.env.SMTP_PORT ?? 465),
