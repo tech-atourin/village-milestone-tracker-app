@@ -60,26 +60,66 @@ export function DesaDetailSections({
   const tier = base.current_classification ?? "unclassified";
 
   const b = (baseline ?? {}) as Record<string, unknown>;
-  const kontak_hp = (b.kontak_hp as string) ?? null;
-  const kontak_email = (b.kontak_email as string) ?? null;
-  const kontak_nama = (b.kontak_nama as string) ?? null;
-  const kontak_jabatan = (b.kontak_jabatan as string) ?? null;
-  const jumlah_kk = (b.jumlah_kk as number) ?? null;
-  const jumlah_l = (b.jumlah_penduduk_l as number) ?? null;
-  const jumlah_p = (b.jumlah_penduduk_p as number) ?? null;
-  const jenis_wisata = b.jenis_wisata_utama as string[] | null;
-  const kunjungan = (b.kunjungan_tahunan as number) ?? null;
-  const homestay = (b.jumlah_homestay as number) ?? null;
-  const daya_tarik = (b.jumlah_daya_tarik as number) ?? null;
-  const pokdarwis = b.punya_pokdarwis as boolean | undefined;
-  const bumdes = b.punya_bumdes as boolean | undefined;
-  const perdes = b.punya_perdes as boolean | undefined;
-  const sumber_air = (b.sumber_air as string) ?? null;
-  const internet = (b.akses_internet as string) ?? null;
-  const akses_jalan = (b.akses_jalan as string) ?? null;
-  const potensi_bencana = b.potensi_bencana as string[] | null;
-  const sop_mitigasi = b.punya_sop_mitigasi as boolean | undefined;
-  const sampah = (b.sistem_pengelolaan_sampah as string) ?? null;
+  const num = (k: string): number | null => (b[k] as number) ?? null;
+  const str = (k: string): string | null => (b[k] as string) ?? null;
+  const bool = (k: string): boolean | undefined => b[k] as boolean | undefined;
+  const arr = (k: string): string[] | null => (b[k] as string[] | null) ?? null;
+  const rep = (k: string): Array<Record<string, unknown>> =>
+    Array.isArray(b[k]) ? (b[k] as Array<Record<string, unknown>>) : [];
+
+  const kontak_hp = str("kontak_hp");
+  const kontak_email = str("kontak_email");
+  const kontak_nama = str("kontak_nama");
+  const kontak_jabatan = str("kontak_jabatan");
+  const jumlah_kk = num("jumlah_kk");
+  const jumlah_l = num("jumlah_penduduk_l");
+  const jumlah_p = num("jumlah_penduduk_p");
+  const jumlah_rt = num("jumlah_rt");
+  const jumlah_rw = num("jumlah_rw");
+  const jenis_wisata = arr("jenis_wisata_utama");
+  const kategori_desa = arr("kategori_desa");
+  const kunjungan = num("kunjungan_tahunan");
+  const homestay = num("jumlah_homestay");
+  const daya_tarik = num("jumlah_daya_tarik");
+  const pokdarwis = bool("punya_pokdarwis");
+  const bumdes = bool("punya_bumdes");
+  const perdes = bool("punya_perdes");
+  const sumber_air = str("sumber_air");
+  const internet = str("akses_internet");
+  const akses_jalan = str("akses_jalan");
+  const potensi_bencana = arr("potensi_bencana");
+  const sop_mitigasi = bool("punya_sop_mitigasi");
+
+  // Repeater data
+  const penghargaan = rep("penghargaan");
+  const partisipasi_event = rep("partisipasi_event");
+  const exposure_publikasi = rep("exposure_publikasi");
+  const sertifikasi = rep("sertifikasi");
+  const kemitraan_pt = rep("kemitraan_pt");
+  const kemitraan_swasta = rep("kemitraan_swasta");
+  const dokumen = rep("dokumen");
+  const kunjungan_per_tahun = rep("kunjungan_per_tahun");
+  const tenaga_kerja_per_tahun = rep("tenaga_kerja_per_tahun");
+  const umkm_per_tahun = rep("umkm_per_tahun");
+  const pendapatan_per_tahun = rep("pendapatan_per_tahun");
+  const pengurus_pokdarwis_per_tahun = rep("pengurus_pokdarwis_per_tahun");
+
+  // Merge Hub awards into the unified Pencapaian section so they don't
+  // duplicate in HubExtras. Hub awards become read-only "from Hub" entries.
+  const hubAwards = (profile?.awards ?? []) as Array<Record<string, unknown>>;
+  const penghargaanMerged = [
+    ...hubAwards.map((a) => ({
+      nama:
+        (a.kompetisi as string) ??
+        (a.kategori as string) ??
+        "Penghargaan",
+      lembaga: null,
+      tahun: a.tahun ?? null,
+      peringkat: (a.peringkat as string) ?? (a.edisi as string) ?? null,
+      _source: "hub",
+    })),
+    ...penghargaan.map((p) => ({ ...p, _source: "baseline" })),
+  ];
 
   return (
     <div className="space-y-6">
@@ -155,7 +195,7 @@ export function DesaDetailSections({
 
       {/* Demografi */}
       <Section title="Demografi" icon={Users}>
-        {baseline && (jumlah_kk || jumlah_l || jumlah_p) ? (
+        {baseline && (jumlah_kk || jumlah_l || jumlah_p || jumlah_rt || jumlah_rw) ? (
           <div className="grid grid-cols-2 gap-4 text-sm sm:grid-cols-4">
             <Detail label="Jumlah KK" value={jumlah_kk?.toString() ?? null} />
             <Detail
@@ -174,73 +214,131 @@ export function DesaDetailSections({
                   : null
               }
             />
+            <Detail label="Jumlah RT" value={jumlah_rt?.toString() ?? null} />
+            <Detail label="Jumlah RW" value={jumlah_rw?.toString() ?? null} />
           </div>
         ) : (
           <EmptySection message="Data demografi belum diisi (perlu baseline)" />
         )}
       </Section>
 
-      {/* Wisata */}
-      <Section title="Profil Wisata" icon={Sparkles}>
-        {baseline && (jenis_wisata || kunjungan || daya_tarik) ? (
-          <div className="space-y-3">
-            <div className="grid grid-cols-2 gap-4 text-sm sm:grid-cols-3">
-              <Detail
-                label="Daya Tarik"
-                value={daya_tarik?.toString() ?? null}
-              />
+      {/* Daya Tarik Wisata */}
+      <Section title="Daya Tarik Wisata" icon={Sparkles}>
+        {baseline && (jenis_wisata || kunjungan || daya_tarik || str("tematik_desa")) ? (
+          <div className="space-y-4">
+            {str("tematik_desa") && (
+              <Para label="Tematik Desa" value={str("tematik_desa")} />
+            )}
+            <div className="grid grid-cols-2 gap-4 text-sm sm:grid-cols-4">
+              <Detail label="Daya Tarik" value={daya_tarik?.toString() ?? null} />
               <Detail
                 label="Kunjungan/Tahun"
                 value={kunjungan ? kunjungan.toLocaleString("id-ID") : null}
               />
-              <Detail label="Homestay" value={homestay?.toString() ?? null} />
+              <Detail label="Domestik/Th" value={num("kunjungan_domestik")?.toLocaleString("id-ID") ?? null} />
+              <Detail label="Mancanegara/Th" value={num("kunjungan_mancanegara")?.toLocaleString("id-ID") ?? null} />
+              <Detail label="Asal Domestik" value={str("asal_domestik")} />
+              <Detail label="Asal Mancanegara" value={str("asal_mancanegara")} />
+              <Detail label="Kondisi Atraksi" value={str("kondisi_atraksi")} />
             </div>
-            {jenis_wisata && jenis_wisata.length > 0 && (
-              <div>
-                <div className="text-xs font-bold uppercase tracking-wide text-atr-fg-muted">
-                  Jenis Wisata
-                </div>
-                <div className="mt-1.5 flex flex-wrap gap-1.5">
-                  {jenis_wisata.map((j) => (
-                    <span
-                      key={j}
-                      className="inline-flex rounded-full bg-atr-purple-50 px-2.5 py-0.5 text-xs font-bold text-atr-purple-600"
-                    >
-                      {j}
-                    </span>
-                  ))}
-                </div>
+            {(jenis_wisata?.length || kategori_desa?.length) ? (
+              <div className="space-y-2">
+                {jenis_wisata && jenis_wisata.length > 0 && (
+                  <ChipList label="Jenis Wisata" items={jenis_wisata} />
+                )}
+                {kategori_desa && kategori_desa.length > 0 && (
+                  <ChipList label="Kategori Desa" items={kategori_desa} />
+                )}
               </div>
-            )}
+            ) : null}
+            <Para label="Wisata Alam" value={str("wisata_alam")} />
+            <Para label="Wisata Budaya" value={str("wisata_budaya")} />
+            <Para label="Wisata Buatan / Kreatif" value={str("wisata_buatan")} />
+            <Para label="Kegiatan Wisatawan" value={str("kegiatan_wisatawan")} />
+            <Para label="Potensi Belum Dikembangkan" value={str("potensi_daya_tarik")} />
+            <Para label="Kendala Pengembangan" value={str("kendala_atraksi")} />
+            <Para label="Program yang Diperlukan" value={str("program_atraksi")} />
             {profile?.keunikan && (
-              <div>
-                <div className="text-xs font-bold uppercase tracking-wide text-atr-fg-muted">
-                  Keunikan
-                </div>
-                <p className="mt-1 text-sm text-atr-fg">{profile.keunikan}</p>
-              </div>
+              <Para label="Keunikan & Keunggulan" value={profile.keunikan} />
             )}
           </div>
         ) : (
-          <EmptySection message="Profil wisata belum diisi (perlu baseline)" />
+          <EmptySection message="Daya tarik wisata belum diisi (perlu baseline)" />
         )}
       </Section>
 
-      {/* Fasilitas */}
+      {/* Amenitas & Fasilitas */}
       <Section title="Amenitas & Fasilitas" icon={ImageIcon}>
-        {profile?.fasilitas && profile.fasilitas.length > 0 ? (
-          <div className="flex flex-wrap gap-2">
-            {profile.fasilitas.map((f) => (
-              <span
-                key={f}
-                className="inline-flex rounded-full border border-atr-outline bg-atr-bg-soft px-3 py-1 text-xs font-bold text-atr-fg"
-              >
-                {f}
-              </span>
-            ))}
+        <div className="space-y-4">
+          <div className="grid grid-cols-2 gap-3 text-sm sm:grid-cols-4">
+            <Detail label="Homestay" value={homestay?.toString() ?? null} />
+            <Detail label="Total Kamar" value={num("jumlah_kamar_homestay")?.toString() ?? null} />
+            <Detail label="Tamu/Bulan" value={num("rata_tamu_homestay_bulan")?.toString() ?? null} />
+            <Detail label="Hotel/Akomodasi" value={num("jumlah_hotel")?.toString() ?? null} />
+            <Detail label="Kios Ekraf" value={num("jumlah_kios_ekraf")?.toString() ?? null} />
+            <Detail label="Toilet Umum" value={num("jumlah_toilet_umum")?.toString() ?? null} />
+            <Detail label="Kapasitas Parkir" value={str("kapasitas_parkir")} />
+          </div>
+          <div className="flex flex-wrap gap-1.5 text-xs">
+            <BoolChip label="Area parkir" value={bool("punya_area_parkir")} />
+            <BoolChip label="TIC" value={bool("punya_tic")} />
+            <BoolChip label="Penerangan" value={bool("punya_sarana_penerangan")} />
+            <BoolChip label="Sarana ibadah" value={bool("punya_sarana_ibadah")} />
+            <BoolChip label="Ruang ASI" value={bool("punya_ruangan_asi")} />
+            <BoolChip label="Kios oleh-oleh" value={bool("punya_kios_jualan")} />
+          </div>
+          {profile?.fasilitas && profile.fasilitas.length > 0 && (
+            <div>
+              <div className="mb-1.5 text-[10px] font-bold uppercase tracking-wide text-atr-fg-muted">
+                Fasilitas (dari Hub)
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {profile.fasilitas.map((f) => (
+                  <span
+                    key={f}
+                    className="inline-flex rounded-full border border-atr-outline bg-atr-bg-soft px-3 py-1 text-xs font-bold text-atr-fg"
+                  >
+                    {f}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+          <Para label="Sarana lainnya" value={str("sarana_lainnya")} />
+          <Para label="Program pengembangan amenitas" value={str("program_amenitas")} />
+        </div>
+      </Section>
+
+      {/* Paket Wisata & Pemasaran Digital */}
+      <Section title="Paket Wisata & Pemasaran Digital" icon={Globe}>
+        {baseline && (bool("paket_tersedia") !== undefined || str("daftar_paket") || arr("media_sosial")?.length) ? (
+          <div className="space-y-4">
+            <div className="flex flex-wrap gap-1.5 text-xs">
+              <BoolChip label="Paket wisata tersedia" value={bool("paket_tersedia")} />
+              <BoolChip label="Punya website" value={bool("punya_website")} />
+              <BoolChip label="Video profil" value={bool("video_profil")} />
+            </div>
+            <div className="grid grid-cols-2 gap-3 text-sm sm:grid-cols-3">
+              <Detail label="Jumlah Paket" value={num("jumlah_paket")?.toString() ?? null} />
+              <Detail label="Website" value={str("website_url")} />
+              <Detail label="Link Video" value={str("link_video")} />
+            </div>
+            {arr("jenis_paket")?.length ? (
+              <ChipList label="Jenis Paket" items={arr("jenis_paket") ?? []} />
+            ) : null}
+            <Para label="Daftar Paket Wisata" value={str("daftar_paket")} />
+            {arr("media_sosial")?.length ? (
+              <ChipList label="Media Sosial" items={arr("media_sosial") ?? []} />
+            ) : null}
+            <Para label="Akun Sosmed" value={str("akun_sosmed")} />
+            {arr("marketplace")?.length ? (
+              <ChipList label="Marketplace / OTA" items={arr("marketplace") ?? []} />
+            ) : null}
+            <Para label="Kendala pemasaran digital" value={str("kendala_pemasaran")} />
+            <Para label="Program pengembangan pemasaran" value={str("program_pemasaran")} />
           </div>
         ) : (
-          <EmptySection message="Belum ada data fasilitas (perlu sync dari Hub atau input manual)" />
+          <EmptySection message="Paket wisata & pemasaran digital belum diisi (perlu baseline)" />
         )}
       </Section>
 
@@ -249,39 +347,92 @@ export function DesaDetailSections({
         {baseline &&
         (pokdarwis !== undefined ||
           bumdes !== undefined ||
-          perdes !== undefined) ? (
-          <div className="grid grid-cols-3 gap-3 text-sm">
-            <Detail
-              label="Pokdarwis"
-              value={
-                pokdarwis === true ? "Aktif" : pokdarwis === false ? "Belum" : null
-              }
-            />
-            <Detail
-              label="BUMDes"
-              value={
-                bumdes === true ? "Aktif" : bumdes === false ? "Belum" : null
-              }
-            />
-            <Detail
-              label="Perdes Wisata"
-              value={
-                perdes === true ? "Sudah ada" : perdes === false ? "Belum" : null
-              }
-            />
+          perdes !== undefined ||
+          str("pihak_pengelola")) ? (
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-3 text-sm sm:grid-cols-4">
+              <Detail label="Pihak Pengelola" value={str("pihak_pengelola")} />
+              <Detail label="Frekuensi Rapat" value={str("frekuensi_pertemuan")} />
+              <Detail label="Pengurus Pokdarwis" value={num("pengurus_pokdarwis")?.toString() ?? null} />
+              <Detail label="Pemandu Wisata" value={num("jumlah_pemandu")?.toString() ?? null} />
+              <Detail label="Pemandu Tersertifikasi" value={num("jumlah_pemandu_sertifikat")?.toString() ?? null} />
+              <Detail label="Total Warga Terlibat" value={num("jumlah_warga_terlibat")?.toString() ?? null} />
+              <Detail label="Warga L Terlibat" value={num("jumlah_terlibat_l")?.toString() ?? null} />
+              <Detail label="Warga P Terlibat" value={num("jumlah_terlibat_p")?.toString() ?? null} />
+              <Detail label="Pendapatan Wisata/Th" value={num("pendapatan_tahunan") ? "Rp " + num("pendapatan_tahunan")!.toLocaleString("id-ID") : null} />
+            </div>
+            <div className="flex flex-wrap gap-1.5 text-xs">
+              <BoolChip label="Pokdarwis aktif" value={pokdarwis} />
+              <BoolChip label="BUMDes mengelola" value={bumdes} />
+              <BoolChip label="Perdes wisata" value={perdes} />
+              <BoolChip label="Keterlibatan disabilitas" value={bool("terlibat_disabilitas")} />
+            </div>
+            <Para label="Pembagian Profit ke Masyarakat" value={str("profit_sharing")} />
+            <Para label="Program Pengembangan SDM" value={str("program_pengembangan_sdm")} />
           </div>
         ) : (
           <EmptySection message="Data kelembagaan belum diisi (perlu baseline)" />
         )}
       </Section>
 
+      {/* Ekonomi Kreatif */}
+      <Section title="Ekonomi Kreatif" icon={Sparkles}>
+        {baseline && (str("produk_ekraf") || num("jumlah_kriya") || num("jumlah_kuliner") || num("jumlah_fesyen")) ? (
+          <div className="space-y-4">
+            <Para label="Produk Ekraf Unggulan" value={str("produk_ekraf")} />
+            <div className="grid grid-cols-2 gap-3 text-sm sm:grid-cols-3">
+              <Detail label="Pelaku Kriya" value={num("jumlah_kriya")?.toString() ?? null} />
+              <Detail label="Pelaku Kuliner" value={num("jumlah_kuliner")?.toString() ?? null} />
+              <Detail label="Pelaku Fesyen" value={num("jumlah_fesyen")?.toString() ?? null} />
+            </div>
+            <Para label="Jenis Kriya" value={str("jenis_kriya")} />
+            <Para label="Jenis Kuliner" value={str("jenis_kuliner")} />
+            <Para label="Jenis Fesyen" value={str("jenis_fesyen")} />
+            <Para label="Kendala Ekraf" value={str("kendala_ekraf")} />
+            <Para label="Program yang Diperlukan" value={str("program_ekraf")} />
+            <Para label="Dampak Ekonomi" value={str("dampak_ekonomi")} />
+          </div>
+        ) : (
+          <EmptySection message="Data ekonomi kreatif belum diisi (perlu baseline)" />
+        )}
+      </Section>
+
+      {/* SDM */}
+      <Section title="Sumber Daya Manusia" icon={Users}>
+        {baseline && (num("sdm_terlatih") != null || arr("bahasa_pengelola")?.length || str("pelatihan_terakhir")) ? (
+          <div className="space-y-3">
+            <div className="grid grid-cols-2 gap-3 text-sm">
+              <Detail label="SDM Terlatih" value={num("sdm_terlatih")?.toString() ?? null} />
+              <Detail label="Pelatihan Terakhir" value={str("pelatihan_terakhir")} />
+            </div>
+            {arr("bahasa_pengelola")?.length ? (
+              <ChipList label="Bahasa Dikuasai" items={arr("bahasa_pengelola") ?? []} />
+            ) : null}
+          </div>
+        ) : (
+          <EmptySection message="Data SDM belum diisi (perlu baseline)" />
+        )}
+      </Section>
+
       {/* Aksesibilitas & Infrastruktur */}
       <Section title="Aksesibilitas & Infrastruktur" icon={Cloud}>
-        {baseline && (sumber_air || internet || akses_jalan) ? (
-          <div className="grid grid-cols-2 gap-3 text-sm sm:grid-cols-3">
-            <Detail label="Akses Jalan" value={akses_jalan} />
-            <Detail label="Sumber Air" value={sumber_air} />
-            <Detail label="Internet" value={internet} />
+        {baseline && (sumber_air || internet || akses_jalan || num("jarak_ke_kota") != null) ? (
+          <div className="space-y-3">
+            <div className="grid grid-cols-2 gap-3 text-sm sm:grid-cols-3">
+              <Detail label="Jarak ke Kab/Kota" value={num("jarak_ke_kota") != null ? `${num("jarak_ke_kota")} km` : null} />
+              <Detail label="Jarak ke Kecamatan" value={num("jarak_kecamatan") != null ? `${num("jarak_kecamatan")} km` : null} />
+              <Detail label="Akses Jalan" value={akses_jalan} />
+              <Detail label="Sumber Air" value={sumber_air} />
+              <Detail label="Internet" value={internet} />
+            </div>
+            <div className="flex flex-wrap gap-1.5 text-xs">
+              <BoolChip label="Transportasi umum" value={bool("akses_transport")} />
+              <BoolChip label="Signage rute" value={bool("punya_signage")} />
+              <BoolChip label="Listrik 24 jam" value={bool("listrik_24jam")} />
+            </div>
+            {arr("moda_transport")?.length ? (
+              <ChipList label="Moda Transportasi" items={arr("moda_transport") ?? []} />
+            ) : null}
           </div>
         ) : (
           <EmptySection message="Data infrastruktur belum diisi (perlu baseline)" />
@@ -289,24 +440,22 @@ export function DesaDetailSections({
       </Section>
 
       {/* Resiliensi */}
-      <Section title="Resiliensi & Pengelolaan" icon={ClipboardCheck}>
+      <Section title="Resiliensi & Keberlanjutan" icon={ClipboardCheck}>
         {baseline &&
         (potensi_bencana ||
           sop_mitigasi !== undefined ||
-          sampah) ? (
-          <div className="space-y-3">
+          bool("punya_bank_sampah") !== undefined) ? (
+          <div className="space-y-4">
             <div className="grid grid-cols-2 gap-3 text-sm">
-              <Detail
-                label="SOP Mitigasi Bencana"
-                value={
-                  sop_mitigasi === true
-                    ? "Ada"
-                    : sop_mitigasi === false
-                      ? "Belum"
-                      : null
-                }
-              />
-              <Detail label="Pengelolaan Sampah" value={sampah} />
+              <Detail label="Kebiasaan Pilah Sampah" value={str("kebiasaan_pilah_sampah")} />
+            </div>
+            <div className="flex flex-wrap gap-1.5 text-xs">
+              <BoolChip label="SOP mitigasi bencana" value={sop_mitigasi} />
+              <BoolChip label="Papan titik kumpul + evakuasi" value={bool("papan_titik_kumpul")} />
+              <BoolChip label="Bank Sampah" value={bool("punya_bank_sampah")} />
+              <BoolChip label="TPS3R" value={bool("punya_tps3r")} />
+              <BoolChip label="Perdes sampah" value={bool("perdes_sampah")} />
+              <BoolChip label="Program edukasi sampah" value={bool("program_edukasi_sampah")} />
             </div>
             {potensi_bencana && potensi_bencana.length > 0 && (
               <div>
@@ -325,6 +474,8 @@ export function DesaDetailSections({
                 </div>
               </div>
             )}
+            <Para label="Sarana Keselamatan Wisatawan" value={str("sarana_keselamatan")} />
+            <Para label="Kendala Pelestarian Lingkungan" value={str("kendala_lingkungan")} />
           </div>
         ) : (
           <EmptySection message="Data resiliensi belum diisi (perlu baseline)" />
@@ -426,16 +577,239 @@ export function DesaDetailSections({
         )}
       </Section>
 
-      {/* Hub extras (produk/foto/awards/events) */}
+      {/* Hub extras (produk/foto/events) — awards moved into Pencapaian below
+          to avoid duplication. */}
       <HubExtrasSections
         produk={profile?.produk_list ?? null}
         foto={profile?.foto_galeri ?? null}
-        awards={profile?.awards ?? null}
+        awards={null}
         events={profile?.events ?? null}
       />
 
-      {/* Self-Improvement Journey - only when we have a tier journey to show */}
-      {journey && (
+      {/* Kemitraan */}
+      <Section title="Kemitraan" icon={Handshake}>
+        {kemitraan_pt.length > 0 || kemitraan_swasta.length > 0 ? (
+          <div className="space-y-4">
+            {kemitraan_pt.length > 0 && (
+              <div>
+                <div className="mb-2 text-xs font-bold uppercase tracking-wide text-atr-fg-muted">
+                  Perguruan Tinggi
+                </div>
+                <RepeaterTable
+                  rows={kemitraan_pt}
+                  cols={[
+                    { key: "institusi", label: "Institusi" },
+                    { key: "program", label: "Program" },
+                    { key: "tahun", label: "Tahun", align: "right" },
+                  ]}
+                />
+              </div>
+            )}
+            {kemitraan_swasta.length > 0 && (
+              <div>
+                <div className="mb-2 text-xs font-bold uppercase tracking-wide text-atr-fg-muted">
+                  Swasta / CSR / Industri
+                </div>
+                <RepeaterTable
+                  rows={kemitraan_swasta}
+                  cols={[
+                    { key: "institusi", label: "Institusi" },
+                    { key: "program", label: "Program" },
+                    { key: "tahun", label: "Tahun", align: "right" },
+                  ]}
+                />
+              </div>
+            )}
+          </div>
+        ) : (
+          <EmptySection message="Belum ada kemitraan tercatat (perlu baseline)" />
+        )}
+      </Section>
+
+      {/* Pencapaian — Hub awards + baseline entries merged */}
+      <Section title="Pencapaian" icon={Award}>
+        {penghargaanMerged.length > 0 ||
+        partisipasi_event.length > 0 ||
+        exposure_publikasi.length > 0 ||
+        sertifikasi.length > 0 ? (
+          <div className="space-y-4">
+            {penghargaanMerged.length > 0 && (
+              <div>
+                <div className="mb-2 text-xs font-bold uppercase tracking-wide text-atr-fg-muted">
+                  Penghargaan ({penghargaanMerged.length})
+                </div>
+                <RepeaterTable
+                  rows={penghargaanMerged}
+                  cols={[
+                    { key: "nama", label: "Penghargaan" },
+                    { key: "lembaga", label: "Lembaga" },
+                    { key: "tahun", label: "Tahun", align: "right" },
+                    { key: "peringkat", label: "Peringkat" },
+                    { key: "_source", label: "Sumber", render: (v) => v === "hub" ? "Hub" : "Manual" },
+                  ]}
+                />
+              </div>
+            )}
+            {partisipasi_event.length > 0 && (
+              <div>
+                <div className="mb-2 text-xs font-bold uppercase tracking-wide text-atr-fg-muted">
+                  Partisipasi Event / Kompetisi ({partisipasi_event.length})
+                </div>
+                <RepeaterTable
+                  rows={partisipasi_event}
+                  cols={[
+                    { key: "nama_event", label: "Event" },
+                    { key: "tahun", label: "Tahun", align: "right" },
+                    { key: "hasil", label: "Hasil" },
+                  ]}
+                />
+              </div>
+            )}
+            {exposure_publikasi.length > 0 && (
+              <div>
+                <div className="mb-2 text-xs font-bold uppercase tracking-wide text-atr-fg-muted">
+                  Exposure / Publikasi ({exposure_publikasi.length})
+                </div>
+                <RepeaterTable
+                  rows={exposure_publikasi}
+                  cols={[
+                    { key: "jenis", label: "Jenis" },
+                    { key: "media", label: "Media" },
+                    { key: "tahun", label: "Tahun", align: "right" },
+                    { key: "link", label: "Link", render: (v) => v ? <a href={String(v)} target="_blank" rel="noreferrer" className="text-atr-purple-600 hover:underline">Buka</a> : "-" },
+                  ]}
+                />
+              </div>
+            )}
+            {sertifikasi.length > 0 && (
+              <div>
+                <div className="mb-2 text-xs font-bold uppercase tracking-wide text-atr-fg-muted">
+                  Sertifikasi ({sertifikasi.length})
+                </div>
+                <RepeaterTable
+                  rows={sertifikasi}
+                  cols={[
+                    { key: "nama", label: "Sertifikat" },
+                    { key: "lembaga", label: "Lembaga" },
+                    { key: "tahun", label: "Tahun", align: "right" },
+                    { key: "link", label: "Bukti", render: (v) => v ? <a href={String(v)} target="_blank" rel="noreferrer" className="text-atr-purple-600 hover:underline">Buka</a> : "-" },
+                  ]}
+                />
+              </div>
+            )}
+          </div>
+        ) : (
+          <EmptySection message="Belum ada pencapaian tercatat (Hub auto-sync ADWI + tambahan via baseline)" />
+        )}
+      </Section>
+
+      {/* Data Tahunan */}
+      <Section title="Data Tahunan" icon={Calendar}>
+        {kunjungan_per_tahun.length > 0 ||
+        tenaga_kerja_per_tahun.length > 0 ||
+        umkm_per_tahun.length > 0 ||
+        pendapatan_per_tahun.length > 0 ||
+        pengurus_pokdarwis_per_tahun.length > 0 ? (
+          <div className="space-y-4">
+            {kunjungan_per_tahun.length > 0 && (
+              <div>
+                <div className="mb-2 text-xs font-bold uppercase tracking-wide text-atr-fg-muted">
+                  Kunjungan Wisatawan
+                </div>
+                <RepeaterTable
+                  rows={kunjungan_per_tahun}
+                  cols={[
+                    { key: "tahun", label: "Tahun" },
+                    { key: "wni", label: "WNI", align: "right" },
+                    { key: "wna", label: "WNA", align: "right" },
+                  ]}
+                />
+              </div>
+            )}
+            {tenaga_kerja_per_tahun.length > 0 && (
+              <div>
+                <div className="mb-2 text-xs font-bold uppercase tracking-wide text-atr-fg-muted">
+                  Tenaga Kerja
+                </div>
+                <RepeaterTable
+                  rows={tenaga_kerja_per_tahun}
+                  cols={[
+                    { key: "tahun", label: "Tahun" },
+                    { key: "pria", label: "Pria", align: "right" },
+                    { key: "wanita", label: "Wanita", align: "right" },
+                  ]}
+                />
+              </div>
+            )}
+            {umkm_per_tahun.length > 0 && (
+              <div>
+                <div className="mb-2 text-xs font-bold uppercase tracking-wide text-atr-fg-muted">
+                  UMKM
+                </div>
+                <RepeaterTable
+                  rows={umkm_per_tahun}
+                  cols={[
+                    { key: "tahun", label: "Tahun" },
+                    { key: "jumlah", label: "Jumlah", align: "right" },
+                  ]}
+                />
+              </div>
+            )}
+            {pendapatan_per_tahun.length > 0 && (
+              <div>
+                <div className="mb-2 text-xs font-bold uppercase tracking-wide text-atr-fg-muted">
+                  Pendapatan
+                </div>
+                <RepeaterTable
+                  rows={pendapatan_per_tahun}
+                  cols={[
+                    { key: "tahun", label: "Tahun" },
+                    { key: "jumlah_rp", label: "Rp", align: "right", render: (v) => v ? "Rp " + Number(v).toLocaleString("id-ID") : "-" },
+                  ]}
+                />
+              </div>
+            )}
+            {pengurus_pokdarwis_per_tahun.length > 0 && (
+              <div>
+                <div className="mb-2 text-xs font-bold uppercase tracking-wide text-atr-fg-muted">
+                  Pengurus Pokdarwis
+                </div>
+                <RepeaterTable
+                  rows={pengurus_pokdarwis_per_tahun}
+                  cols={[
+                    { key: "tahun", label: "Tahun" },
+                    { key: "pria", label: "Pria", align: "right" },
+                    { key: "wanita", label: "Wanita", align: "right" },
+                  ]}
+                />
+              </div>
+            )}
+          </div>
+        ) : (
+          <EmptySection message="Belum ada data tahunan (perlu baseline)" />
+        )}
+      </Section>
+
+      {/* Dokumen Pendukung */}
+      <Section title="Dokumen Pendukung" icon={FileText}>
+        {dokumen.length > 0 ? (
+          <RepeaterTable
+            rows={dokumen}
+            cols={[
+              { key: "jenis", label: "Jenis" },
+              { key: "nama", label: "Nama Dokumen" },
+              { key: "tahun", label: "Tahun", align: "right" },
+              { key: "link_url", label: "Link", render: (v) => v ? <a href={String(v)} target="_blank" rel="noreferrer" className="text-atr-purple-600 hover:underline">Buka</a> : "-" },
+            ]}
+          />
+        ) : (
+          <EmptySection message="Belum ada dokumen pendukung (perlu baseline)" />
+        )}
+      </Section>
+
+      {/* Self-Improvement Journey - skip when desa is already at the top tier
+          (Mandiri), since there's no next tier to aim for. */}
+      {journey && journey.next_tier && (
         <TierJourneyCard
           journey={journey}
           viewerScope={
@@ -611,6 +985,108 @@ function EmptySection({ message }: { message: string }) {
   return (
     <div className="rounded-lg border border-dashed border-atr-outline bg-atr-bg-soft p-6 text-center">
       <p className="text-xs italic text-atr-fg-muted">{message}</p>
+    </div>
+  );
+}
+
+function Para({ label, value }: { label: string; value: string | null }) {
+  if (!value) return null;
+  return (
+    <div>
+      <div className="text-[10px] font-bold uppercase tracking-wide text-atr-fg-muted">
+        {label}
+      </div>
+      <p className="mt-1 whitespace-pre-line text-sm text-atr-fg">{value}</p>
+    </div>
+  );
+}
+
+function BoolChip({ label, value }: { label: string; value: boolean | undefined }) {
+  if (value === undefined) return null;
+  return (
+    <span
+      className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-bold ${
+        value
+          ? "bg-atr-arti/10 text-atr-arti"
+          : "bg-atr-bg-soft text-atr-fg-muted"
+      }`}
+    >
+      {value ? "✓" : "✗"} {label}
+    </span>
+  );
+}
+
+function ChipList({ label, items }: { label: string; items: string[] }) {
+  return (
+    <div>
+      <div className="text-xs font-bold uppercase tracking-wide text-atr-fg-muted">
+        {label}
+      </div>
+      <div className="mt-1.5 flex flex-wrap gap-1.5">
+        {items.map((i) => (
+          <span
+            key={i}
+            className="inline-flex rounded-full bg-atr-purple-50 px-2.5 py-0.5 text-xs font-bold text-atr-purple-600"
+          >
+            {i}
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+type RepeaterCol = {
+  key: string;
+  label: string;
+  align?: "left" | "right";
+  render?: (v: unknown) => React.ReactNode;
+};
+
+function RepeaterTable({
+  rows,
+  cols,
+}: {
+  rows: Array<Record<string, unknown>>;
+  cols: RepeaterCol[];
+}) {
+  return (
+    <div className="overflow-hidden rounded-lg border border-atr-outline">
+      <table className="w-full text-xs">
+        <thead className="bg-atr-bg-soft text-left text-[10px] uppercase tracking-wide text-atr-fg-muted">
+          <tr>
+            {cols.map((c) => (
+              <th
+                key={c.key}
+                className={`px-3 py-1.5 ${c.align === "right" ? "text-right" : "text-left"}`}
+              >
+                {c.label}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-atr-outline">
+          {rows.map((r, idx) => (
+            <tr key={idx}>
+              {cols.map((c) => {
+                const v = r[c.key];
+                return (
+                  <td
+                    key={c.key}
+                    className={`px-3 py-1.5 text-atr-fg ${c.align === "right" ? "text-right" : "text-left"}`}
+                  >
+                    {c.render
+                      ? c.render(v)
+                      : v == null || v === ""
+                        ? <span className="italic text-atr-fg-muted">-</span>
+                        : String(v)}
+                  </td>
+                );
+              })}
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
 }

@@ -306,8 +306,8 @@ export function RaporView({
       </section>
 
       {/* Nilai per materi - data-driven dari peserta_test_results */}
-      <section className="mb-8">
-        <h2 className="mb-3 text-sm font-bold uppercase tracking-wide text-atr-fg-muted">
+      <section className="mb-8 rounded-2xl border border-atr-outline p-6">
+        <h2 className="mb-4 text-sm font-bold uppercase tracking-wide text-atr-fg-muted">
           Hasil Capacity Building per Materi
         </h2>
         {materi_scores.length === 0 ? (
@@ -359,8 +359,8 @@ export function RaporView({
 
       {/* Sesi & Narasumber yang mendampingi peserta ini */}
       {narasumber.length > 0 && (
-        <section className="mb-8">
-          <h2 className="mb-3 text-sm font-bold uppercase tracking-wide text-atr-fg-muted">
+        <section className="mb-8 rounded-2xl border border-atr-outline p-6">
+          <h2 className="mb-4 text-sm font-bold uppercase tracking-wide text-atr-fg-muted">
             Sesi Pendampingan &amp; Narasumber
           </h2>
           <table className="w-full text-sm">

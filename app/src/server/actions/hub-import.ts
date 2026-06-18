@@ -2,9 +2,108 @@
 
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
+import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { createAdminClient } from "@/lib/supabase/server";
 import { requireRole } from "@/lib/auth/rbac";
 import { getHubDesaProfile } from "@/server/queries/hub";
+import { serverEnv } from "@/lib/env";
+
+// hub-schema client for the extra tables (produk, desa_foto, award, event)
+// that aren't covered by getHubDesaProfile.
+function hubClient() {
+  const env = serverEnv();
+  return createSupabaseClient(
+    env.NEXT_PUBLIC_SUPABASE_URL,
+    env.SUPABASE_SERVICE_ROLE_KEY,
+    {
+      db: { schema: "hub" },
+      auth: { autoRefreshToken: false, persistSession: false },
+    },
+  );
+}
+
+/**
+ * Mirror Hub-side rich content (produk, foto, awards, events) into
+ * vmt.desa_profile_data so the profil desa page can render them without
+ * needing a second sync click. Idempotent — safe to call on re-import.
+ */
+async function upsertHubProfileData(
+  vmtDesaId: string,
+  hubDesaId: string,
+  profile: Awaited<ReturnType<typeof getHubDesaProfile>>,
+) {
+  if (!profile) return;
+  const supabase = createAdminClient();
+  const hub = hubClient();
+
+  const [
+    { data: produkRows },
+    { data: fotoRows },
+    { data: awardRows },
+    { data: eventRows },
+  ] = await Promise.all([
+    hub
+      .from("produk")
+      .select(
+        "id, jenis, nama, sub_jenis, harga, deskripsi, image_url, is_available",
+      )
+      .eq("desa_id", hubDesaId)
+      .limit(50),
+    hub
+      .from("desa_foto")
+      .select("id, url, is_cover, urutan")
+      .eq("desa_id", hubDesaId)
+      .order("urutan", { ascending: true })
+      .limit(20),
+    hub
+      .from("award")
+      .select("id, competition_kode, tahun, edisi, kategori, peringkat")
+      .eq("desa_id", hubDesaId)
+      .order("tahun", { ascending: false })
+      .limit(20),
+    hub
+      .from("event")
+      .select("id, judul, deskripsi, mulai, selesai, image_url")
+      .eq("desa_id", hubDesaId)
+      .order("mulai", { ascending: false })
+      .limit(20),
+  ]);
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const k = (profile.kontak ?? {}) as any;
+  const profileRow = {
+    desa_id: vmtDesaId,
+    alamat: profile.desa.alamat ?? null,
+    cover_image_url: profile.desa.cover_image_url ?? null,
+    deskripsi: profile.desa.deskripsi ?? null,
+    fasilitas: profile.fasilitas.length > 0 ? profile.fasilitas : null,
+    pengelola_kontak_person: k.contact_person ?? null,
+    pengelola_email: k.email ?? null,
+    pengelola_whatsapp: k.phone ?? null,
+    social_website: k.website ?? null,
+    social_instagram: k.instagram ?? null,
+    produk_list: produkRows && produkRows.length > 0 ? produkRows : null,
+    foto_galeri: fotoRows && fotoRows.length > 0 ? fotoRows : null,
+    awards: awardRows && awardRows.length > 0 ? awardRows : null,
+    events: eventRows && eventRows.length > 0 ? eventRows : null,
+    synced_from_hub_at: new Date().toISOString(),
+    source: "hub_import",
+  };
+
+  const { data: existing } = await supabase
+    .from("desa_profile_data")
+    .select("desa_id")
+    .eq("desa_id", vmtDesaId)
+    .maybeSingle();
+  if (existing) {
+    await supabase
+      .from("desa_profile_data")
+      .update(profileRow)
+      .eq("desa_id", vmtDesaId);
+  } else {
+    await supabase.from("desa_profile_data").insert(profileRow);
+  }
+}
 
 const importSchema = z.object({
   project_id: z.string().uuid(),
@@ -53,13 +152,25 @@ export async function importHubDesaToProject(
         kabupaten: profile.desa.kabupaten,
         provinsi: profile.desa.provinsi,
         current_classification: tier,
-        jadesta_id: profile.desa.slug, // store slug as external id
+        jadesta_id: profile.desa.slug,
+        hub_desa_id: parsed.data.hub_desa_id, // canonical link for later syncs
       })
       .select("id")
       .single();
     if (error || !created) return { error: error?.message ?? "Gagal create desa" };
     vmtDesaId = (created as { id: string }).id;
+  } else {
+    // Ensure existing row is linked back to hub so future syncs work.
+    await supabase
+      .from("desa")
+      .update({ hub_desa_id: parsed.data.hub_desa_id })
+      .eq("id", vmtDesaId)
+      .is("hub_desa_id", null);
   }
+
+  // Mirror Hub extras (kontak, fasilitas, produk, foto, awards, events) into
+  // desa_profile_data so profil desa is populated immediately after import.
+  await upsertHubProfileData(vmtDesaId, parsed.data.hub_desa_id, profile);
 
   // 2. Attach to project. The attach_desa_to_project RPC hard-codes a
   // vmt.is_superadmin() check that reads auth.uid(), which is null under
@@ -120,24 +231,46 @@ export async function importHubDesaToProject(
       // (v1.1.0-adwi). Anything that doesn't have a direct ADWI key goes
       // into the meta_* namespace so it's still surfaced when AI assembles
       // context but doesn't clutter the form.
+      // Seed the Pencapaian section's `penghargaan` repeater from Hub's
+      // riwayat_adwi + awards so the desa doesn't have to re-type history
+      // that Hub already knows.
+      const penghargaan: Array<Record<string, unknown>> = [];
+      for (const r of profile.riwayat_adwi ?? []) {
+        if (!r.tahun) continue;
+        penghargaan.push({
+          nama: "Anugerah Desa Wisata Indonesia (ADWI)",
+          lembaga: "Kemenpar",
+          tahun: r.tahun,
+          peringkat: r.peringkat ?? null,
+        });
+      }
+      for (const a of profile.awards ?? []) {
+        if (!a.tahun) continue;
+        penghargaan.push({
+          nama: a.kompetisi ?? a.kategori ?? "Penghargaan",
+          lembaga: null,
+          tahun: a.tahun,
+          peringkat: a.peringkat ?? a.edisi ?? null,
+        });
+      }
+
       const baselineData: Record<string, unknown> = {
         // Informasi Dasar
         kontak_nama: profile.kontak?.contact_person ?? null,
         kontak_hp: profile.kontak?.phone ?? null,
         kontak_email: profile.kontak?.email ?? null,
-        // Atraksi
+        // Daya Tarik Wisata
         tematik_desa: profile.desa.deskripsi ?? null,
         kunjungan_tahunan: profile.desa.jumlah_kunjungan ?? null,
-        // Masyarakat
+        // Kelembagaan
         pendapatan_tahunan: profile.desa.pendapatan ?? null,
         jumlah_warga_terlibat: profile.desa.tenaga_kerja ?? null,
-        // Industri & Ekraf
+        // Ekonomi Kreatif (proxy: total UMKM count)
         jumlah_kios_ekraf: profile.desa.jumlah_umkm ?? null,
+        // Pencapaian (auto-fed from Hub history)
+        penghargaan,
         // Meta
         meta_fasilitas: profile.fasilitas,
-        meta_adwi_history: profile.riwayat_adwi.map(
-          (r) => `${r.tahun}: ${r.peringkat ?? "-"}`,
-        ),
         _imported_from_hub: true,
         _hub_desa_id: parsed.data.hub_desa_id,
         _imported_at: new Date().toISOString(),
@@ -153,7 +286,7 @@ export async function importHubDesaToProject(
 
       await supabase.from("desa_baseline_data").insert({
         project_desa_id: pdId,
-        schema_version: "1.1.0-adwi-hub",
+        schema_version: "1.2.0-adwi-jadesta-hub",
         data: baselineData,
       });
     }
@@ -197,12 +330,15 @@ export async function importHubDesaToMaster(
     .eq("kabupaten", profile.desa.kabupaten ?? "")
     .maybeSingle();
   if (existing) {
+    const existingId = (existing as { id: string }).id;
+    await supabase
+      .from("desa")
+      .update({ hub_desa_id: parsed.data.hub_desa_id })
+      .eq("id", existingId)
+      .is("hub_desa_id", null);
+    await upsertHubProfileData(existingId, parsed.data.hub_desa_id, profile);
     revalidatePath("/atourin/desa");
-    return {
-      ok: true,
-      vmt_desa_id: (existing as { id: string }).id,
-      already_existed: true,
-    };
+    return { ok: true, vmt_desa_id: existingId, already_existed: true };
   }
 
   const { data: created, error } = await supabase
@@ -215,16 +351,16 @@ export async function importHubDesaToMaster(
       provinsi: profile.desa.provinsi,
       current_classification: tier,
       jadesta_id: profile.desa.slug,
+      hub_desa_id: parsed.data.hub_desa_id,
     })
     .select("id")
     .single();
   if (error || !created)
     return { error: error?.message ?? "Gagal create desa" };
 
+  const newId = (created as { id: string }).id;
+  await upsertHubProfileData(newId, parsed.data.hub_desa_id, profile);
+
   revalidatePath("/atourin/desa");
-  return {
-    ok: true,
-    vmt_desa_id: (created as { id: string }).id,
-    already_existed: false,
-  };
+  return { ok: true, vmt_desa_id: newId, already_existed: false };
 }

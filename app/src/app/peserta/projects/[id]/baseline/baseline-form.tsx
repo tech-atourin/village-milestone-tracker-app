@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Loader2, Save, Send } from "lucide-react";
+import { Loader2, Save, Send, Plus, Trash2 } from "lucide-react";
 import { saveBaseline } from "@/server/actions/baseline";
 import type {
   BaselineField,
@@ -240,5 +240,71 @@ function Field({
           />
         </label>
       );
+    case "repeater": {
+      const rows = (Array.isArray(value) ? value : []) as Array<
+        Record<string, unknown>
+      >;
+      const sub = field.subfields ?? [];
+      const itemLabel = field.itemLabel ?? "entri";
+      return (
+        <div className="space-y-2">
+          {label}
+          {field.hint && (
+            <p className="text-xs text-atr-fg-muted">{field.hint}</p>
+          )}
+          {rows.length === 0 ? (
+            <p className="rounded-lg border border-dashed border-atr-outline bg-atr-bg-soft px-3 py-2 text-xs italic text-atr-fg-muted">
+              Belum ada {itemLabel}. Klik &quot;Tambah {itemLabel}&quot; untuk
+              menambahkan.
+            </p>
+          ) : (
+            <div className="space-y-2">
+              {rows.map((row, idx) => (
+                <div
+                  key={idx}
+                  className="space-y-2 rounded-lg border border-atr-outline bg-atr-bg-soft/40 p-3"
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-bold uppercase tracking-wide text-atr-fg-muted">
+                      {itemLabel} #{idx + 1}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        onChange(rows.filter((_, i) => i !== idx))
+                      }
+                      className="inline-flex items-center gap-1 text-xs font-bold text-atr-red hover:text-atr-red/80"
+                    >
+                      <Trash2 className="h-3 w-3" /> Hapus
+                    </button>
+                  </div>
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                    {sub.map((sf) => (
+                      <Field
+                        key={sf.key}
+                        field={sf}
+                        value={row[sf.key]}
+                        onChange={(v) => {
+                          const next = rows.slice();
+                          next[idx] = { ...row, [sf.key]: v };
+                          onChange(next);
+                        }}
+                      />
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+          <button
+            type="button"
+            onClick={() => onChange([...rows, {}])}
+            className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-atr-purple/40 bg-atr-purple-50 px-3 text-xs font-bold text-atr-purple-600 transition hover:bg-atr-purple-light/40"
+          >
+            <Plus className="h-3.5 w-3.5" /> Tambah {itemLabel}
+          </button>
+        </div>
+      );
+    }
   }
 }

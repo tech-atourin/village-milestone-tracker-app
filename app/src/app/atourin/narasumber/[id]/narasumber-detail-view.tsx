@@ -208,6 +208,49 @@ export function NarasumberDetailView({
                       </div>
                     </div>
                   </div>
+
+                  {r.topiks.length > 0 && (
+                    <div className="mt-3 border-t border-atr-outline pt-3">
+                      <div className="mb-2 text-[10px] font-bold uppercase tracking-wide text-atr-fg-muted">
+                        Materi yang Disampaikan
+                      </div>
+                      <div className="overflow-hidden rounded-lg border border-atr-outline">
+                        <table className="w-full text-xs">
+                          <thead className="bg-atr-bg-soft text-left text-[10px] uppercase tracking-wide text-atr-fg-muted">
+                            <tr>
+                              <th className="px-3 py-1.5">Materi</th>
+                              <th className="px-3 py-1.5 text-right">Sesi</th>
+                              <th className="px-3 py-1.5 text-right">Rating</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-atr-outline">
+                            {r.topiks.map((t) => (
+                              <tr key={t.name}>
+                                <td className="px-3 py-1.5 font-bold text-atr-fg">
+                                  {t.name}
+                                </td>
+                                <td className="px-3 py-1.5 text-right text-atr-fg-muted">
+                                  {t.sessions}
+                                </td>
+                                <td className="px-3 py-1.5 text-right">
+                                  {t.avg_rating != null ? (
+                                    <span className="font-bold text-atr-fg">
+                                      ★ {t.avg_rating.toFixed(2)}{" "}
+                                      <span className="font-normal text-atr-fg-muted">
+                                        ({t.rating_count})
+                                      </span>
+                                    </span>
+                                  ) : (
+                                    <span className="text-atr-fg-muted">-</span>
+                                  )}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </li>
             ))}

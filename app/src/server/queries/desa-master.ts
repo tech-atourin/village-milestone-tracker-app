@@ -96,10 +96,14 @@ export async function listAllDesa(opts: {
   const allPdIds = (pdAll ?? []).map((p) => (p as { id: string }).id);
   const baselineByPd = new Set<string>();
   if (allPdIds.length > 0) {
+    // Only count baseline as "complete" when the desa user (or mentor) has
+    // submitted it via the form — Hub auto-import inserts a row without
+    // submitted_at, which should not flip the checkmark.
     const { data: bl } = await supabase
       .from("desa_baseline_data")
       .select("project_desa_id")
-      .in("project_desa_id", allPdIds);
+      .in("project_desa_id", allPdIds)
+      .not("submitted_at", "is", null);
     for (const b of (bl ?? []) as Array<{ project_desa_id: string }>) {
       baselineByPd.add(b.project_desa_id);
     }

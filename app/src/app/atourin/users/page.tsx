@@ -19,7 +19,7 @@ export default async function UsersListPage() {
             Users
           </h1>
           <p className="text-sm text-atr-fg-muted">
-            Semua peserta, admin mitra, narasumber, dan desa wisata.
+            Semua superadmin, mitra admin, peserta, narasumber, dan desa wisata.
           </p>
         </div>
         <div className="flex items-center gap-2">

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Users, MapPin, FolderOpen } from "lucide-react";
 import { requireRole } from "@/lib/auth/rbac";
 import { createAdminClient } from "@/lib/supabase/server";
+import { listProjects } from "@/server/queries/projects";
 import { EmptyState } from "@/components/ui/empty-state";
 
 type Row = {
@@ -15,25 +16,24 @@ type Row = {
   project_name: string;
 };
 
-async function loadPeserta(organizationId: string | null): Promise<Row[]> {
-  // Admin client to bypass RLS on project_memberships/users (mitra anon role
-  // can't read other users' rows). We scope to mitra's organization here.
+async function loadPeserta(projectIds: string[]): Promise<Row[]> {
+  if (projectIds.length === 0) return [];
+  // Admin client bypasses RLS on project_memberships/users (mitra anon role
+  // can't read other users' rows). Scope is enforced by the project_ids
+  // list, which comes from the RLS-filtered listProjects() above.
   const admin = createAdminClient();
-  let query = admin
+  const { data } = await admin
     .from("project_memberships")
     .select(
-      "user_id, project_id, user:users!project_memberships_user_id_fkey(full_name, email), desa:desa(name), project:projects(name, organization_id)",
+      "user_id, project_id, user:users!project_memberships_user_id_fkey(full_name, email), desa:desa(name), project:projects(name)",
     )
+    .in("project_id", projectIds)
     .eq("role", "peserta")
     .eq("status", "active")
     .order("created_at", { ascending: false });
-  const { data } = await query;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const rows = ((data ?? []) as any[]);
-  const filtered = organizationId
-    ? rows.filter((r) => r.project?.organization_id === organizationId)
-    : rows;
-  return filtered.map((r) => ({
+  return rows.map((r) => ({
     user_id: r.user_id,
     full_name: r.user?.full_name ?? "-",
     email: r.user?.email ?? null,
@@ -44,8 +44,13 @@ async function loadPeserta(organizationId: string | null): Promise<Row[]> {
 }
 
 export default async function MitraPesertaPage() {
-  const user = await requireRole("mitra_admin");
-  const rows = await loadPeserta(user.organization_id ?? null);
+  await requireRole("mitra_admin");
+  // Use the same RLS-filtered project list the mitra sees on /mitra/projects
+  // instead of comparing organization_id (which fails when the user's org and
+  // project's org don't match exactly — e.g. atourin-created projects that
+  // the mitra has membership-level access to).
+  const projects = await listProjects();
+  const rows = await loadPeserta(projects.map((p) => p.id));
 
   return (
     <div className="space-y-6">
