@@ -9,6 +9,9 @@ import {
   Star,
   GraduationCap,
   ClipboardList,
+  Target,
+  AlertCircle,
+  Lightbulb,
 } from "lucide-react";
 import type { RaporDesaDetail } from "@/server/queries/rapor-desa";
 
@@ -36,7 +39,16 @@ export function RaporDesaPrintable({
   data: RaporDesaDetail;
   backHref: string;
 }) {
-  const { project, desa, aggregate, peserta, topik, narasumber, action_plans } = data;
+  const {
+    project,
+    desa,
+    aggregate,
+    peserta,
+    topik,
+    narasumber,
+    action_plans,
+    swot,
+  } = data;
   const tierLabel =
     TIER_LABEL[desa.current_classification ?? "unclassified"] ??
     "Belum Diklasifikasi";
@@ -279,6 +291,46 @@ export function RaporDesaPrintable({
         </section>
       )}
 
+      {/* SWOT analysis */}
+      {swot &&
+        (swot.strengths.length > 0 ||
+          swot.weaknesses.length > 0 ||
+          swot.opportunities.length > 0 ||
+          swot.threats.length > 0) && (
+          <section className="mb-8 rounded-2xl border border-atr-outline p-6">
+            <h2 className="mb-4 flex items-center gap-2 text-sm font-bold uppercase tracking-wide text-atr-fg-muted">
+              <Target className="h-3.5 w-3.5" />
+              SWOT Analysis Desa
+            </h2>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <SwotQuad
+                title="Strengths"
+                icon={Award}
+                palette="green"
+                items={swot.strengths}
+              />
+              <SwotQuad
+                title="Weaknesses"
+                icon={AlertCircle}
+                palette="red"
+                items={swot.weaknesses}
+              />
+              <SwotQuad
+                title="Opportunities"
+                icon={Lightbulb}
+                palette="yellow"
+                items={swot.opportunities}
+              />
+              <SwotQuad
+                title="Threats"
+                icon={TrendingUp}
+                palette="purple"
+                items={swot.threats}
+              />
+            </div>
+          </section>
+        )}
+
       {/* Peserta breakdown */}
       <section className="mb-8">
         <h2 className="mb-3 flex items-center gap-2 text-sm font-bold uppercase tracking-wide text-atr-fg-muted">
@@ -364,6 +416,53 @@ export function RaporDesaPrintable({
         </div>
       </div>
     </main>
+  );
+}
+
+function SwotQuad({
+  title,
+  icon: Icon,
+  palette,
+  items,
+}: {
+  title: string;
+  icon: React.ComponentType<{ className?: string }>;
+  palette: "green" | "red" | "yellow" | "purple";
+  items: string[];
+}) {
+  const styles: Record<string, string> = {
+    green: "border-atr-arti/30 bg-atr-arti/5",
+    red: "border-atr-red/30 bg-atr-red/5",
+    yellow: "border-atr-yellow/40 bg-atr-yellow/10",
+    purple: "border-atr-purple/30 bg-atr-purple-50/50",
+  };
+  const titleColor: Record<string, string> = {
+    green: "text-atr-arti",
+    red: "text-atr-red",
+    yellow: "text-atr-fg",
+    purple: "text-atr-purple-600",
+  };
+  return (
+    <article className={`rounded-xl border p-3 ${styles[palette]}`}>
+      <header
+        className={`mb-1.5 inline-flex items-center gap-1 text-[11px] font-bold uppercase tracking-wide ${titleColor[palette]}`}
+      >
+        <Icon className="h-3 w-3" />
+        {title}
+      </header>
+      {items.length === 0 ? (
+        <p className="text-[11px] italic text-atr-fg-muted">—</p>
+      ) : (
+        <ul className="space-y-1 text-[11px] text-atr-fg">
+          {items.map((it, i) => (
+            <li key={i} className="flex items-start gap-1">
+              <span className="mt-1 h-0.5 w-0.5 shrink-0 rounded-full bg-atr-fg-muted" />
+              <span>{it}</span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </article>
   );
 }
 

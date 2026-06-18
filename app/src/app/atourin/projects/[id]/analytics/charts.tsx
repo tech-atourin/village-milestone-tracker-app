@@ -276,23 +276,38 @@ export function AnalyticsCharts({ data }: { data: ProjectAnalytics }) {
         </section>
 
         <section className="rounded-2xl border border-atr-outline bg-white p-6 shadow-atr-1">
-          <header className="mb-4 flex items-center gap-2">
-            <TrendingUp className="h-4 w-4 text-atr-purple" />
-            <h3 className="text-sm font-bold uppercase tracking-wide text-atr-fg">
-              Top Narasumber (by Kuisioner)
-            </h3>
+          <header className="mb-4 flex items-center justify-between gap-2">
+            <div className="inline-flex items-center gap-2">
+              <Star className="h-4 w-4 fill-atr-yellow text-atr-yellow" />
+              <h3 className="text-sm font-bold uppercase tracking-wide text-atr-fg">
+                Kuisioner Kualitas Materi
+              </h3>
+            </div>
+            {data.kuisioner.rating_count > 0 && (
+              <span className="text-[11px] text-atr-fg-muted">
+                Rata-rata{" "}
+                <strong className="text-atr-fg">
+                  ★ {data.kuisioner.avg_rating?.toFixed(2) ?? "—"}
+                </strong>
+              </span>
+            )}
           </header>
-          {data.top_narasumber.length === 0 ? (
+          {data.rating_by_materi.length === 0 ? (
             <p className="py-12 text-center text-sm italic text-atr-fg-muted">
-              Belum ada penilaian peserta lewat kuisioner.
+              Belum ada penilaian peserta lewat kuisioner per materi.
             </p>
           ) : (
             <div className="h-72">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart
-                  data={data.top_narasumber.map((n) => ({
-                    ...n,
-                    rating_rounded: Number(n.avg_rating.toFixed(2)),
+                  data={data.rating_by_materi.map((m) => ({
+                    name:
+                      m.topik_name.length > 22
+                        ? m.topik_name.slice(0, 22) + "…"
+                        : m.topik_name,
+                    full_name: m.topik_name,
+                    rating_rounded: Number(m.avg_rating.toFixed(2)),
+                    rating_count: m.rating_count,
                   }))}
                   layout="vertical"
                   margin={{ top: 5, right: 40, bottom: 5, left: 5 }}
@@ -308,23 +323,25 @@ export function AnalyticsCharts({ data }: { data: ProjectAnalytics }) {
                     type="category"
                     dataKey="name"
                     tick={{ fontSize: 11 }}
-                    width={120}
-                    tickFormatter={(s: string) =>
-                      s.length > 16 ? s.slice(0, 16) + "…" : s
-                    }
+                    width={140}
                   />
                   <Tooltip
-                    formatter={(value: number, _name, ctx) => {
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    formatter={(value: any, _name: any, ctx: any) => {
                       const count = ctx?.payload?.rating_count ?? 0;
                       return [
                         `★ ${Number(value).toFixed(2)} (${count} penilaian)`,
                         "Rating",
                       ];
                     }}
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    labelFormatter={(label: any, ctx: any) =>
+                      ctx?.[0]?.payload?.full_name ?? label
+                    }
                   />
                   <Bar
                     dataKey="rating_rounded"
-                    fill={PURPLE}
+                    fill={YELLOW}
                     radius={[0, 4, 4, 0]}
                   >
                     <LabelList
@@ -345,57 +362,138 @@ export function AnalyticsCharts({ data }: { data: ProjectAnalytics }) {
         </section>
       </div>
 
-      {/* Sebaran Rating Kuisioner — histogram of star ratings peserta gave */}
-      <section className="rounded-2xl border border-atr-outline bg-white p-6 shadow-atr-1">
-        <header className="mb-4 flex items-center justify-between gap-2">
-          <div className="inline-flex items-center gap-2">
-            <Star className="h-4 w-4 fill-atr-yellow text-atr-yellow" />
-            <h3 className="text-sm font-bold uppercase tracking-wide text-atr-fg">
-              Sebaran Rating Kuisioner Narasumber
-            </h3>
-          </div>
-          {data.kuisioner.rating_count > 0 && (
-            <span className="text-xs font-bold text-atr-fg-muted">
-              Rata-rata{" "}
-              <strong className="text-atr-fg">
-                ★ {data.kuisioner.avg_rating?.toFixed(2) ?? "—"}
-              </strong>{" "}
-              · {data.kuisioner.rating_count} penilaian
-            </span>
-          )}
-        </header>
-        {data.kuisioner.rating_count === 0 ? (
-          <p className="py-12 text-center text-sm italic text-atr-fg-muted">
-            Belum ada peserta yang mengisi kuisioner narasumber.
-          </p>
-        ) : (
-          <div className="h-56">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart
-                data={ratingDist}
-                margin={{ top: 10, right: 20, bottom: 5, left: 5 }}
-              >
-                <CartesianGrid stroke="#E5E7EB" vertical={false} />
-                <XAxis dataKey="star" tick={{ fontSize: 11 }} />
-                <YAxis allowDecimals={false} tick={{ fontSize: 11 }} />
-                <Tooltip
-                  formatter={(value: number) => [
-                    `${value} penilaian`,
-                    "Jumlah",
-                  ]}
-                />
-                <Bar dataKey="count" fill={YELLOW} radius={[4, 4, 0, 0]}>
-                  <LabelList
-                    dataKey="count"
-                    position="top"
-                    style={{ fontSize: 11, fontWeight: 700, fill: "#374151" }}
+      {/* Rating distribution + Pre/Post growth per materi, side-by-side */}
+      <div className="grid gap-4 lg:grid-cols-2">
+        <section className="rounded-2xl border border-atr-outline bg-white p-6 shadow-atr-1">
+          <header className="mb-4 flex items-center justify-between gap-2">
+            <div className="inline-flex items-center gap-2">
+              <Star className="h-4 w-4 fill-atr-yellow text-atr-yellow" />
+              <h3 className="text-sm font-bold uppercase tracking-wide text-atr-fg">
+                Sebaran Rating Kuisioner Narasumber
+              </h3>
+            </div>
+            {data.kuisioner.rating_count > 0 && (
+              <span className="text-[11px] text-atr-fg-muted">
+                {data.kuisioner.rating_count} penilaian
+              </span>
+            )}
+          </header>
+          {data.kuisioner.rating_count === 0 ? (
+            <p className="py-12 text-center text-sm italic text-atr-fg-muted">
+              Belum ada peserta yang mengisi kuisioner narasumber.
+            </p>
+          ) : (
+            <div className="h-56">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart
+                  data={ratingDist}
+                  margin={{ top: 10, right: 20, bottom: 5, left: 5 }}
+                >
+                  <CartesianGrid stroke="#E5E7EB" vertical={false} />
+                  <XAxis dataKey="star" tick={{ fontSize: 11 }} />
+                  <YAxis allowDecimals={false} tick={{ fontSize: 11 }} />
+                  <Tooltip
+                    formatter={(value: number) => [
+                      `${value} penilaian`,
+                      "Jumlah",
+                    ]}
                   />
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        )}
-      </section>
+                  <Bar dataKey="count" fill={YELLOW} radius={[4, 4, 0, 0]}>
+                    <LabelList
+                      dataKey="count"
+                      position="top"
+                      style={{
+                        fontSize: 11,
+                        fontWeight: 700,
+                        fill: "#374151",
+                      }}
+                    />
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          )}
+        </section>
+
+        <section className="rounded-2xl border border-atr-outline bg-white p-6 shadow-atr-1">
+          <header className="mb-4 flex items-center gap-2">
+            <TrendingUp className="h-4 w-4 text-atr-arti" />
+            <h3 className="text-sm font-bold uppercase tracking-wide text-atr-fg">
+              Pertumbuhan Pre &amp; Post Test per Materi
+            </h3>
+          </header>
+          {data.test_growth_by_materi.length === 0 ? (
+            <p className="py-12 text-center text-sm italic text-atr-fg-muted">
+              Belum ada hasil pre/post test per materi.
+            </p>
+          ) : (
+            <div className="h-56">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart
+                  data={data.test_growth_by_materi.map((m) => ({
+                    name:
+                      m.topik_name.length > 14
+                        ? m.topik_name.slice(0, 14) + "…"
+                        : m.topik_name,
+                    full_name: m.topik_name,
+                    pre: m.avg_pre != null ? Math.round(m.avg_pre) : 0,
+                    post: m.avg_post != null ? Math.round(m.avg_post) : 0,
+                    delta: m.delta != null ? Math.round(m.delta) : 0,
+                  }))}
+                  margin={{ top: 10, right: 20, bottom: 5, left: 5 }}
+                >
+                  <CartesianGrid stroke="#E5E7EB" vertical={false} />
+                  <XAxis dataKey="name" tick={{ fontSize: 10 }} />
+                  <YAxis tick={{ fontSize: 11 }} domain={[0, 100]} />
+                  <Tooltip
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    labelFormatter={(label: any, ctx: any) =>
+                      ctx?.[0]?.payload?.full_name ?? label
+                    }
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    formatter={(value: any, name: any, ctx: any) => {
+                      if (name === "Δ") {
+                        const d = ctx?.payload?.delta ?? 0;
+                        return [`${d > 0 ? "+" : ""}${d} poin`, "Pertumbuhan"];
+                      }
+                      return [`${value} poin`, name];
+                    }}
+                  />
+                  <Legend
+                    iconType="square"
+                    wrapperStyle={{ fontSize: 11 }}
+                  />
+                  <Bar
+                    dataKey="pre"
+                    name="Pre-test"
+                    fill={MUTED}
+                    radius={[4, 4, 0, 0]}
+                  />
+                  <Bar
+                    dataKey="post"
+                    name="Post-test"
+                    fill={ARTI}
+                    radius={[4, 4, 0, 0]}
+                  >
+                    <LabelList
+                      dataKey="delta"
+                      position="top"
+                      formatter={(v: number) =>
+                        v > 0 ? `+${v}` : v < 0 ? `${v}` : ""
+                      }
+                      style={{
+                        fontSize: 10,
+                        fontWeight: 700,
+                        fill: "#3FB68B",
+                      }}
+                    />
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          )}
+        </section>
+      </div>
 
       {/* Rencana aksi + sesi status */}
       <div className="grid gap-4 lg:grid-cols-2">

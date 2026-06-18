@@ -1,5 +1,15 @@
 import Link from "next/link";
-import { ArrowLeft, MapPin, CheckCircle2, Clock } from "lucide-react";
+import {
+  ArrowLeft,
+  MapPin,
+  CheckCircle2,
+  Clock,
+  Award,
+  AlertCircle,
+  Lightbulb,
+  TrendingUp,
+  Target,
+} from "lucide-react";
 import { getProjectDesa } from "@/server/queries/desa";
 import { listPesertaTopik } from "@/server/queries/peserta";
 import { createClient } from "@/lib/supabase/server";
@@ -9,9 +19,16 @@ import type { DesaRecommendation } from "@/lib/ai/desa-recommendation";
 import { AiSummaryCard } from "./ai-summary-card";
 import { AiRecommendationCard } from "./ai-recommendation-card";
 
+export type DesaSwot = {
+  strengths: string[];
+  weaknesses: string[];
+  opportunities: string[];
+  threats: string[];
+};
+
 async function fetchCachedInsight<T>(
   projectDesaId: string,
-  type: "summary" | "recommendation",
+  type: "summary" | "recommendation" | "swot",
 ): Promise<{ content: T | null; cached: boolean }> {
   const supabase = createClient();
   const { data } = await supabase
@@ -58,10 +75,11 @@ export async function ProjectDesaDetailView({
   const detail = await getProjectDesa(projectId, projectDesaId);
   if (!detail) return null;
 
-  const [topik, cachedSummary, cachedRec] = await Promise.all([
+  const [topik, cachedSummary, cachedRec, cachedSwot] = await Promise.all([
     listPesertaTopik(projectDesaId),
     fetchCachedInsight<DesaSummary>(projectDesaId, "summary"),
     fetchCachedInsight<DesaRecommendation>(projectDesaId, "recommendation"),
+    fetchCachedInsight<DesaSwot>(projectDesaId, "swot"),
   ]);
   const aiReady = aiProvider().isReady();
   const overall =
@@ -141,6 +159,8 @@ export async function ProjectDesaDetailView({
           cached={cachedRec.cached}
         />
       </div>
+
+      {cachedSwot.content && <SwotCardSection swot={cachedSwot.content} />}
 
       <section className="space-y-3">
         <h2 className="text-sm font-bold uppercase tracking-wide text-atr-fg-muted">
@@ -223,5 +243,90 @@ function SummaryCard({
         {value}
       </div>
     </div>
+  );
+}
+
+// SWOT card — analisis dari hasil pendampingan narasumber, rencana aksi
+// peserta, dan baseline data desa. Disimpan di ai_insights dengan
+// insight_type='swot' (boleh AI-generated atau manual seed).
+export function SwotCardSection({ swot }: { swot: DesaSwot }) {
+  return (
+    <section className="space-y-3">
+      <h2 className="inline-flex items-center gap-2 text-sm font-bold uppercase tracking-wide text-atr-fg-muted">
+        <Target className="h-4 w-4 text-atr-purple" />
+        SWOT Analysis Desa
+      </h2>
+      <div className="grid gap-3 sm:grid-cols-2">
+        <SwotQuadrant
+          title="Strengths"
+          icon={Award}
+          palette="green"
+          items={swot.strengths}
+          emptyHint="Belum ada kekuatan teridentifikasi."
+        />
+        <SwotQuadrant
+          title="Weaknesses"
+          icon={AlertCircle}
+          palette="red"
+          items={swot.weaknesses}
+          emptyHint="Belum ada kelemahan teridentifikasi."
+        />
+        <SwotQuadrant
+          title="Opportunities"
+          icon={Lightbulb}
+          palette="yellow"
+          items={swot.opportunities}
+          emptyHint="Belum ada peluang teridentifikasi."
+        />
+        <SwotQuadrant
+          title="Threats"
+          icon={TrendingUp}
+          palette="purple"
+          items={swot.threats}
+          emptyHint="Belum ada ancaman teridentifikasi."
+        />
+      </div>
+    </section>
+  );
+}
+
+function SwotQuadrant({
+  title,
+  icon: Icon,
+  palette,
+  items,
+  emptyHint,
+}: {
+  title: string;
+  icon: React.ComponentType<{ className?: string }>;
+  palette: "green" | "red" | "yellow" | "purple";
+  items: string[];
+  emptyHint: string;
+}) {
+  const styles: Record<string, string> = {
+    green: "border-atr-arti/30 bg-atr-arti/5 text-atr-arti",
+    red: "border-atr-red/30 bg-atr-red/5 text-atr-red",
+    yellow: "border-atr-yellow/40 bg-atr-yellow/10 text-atr-fg",
+    purple: "border-atr-purple/30 bg-atr-purple-50/50 text-atr-purple-600",
+  };
+  return (
+    <article className={`rounded-2xl border p-4 ${styles[palette]}`}>
+      <header className="mb-2 inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wide">
+        <Icon className="h-3.5 w-3.5" />
+        {title}
+      </header>
+      {items.length === 0 ? (
+        <p className="text-xs italic opacity-70">{emptyHint}</p>
+      ) : (
+        <ul className="space-y-1.5 text-xs text-atr-fg">
+          {items.map((it, i) => (
+            <li key={i} className="flex items-start gap-1.5">
+              <span className="mt-1 h-1 w-1 shrink-0 rounded-full bg-atr-fg-muted" />
+              <span>{it}</span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </article>
   );
 }

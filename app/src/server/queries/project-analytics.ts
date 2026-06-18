@@ -83,6 +83,24 @@ export type ProjectAnalytics = {
     desa_done: number;
     desa_total: number;
   }>;
+  // Per-materi kuisioner rating (avg across peserta) for each project_topik.
+  rating_by_materi: Array<{
+    topik_id: string;
+    topik_name: string;
+    avg_rating: number;
+    rating_count: number;
+  }>;
+  // Per-materi pre→post test growth (avg per topik). Comes from
+  // peserta_test_results scoped by project_topik_id.
+  test_growth_by_materi: Array<{
+    topik_id: string;
+    topik_name: string;
+    avg_pre: number | null;
+    avg_post: number | null;
+    delta: number | null;
+    pre_count: number;
+    post_count: number;
+  }>;
 };
 
 export async function getProjectAnalytics(
@@ -460,6 +478,101 @@ export async function getProjectAnalytics(
     }))
     .sort((a, b) => b.completion_pct - a.completion_pct);
 
+  // Per-materi narasumber rating: avg + count grouped by project_topik.
+  type TopikRatingRow = {
+    project_topik_id: string;
+    rating: number;
+    project_topik: { id: string; name: string | null } | null;
+  };
+  const { data: ratingsByTopik } = await supabase
+    .from("narasumber_ratings")
+    .select(
+      "project_topik_id, rating, project_topik:project_topik(id, name)",
+    )
+    .eq("project_id", projectId)
+    .not("project_topik_id", "is", null);
+  const ratingByMateriAgg = new Map<
+    string,
+    { name: string; sum: number; count: number }
+  >();
+  for (const r of ((ratingsByTopik ?? []) as unknown) as TopikRatingRow[]) {
+    const id = r.project_topik_id;
+    const name = r.project_topik?.name ?? "—";
+    const cur = ratingByMateriAgg.get(id) ?? { name, sum: 0, count: 0 };
+    cur.sum += Number(r.rating);
+    cur.count += 1;
+    ratingByMateriAgg.set(id, cur);
+  }
+  const rating_by_materi = Array.from(ratingByMateriAgg.entries())
+    .map(([topik_id, v]) => ({
+      topik_id,
+      topik_name: v.name,
+      avg_rating: v.count > 0 ? v.sum / v.count : 0,
+      rating_count: v.count,
+    }))
+    .sort((a, b) => b.avg_rating - a.avg_rating);
+
+  // Per-materi pre/post test growth (from peserta_test_results scoped to topik).
+  type TestRow = {
+    project_topik_id: string | null;
+    score: number | null;
+    project_topik: { id: string; name: string | null } | null;
+    gform: { form_type: string | null } | null;
+  };
+  const { data: testRows } = await supabase
+    .from("peserta_test_results")
+    .select(
+      "project_topik_id, score, project_topik:project_topik(id, name), gform:project_gforms!inner(form_type, project_id)",
+    )
+    .eq("gform.project_id", projectId)
+    .not("project_topik_id", "is", null);
+  const testAgg = new Map<
+    string,
+    {
+      name: string;
+      pre_sum: number;
+      pre_count: number;
+      post_sum: number;
+      post_count: number;
+    }
+  >();
+  for (const r of ((testRows ?? []) as unknown) as TestRow[]) {
+    if (!r.project_topik_id || r.score == null) continue;
+    const id = r.project_topik_id;
+    const cur = testAgg.get(id) ?? {
+      name: r.project_topik?.name ?? "—",
+      pre_sum: 0,
+      pre_count: 0,
+      post_sum: 0,
+      post_count: 0,
+    };
+    if (r.gform?.form_type === "pre_test") {
+      cur.pre_sum += Number(r.score);
+      cur.pre_count += 1;
+    } else if (r.gform?.form_type === "post_test") {
+      cur.post_sum += Number(r.score);
+      cur.post_count += 1;
+    }
+    testAgg.set(id, cur);
+  }
+  const test_growth_by_materi = Array.from(testAgg.entries())
+    .map(([topik_id, v]) => {
+      const avg_pre = v.pre_count > 0 ? v.pre_sum / v.pre_count : null;
+      const avg_post = v.post_count > 0 ? v.post_sum / v.post_count : null;
+      const delta =
+        avg_pre != null && avg_post != null ? avg_post - avg_pre : null;
+      return {
+        topik_id,
+        topik_name: v.name,
+        avg_pre,
+        avg_post,
+        delta,
+        pre_count: v.pre_count,
+        post_count: v.post_count,
+      };
+    })
+    .sort((a, b) => (b.delta ?? -Infinity) - (a.delta ?? -Infinity));
+
   return {
     project: {
       id: project?.id ?? projectId,
@@ -490,5 +603,7 @@ export async function getProjectAnalytics(
       distribution,
     },
     checklist_by_topik,
+    rating_by_materi,
+    test_growth_by_materi,
   };
 }

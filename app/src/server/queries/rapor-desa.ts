@@ -223,6 +223,13 @@ export type RaporDesaDetail = {
     total: number;
     by_status: { rencana: number; on_track: number; selesai: number; ditunda: number };
   };
+  // SWOT analysis from ai_insights (insight_type='swot') for this project_desa.
+  swot: {
+    strengths: string[];
+    weaknesses: string[];
+    opportunities: string[];
+    threats: string[];
+  } | null;
 };
 
 export async function getRaporDesaDetail(
@@ -426,6 +433,30 @@ export async function getRaporDesaDetail(
     by_status: apStatus,
   };
 
+  // SWOT from ai_insights (insight_type='swot') for this project_desa
+  const { data: swotRow } = await supabase
+    .from("ai_insights")
+    .select("content")
+    .eq("target_type", "project_desa")
+    .eq("target_id", projectDesaId)
+    .eq("insight_type", "swot")
+    .order("generated_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const swot = (swotRow as any)?.content
+    ? {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        strengths: ((swotRow as any).content.strengths ?? []) as string[],
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        weaknesses: ((swotRow as any).content.weaknesses ?? []) as string[],
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        opportunities: ((swotRow as any).content.opportunities ?? []) as string[],
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        threats: ((swotRow as any).content.threats ?? []) as string[],
+      }
+    : null;
+
   return {
     project: {
       id: project.id as string,
@@ -461,6 +492,7 @@ export async function getRaporDesaDetail(
     topik,
     narasumber: narasumberSummary,
     action_plans: actionPlansSummary,
+    swot,
   };
 }
 
