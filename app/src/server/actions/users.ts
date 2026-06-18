@@ -170,6 +170,111 @@ export async function upsertUser(input: z.input<typeof upsertSchema>): Promise<
   return { ok: true, id: userId, generated_password: generatedPassword };
 }
 
+// =====================================================
+// updateUserEmail - change a user's email (auth + vmt.users)
+// =====================================================
+const updateEmailSchema = z.object({
+  id: z.string().uuid(),
+  email: z.string().email(),
+});
+
+export async function updateUserEmail(
+  input: z.input<typeof updateEmailSchema>,
+): Promise<{ ok: true } | { error: string }> {
+  const parsed = updateEmailSchema.safeParse(input);
+  if (!parsed.success) return { error: "Email tidak valid" };
+  const admin = createAdminClient();
+  const { data: target } = await admin
+    .from("users")
+    .select("id, global_role, organization_id")
+    .eq("id", parsed.data.id)
+    .maybeSingle();
+  if (!target) return { error: "User tidak ditemukan" };
+  const t = target as {
+    id: string;
+    global_role: string;
+    organization_id: string | null;
+  };
+  const access = await ensureAccess(t.global_role, t.organization_id);
+  if ("error" in access) return { error: access.error ?? "Tidak diizinkan" };
+
+  // Check duplicate email
+  const { data: dup } = await admin
+    .from("users")
+    .select("id")
+    .eq("email", parsed.data.email)
+    .neq("id", parsed.data.id)
+    .is("deleted_at", null)
+    .maybeSingle();
+  if (dup) return { error: "Email sudah dipakai user lain" };
+
+  // Update auth user email — also confirm immediately so login works
+  const { error: authErr } = await admin.auth.admin.updateUserById(
+    parsed.data.id,
+    { email: parsed.data.email, email_confirm: true },
+  );
+  if (authErr) return { error: authErr.message };
+
+  // Sync to vmt.users
+  const { error: profErr } = await admin
+    .from("users")
+    .update({ email: parsed.data.email, email_artificial: false })
+    .eq("id", parsed.data.id);
+  if (profErr) return { error: profErr.message };
+
+  await audit({
+    actor_id: access.user.id,
+    action: "member.added",
+    entity_type: "user.email_changed",
+    entity_id: parsed.data.id,
+    after: { email: parsed.data.email },
+  });
+  revalidatePath(`/atourin/users/${parsed.data.id}`);
+  revalidatePath(`/mitra/users/${parsed.data.id}`);
+  revalidatePath("/atourin/users");
+  revalidatePath("/mitra/users");
+  return { ok: true };
+}
+
+// =====================================================
+// resetUserPassword - generate new password + return it
+// =====================================================
+export async function resetUserPassword(
+  id: string,
+): Promise<{ ok: true; password: string } | { error: string }> {
+  if (!id) return { error: "User ID required" };
+  const admin = createAdminClient();
+  const { data: target } = await admin
+    .from("users")
+    .select("id, global_role, organization_id, email")
+    .eq("id", id)
+    .maybeSingle();
+  if (!target) return { error: "User tidak ditemukan" };
+  const t = target as {
+    id: string;
+    global_role: string;
+    organization_id: string | null;
+    email: string | null;
+  };
+  if (!t.email) return { error: "User belum punya email — tidak bisa reset password" };
+  const access = await ensureAccess(t.global_role, t.organization_id);
+  if ("error" in access) return { error: access.error ?? "Tidak diizinkan" };
+
+  const password = cryptoRandomPassword();
+  const { error: authErr } = await admin.auth.admin.updateUserById(id, {
+    password,
+  });
+  if (authErr) return { error: authErr.message };
+
+  await audit({
+    actor_id: access.user.id,
+    action: "member.added",
+    entity_type: "user.password_reset",
+    entity_id: id,
+  });
+  return { ok: true, password };
+}
+
 export async function deleteUser(id: string) {
   const user = await requireRole("superadmin");
   const admin = createAdminClient();

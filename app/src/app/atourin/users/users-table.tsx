@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
+import Link from "next/link";
 import type { ColumnDef } from "@tanstack/react-table";
 import { DataTable } from "@/components/data-table";
 import type { UserListRow } from "@/server/queries/users";
@@ -26,7 +27,17 @@ type Row = UserListRow & {
   role_label: string;
 };
 
-export function UsersTable({ users }: { users: UserListRow[] }) {
+export function UsersTable({
+  users,
+  detailHrefBase = "/atourin/users",
+  roleFilterOptions,
+}: {
+  users: UserListRow[];
+  detailHrefBase?: string;
+  // Override role filter dropdown — by default shows all 5 roles. Mitra passes
+  // a restricted set so superadmin/mitra_admin aren't listed.
+  roleFilterOptions?: Array<{ value: string; label: string }>;
+}) {
   const data: Row[] = useMemo(
     () =>
       users.map((u) => ({
@@ -43,7 +54,12 @@ export function UsersTable({ users }: { users: UserListRow[] }) {
         accessorKey: "full_name",
         header: "Nama",
         cell: ({ row }) => (
-          <div className="font-bold text-atr-fg">{row.original.full_name}</div>
+          <Link
+            href={`${detailHrefBase}/${row.original.id}`}
+            className="font-bold text-atr-purple-600 hover:underline"
+          >
+            {row.original.full_name}
+          </Link>
         ),
       },
       {
@@ -99,7 +115,7 @@ export function UsersTable({ users }: { users: UserListRow[] }) {
         ),
       },
     ],
-    [],
+    [detailHrefBase],
   );
 
   const orgOptions = useMemo(() => {
@@ -120,10 +136,12 @@ export function UsersTable({ users }: { users: UserListRow[] }) {
         {
           key: "global_role",
           label: "Role",
-          options: Object.entries(ROLE_LABEL).map(([v, l]) => ({
-            value: v,
-            label: l,
-          })),
+          options:
+            roleFilterOptions ??
+            Object.entries(ROLE_LABEL).map(([v, l]) => ({
+              value: v,
+              label: l,
+            })),
         },
         {
           key: "organization_name",

@@ -5,9 +5,16 @@ import { Plus } from "lucide-react";
 import {
   UserFormDialog,
   type OrgOption,
+  type UserFormRole,
 } from "@/components/users/user-form-dialog";
 
-export function AddUserButton({ orgOptions }: { orgOptions: OrgOption[] }) {
+export function AddUserButton({
+  orgOptions,
+  allowedRoles,
+}: {
+  orgOptions: OrgOption[];
+  allowedRoles?: UserFormRole[];
+}) {
   const [open, setOpen] = useState(false);
   return (
     <>
@@ -23,6 +30,7 @@ export function AddUserButton({ orgOptions }: { orgOptions: OrgOption[] }) {
         open={open}
         onClose={() => setOpen(false)}
         orgOptions={orgOptions}
+        allowedRoles={allowedRoles}
       />
     </>
   );
