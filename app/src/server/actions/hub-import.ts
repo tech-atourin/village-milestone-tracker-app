@@ -21,7 +21,8 @@ const KATEGORI_TO_TIER: Record<string, string> = {
 export async function importHubDesaToProject(
   input: z.input<typeof importSchema>,
 ) {
-  await requireRole("superadmin");
+  // Both atourin and mitra project Desa tabs call this; widen guard to mitra.
+  await requireRole("superadmin", "mitra_admin");
   const parsed = importSchema.safeParse(input);
   if (!parsed.success) return { error: "Input tidak valid" };
 
