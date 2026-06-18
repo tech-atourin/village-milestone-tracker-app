@@ -11,6 +11,7 @@ export type UserListRow = {
   phone: string | null;
   global_role: GlobalRole;
   organization: { id: string; name: string } | null;
+  representing_desa_id: string | null;
   created_at: string;
   last_login_at: string | null;
 };
@@ -23,7 +24,7 @@ export async function listUsers(filter?: {
   let query = supabase
     .from("users")
     .select(
-      "id, full_name, email, email_artificial, phone, global_role, created_at, last_login_at, organization:organizations(id, name)",
+      "id, full_name, email, email_artificial, phone, global_role, representing_desa_id, created_at, last_login_at, organization:organizations(id, name)",
     )
     .is("deleted_at", null)
     .order("created_at", { ascending: false })

@@ -66,6 +66,33 @@ export async function attachDesaToProject(input: AttachDesaInput) {
     console.error("attachDesaToProject:", error);
     return { error: error.message };
   }
+  // Auto-attach all peserta whose representing_desa_id matches this desa
+  await autoAttachPesertaByDesa(parsed.data.project_id, parsed.data.desa_id);
   revalidatePath(`/atourin/projects/${parsed.data.project_id}`);
   return { project_desa_id: data as string };
+}
+
+// Helper: find all peserta users whose home desa = desaId, and insert them
+// as active project_memberships for the given project. Idempotent via upsert.
+async function autoAttachPesertaByDesa(projectId: string, desaId: string) {
+  const { createAdminClient } = await import("@/lib/supabase/server");
+  const admin = createAdminClient();
+  const { data: peserta } = await admin
+    .from("users")
+    .select("id")
+    .eq("global_role", "peserta")
+    .eq("representing_desa_id", desaId)
+    .is("deleted_at", null);
+  for (const u of ((peserta ?? []) as Array<{ id: string }>)) {
+    await admin.from("project_memberships").upsert(
+      {
+        project_id: projectId,
+        user_id: u.id,
+        role: "peserta",
+        desa_id: desaId,
+        status: "active",
+      },
+      { onConflict: "project_id,user_id,role" },
+    );
+  }
 }

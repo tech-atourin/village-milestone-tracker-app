@@ -32,9 +32,6 @@ export default async function PesertaBaselinePage({
         <h1 className="text-xl font-bold tracking-tight text-atr-fg">
           Baseline desa
         </h1>
-        <p className="mt-1 text-sm text-atr-fg-muted">
-          {schema.name} · v{schema.version}
-        </p>
         {existing?.submitted_at && (
           <p className="mt-1 text-xs text-atr-arti">
             ✓ Data baseline aktif - terakhir diupdate{" "}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2, Save, Send, Plus, Trash2 } from "lucide-react";
 import { saveBaseline } from "@/server/actions/baseline";
@@ -8,6 +8,13 @@ import type {
   BaselineField,
   BaselineSchemaRow,
 } from "@/lib/baseline/types";
+
+function slugify(s: string): string {
+  return s
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
+}
 
 export function BaselineForm({
   projectDesaId,
@@ -23,6 +30,38 @@ export function BaselineForm({
   const [data, setData] = useState<Record<string, unknown>>(initialData);
   const [error, setError] = useState<string | null>(null);
   const [savedAt, setSavedAt] = useState<string | null>(null);
+  const [activeSection, setActiveSection] = useState<string>(
+    schema.fields[0]?.section ?? "",
+  );
+  const sectionRefs = useRef<Record<string, HTMLElement | null>>({});
+
+  useEffect(() => {
+    if (typeof IntersectionObserver === "undefined") return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const visible = entries
+          .filter((e) => e.isIntersecting)
+          .sort((a, b) => b.intersectionRatio - a.intersectionRatio);
+        if (visible[0])
+          setActiveSection(
+            (visible[0].target as HTMLElement).dataset.section ?? "",
+          );
+      },
+      { rootMargin: "-30% 0px -60% 0px", threshold: [0, 0.25, 0.5, 1] },
+    );
+    Object.values(sectionRefs.current).forEach((el) => {
+      if (el) observer.observe(el);
+    });
+    return () => observer.disconnect();
+  }, [schema.fields]);
+
+  function jumpTo(section: string) {
+    const el = sectionRefs.current[section];
+    if (el) {
+      const top = el.getBoundingClientRect().top + window.scrollY - 120;
+      window.scrollTo({ top, behavior: "smooth" });
+    }
+  }
 
   function setField(key: string, value: unknown) {
     setData((d) => ({ ...d, [key]: value }));
@@ -47,10 +86,38 @@ export function BaselineForm({
 
   return (
     <div className="space-y-5">
+      {/* Sticky TOC: horizontal-scrollable chip strip with click-to-jump */}
+      <nav className="sticky top-14 z-30 -mx-4 border-y border-atr-outline bg-white/95 px-4 py-2 backdrop-blur sm:mx-0 sm:rounded-xl sm:border sm:shadow-atr-1">
+        <div className="flex gap-1.5 overflow-x-auto pb-0.5 [scrollbar-width:thin]">
+          {schema.fields.map((section) => {
+            const on = activeSection === section.section;
+            return (
+              <button
+                key={section.section}
+                type="button"
+                onClick={() => jumpTo(section.section)}
+                className={`inline-flex h-7 shrink-0 items-center rounded-full px-3 text-xs font-bold transition ${
+                  on
+                    ? "bg-atr-purple text-white"
+                    : "border border-atr-outline bg-white text-atr-fg-muted hover:bg-atr-bg-soft hover:text-atr-fg"
+                }`}
+              >
+                {section.section}
+              </button>
+            );
+          })}
+        </div>
+      </nav>
+
       {schema.fields.map((section) => (
         <section
           key={section.section}
-          className="rounded-2xl border border-atr-outline bg-white p-5 shadow-atr-1"
+          id={`baseline-${slugify(section.section)}`}
+          data-section={section.section}
+          ref={(el) => {
+            sectionRefs.current[section.section] = el;
+          }}
+          className="scroll-mt-32 rounded-2xl border border-atr-outline bg-white p-5 shadow-atr-1"
         >
           <h2 className="mb-4 text-sm font-bold uppercase tracking-wide text-atr-purple">
             {section.section}

@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { ClipboardCheck, FileText } from "lucide-react";
+import Link from "next/link";
+import { ClipboardCheck, FileText, Settings } from "lucide-react";
 
 type Tab = "v1" | "v2";
 
@@ -22,21 +23,31 @@ export function KlasifikasiChipNav({
 
   return (
     <div className="space-y-4">
-      <nav className="flex flex-wrap gap-2">
-        <Chip
-          active={active === "v1"}
-          onClick={() => setActive("v1")}
-          icon={ClipboardCheck}
-          label="Assessment Klasifikasi Desa V1 (ADWI)"
-          count={v1Count}
-        />
-        <Chip
-          active={active === "v2"}
-          onClick={() => setActive("v2")}
-          icon={FileText}
-          label="Assessment Klasifikasi Desa V2 (Atourin)"
-          count={v2Count}
-        />
+      <nav className="flex flex-wrap items-center justify-between gap-2">
+        <div className="flex flex-wrap gap-2">
+          <Chip
+            active={active === "v1"}
+            onClick={() => setActive("v1")}
+            icon={ClipboardCheck}
+            label="Assessment Klasifikasi Desa V1 (ADWI)"
+            count={v1Count}
+          />
+          <Chip
+            active={active === "v2"}
+            onClick={() => setActive("v2")}
+            icon={FileText}
+            label="Assessment Klasifikasi Desa V2 (Atourin)"
+            count={v2Count}
+          />
+        </div>
+        <Link
+          href={active === "v1" ? "/atourin/klasifikasi/master/v1" : "/atourin/klasifikasi/master/v2"}
+          className="inline-flex h-10 items-center gap-2 rounded-lg border border-atr-outline bg-white px-3 text-sm font-bold text-atr-fg transition hover:bg-atr-bg-soft"
+          title="Edit kriteria/checklist master"
+        >
+          <Settings className="h-4 w-4" />
+          Kelola Master {active === "v1" ? "V1" : "V2"}
+        </Link>
       </nav>
 
       {active === "v1" && v1Pending > 0 && (

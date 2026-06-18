@@ -87,6 +87,7 @@ export async function rateNarasumber(
         context_title: "Penilaian Narasumber",
         author_name: user.full_name,
         body_excerpt: `Memberi rating ${body.rating}/5${body.comment ? `: ${body.comment}` : ""}`,
+        project_id: body.project_id,
       },
     });
   } catch {

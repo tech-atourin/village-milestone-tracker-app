@@ -175,7 +175,23 @@ export default async function DesaProfilPage() {
   const kontak_email = (b.kontak_email as string) ?? null;
   const jumlah_homestay = (b.jumlah_homestay as number | string) ?? null;
   const jumlah_daya_tarik = (b.jumlah_daya_tarik as number | string) ?? null;
-  const kunjungan_tahunan = (b.kunjungan_tahunan as number | string) ?? null;
+  // Latest year from kunjungan_per_tahun repeater (fallback to legacy single field)
+  const kunjPerTahun = Array.isArray(b.kunjungan_per_tahun)
+    ? (b.kunjungan_per_tahun as Array<Record<string, unknown>>)
+    : [];
+  const latestKunj = kunjPerTahun.reduce<{ wni: number; wna: number; tahun: number } | null>(
+    (best, r) => {
+      const t = Number(r.tahun ?? 0);
+      if (!Number.isFinite(t)) return best;
+      if (!best || t > best.tahun)
+        return { tahun: t, wni: Number(r.wni ?? 0) || 0, wna: Number(r.wna ?? 0) || 0 };
+      return best;
+    },
+    null,
+  );
+  const kunjungan_tahunan: number | string | null = latestKunj
+    ? latestKunj.wni + latestKunj.wna
+    : ((b.kunjungan_tahunan as number | string) ?? null);
   const punya_pokdarwis = b.punya_pokdarwis as boolean | undefined;
   const punya_bumdes = b.punya_bumdes as boolean | undefined;
   const akses_internet = (b.akses_internet as string) ?? null;

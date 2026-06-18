@@ -16,6 +16,7 @@ const ALL_ROLES = [
 export type UserFormRole = (typeof ALL_ROLES)[number]["value"];
 
 export type OrgOption = { id: string; name: string };
+export type DesaOption = { id: string; name: string };
 
 export type UserFormInitial = {
   id: string;
@@ -24,6 +25,7 @@ export type UserFormInitial = {
   phone: string | null;
   global_role: UserFormRole;
   organization_id: string | null;
+  representing_desa_id: string | null;
 };
 
 /**
@@ -39,6 +41,7 @@ export function UserFormDialog({
   allowedRoles,
   forceOrgId,
   orgOptions,
+  desaOptions = [],
   initialRole,
   initialUser,
 }: {
@@ -47,6 +50,7 @@ export function UserFormDialog({
   allowedRoles?: ReadonlyArray<UserFormRole>;
   forceOrgId?: string;
   orgOptions: OrgOption[];
+  desaOptions?: DesaOption[];
   initialRole?: UserFormRole;
   // When provided, dialog enters edit mode and updates this user in place.
   initialUser?: UserFormInitial | null;
@@ -65,6 +69,7 @@ export function UserFormDialog({
     phone: string;
     global_role: UserFormRole;
     organization_id: string;
+    representing_desa_id: string;
   }>({
     full_name: initialUser?.full_name ?? "",
     email: initialUser?.email ?? "",
@@ -72,6 +77,7 @@ export function UserFormDialog({
     global_role: initialUser?.global_role ?? initialRole ?? "peserta",
     organization_id:
       initialUser?.organization_id ?? forceOrgId ?? "",
+    representing_desa_id: initialUser?.representing_desa_id ?? "",
   });
 
   useEffect(() => {
@@ -83,6 +89,7 @@ export function UserFormDialog({
         global_role: initialUser?.global_role ?? initialRole ?? "peserta",
         organization_id:
           initialUser?.organization_id ?? forceOrgId ?? "",
+        representing_desa_id: initialUser?.representing_desa_id ?? "",
       });
       setError(null);
       setCredentials(null);
@@ -120,6 +127,10 @@ export function UserFormDialog({
         global_role: form.global_role,
         organization_id:
           forceOrgId ?? (form.organization_id ? form.organization_id : null),
+        representing_desa_id:
+          form.global_role === "peserta" || form.global_role === "desa_wisata"
+            ? form.representing_desa_id || null
+            : null,
       });
       if ("error" in r) {
         setError(r.error);
@@ -237,6 +248,24 @@ export function UserFormDialog({
             </header>
 
             <div className="space-y-3">
+              <Field label="Role" required>
+                <select
+                  value={form.global_role}
+                  onChange={(e) =>
+                    setForm((f) => ({
+                      ...f,
+                      global_role: e.target.value as UserFormRole,
+                    }))
+                  }
+                  className="h-10 w-full rounded-lg border border-atr-outline bg-white px-3 text-sm outline-none focus:border-atr-purple focus:ring-2 focus:ring-atr-purple/15"
+                >
+                  {roleOptions.map((r) => (
+                    <option key={r.value} value={r.value}>
+                      {r.label}
+                    </option>
+                  ))}
+                </select>
+              </Field>
               <Field label="Nama lengkap" required>
                 <input
                   type="text"
@@ -276,24 +305,31 @@ export function UserFormDialog({
                   className="h-10 w-full rounded-lg border border-atr-outline bg-white px-3 text-sm outline-none focus:border-atr-purple focus:ring-2 focus:ring-atr-purple/15"
                 />
               </Field>
-              <Field label="Role" required>
-                <select
-                  value={form.global_role}
-                  onChange={(e) =>
-                    setForm((f) => ({
-                      ...f,
-                      global_role: e.target.value as UserFormRole,
-                    }))
-                  }
-                  className="h-10 w-full rounded-lg border border-atr-outline bg-white px-3 text-sm outline-none focus:border-atr-purple focus:ring-2 focus:ring-atr-purple/15"
-                >
-                  {roleOptions.map((r) => (
-                    <option key={r.value} value={r.value}>
-                      {r.label}
-                    </option>
-                  ))}
-                </select>
-              </Field>
+              {form.global_role === "peserta" && desaOptions.length > 0 && (
+                <Field label="Asal Desa Wisata (opsional)">
+                  <select
+                    value={form.representing_desa_id}
+                    onChange={(e) =>
+                      setForm((f) => ({
+                        ...f,
+                        representing_desa_id: e.target.value,
+                      }))
+                    }
+                    className="h-10 w-full rounded-lg border border-atr-outline bg-white px-3 text-sm outline-none focus:border-atr-purple focus:ring-2 focus:ring-atr-purple/15"
+                  >
+                    <option value="">Tidak terkait desa tertentu</option>
+                    {desaOptions.map((d) => (
+                      <option key={d.id} value={d.id}>
+                        {d.name}
+                      </option>
+                    ))}
+                  </select>
+                  <p className="mt-1 text-[10px] italic text-atr-fg-muted">
+                    Kalau diisi, peserta otomatis di-attach ke project yang
+                    melibatkan desa tersebut.
+                  </p>
+                </Field>
+              )}
               {!forceOrgId &&
                 (form.global_role === "mitra_admin" ||
                   form.global_role === "peserta" ||

@@ -4,12 +4,18 @@ import Link from "next/link";
 import { Upload, Users as UsersIcon } from "lucide-react";
 import { listUsers } from "@/server/queries/users";
 import { listOrgsDetailed } from "@/server/queries/orgs";
+import { listDesa } from "@/server/queries/desa";
 import { UsersTable } from "./users-table";
 import { AddUserButton } from "./add-user-button";
 
 export default async function UsersListPage() {
-  const [users, orgs] = await Promise.all([listUsers(), listOrgsDetailed()]);
+  const [users, orgs, desa] = await Promise.all([
+    listUsers(),
+    listOrgsDetailed(),
+    listDesa(),
+  ]);
   const orgOptions = orgs.map((o) => ({ id: o.id, name: o.name }));
+  const desaOptions = desa.map((d) => ({ id: d.id, name: d.name }));
 
   return (
     <div className="space-y-6">
@@ -23,7 +29,7 @@ export default async function UsersListPage() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <AddUserButton orgOptions={orgOptions} />
+          <AddUserButton orgOptions={orgOptions} desaOptions={desaOptions} />
           <Link
             href="/atourin/users/bulk-import"
             className="inline-flex h-10 items-center gap-2 rounded-lg border border-atr-outline bg-white px-4 text-sm font-bold text-atr-fg transition hover:bg-atr-bg-soft"
@@ -46,7 +52,7 @@ export default async function UsersListPage() {
           </p>
         </div>
       ) : (
-        <UsersTable users={users} orgOptions={orgOptions} />
+        <UsersTable users={users} orgOptions={orgOptions} desaOptions={desaOptions} />
       )}
     </div>
   );

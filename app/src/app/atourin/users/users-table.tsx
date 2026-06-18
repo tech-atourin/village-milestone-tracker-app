@@ -12,6 +12,7 @@ import {
   type UserFormInitial,
   type UserFormRole,
   type OrgOption,
+  type DesaOption,
 } from "@/components/users/user-form-dialog";
 import {
   deleteUser,
@@ -46,15 +47,14 @@ export function UsersTable({
   detailHrefBase = "/atourin/users",
   roleFilterOptions,
   orgOptions = [],
+  desaOptions = [],
   allowedRoles,
 }: {
   users: UserListRow[];
   detailHrefBase?: string;
-  // Override role filter dropdown — by default shows all 5 roles. Mitra passes
-  // a restricted set so superadmin/mitra_admin aren't listed.
   roleFilterOptions?: Array<{ value: string; label: string }>;
-  // For the Edit dialog — orgs available + roles the actor is allowed to set
   orgOptions?: OrgOption[];
+  desaOptions?: DesaOption[];
   allowedRoles?: ReadonlyArray<UserFormRole>;
 }) {
   const router = useRouter();
@@ -153,6 +153,7 @@ export function UsersTable({
       phone: u.phone,
       global_role: u.global_role as UserFormRole,
       organization_id: u.organization?.id ?? null,
+      representing_desa_id: u.representing_desa_id ?? null,
     });
   }
 
@@ -553,6 +554,7 @@ export function UsersTable({
         open={!!editing}
         onClose={() => setEditing(null)}
         orgOptions={orgOptions}
+        desaOptions={desaOptions}
         allowedRoles={allowedRoles}
         initialUser={editing}
       />

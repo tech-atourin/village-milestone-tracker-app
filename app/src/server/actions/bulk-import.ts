@@ -341,6 +341,46 @@ export async function commitBulkImport(
     }
   }
 
+  // Global desa name → id map for resolving representing_desa_id on peserta
+  const globalDesaByName = new Map<string, string>();
+  {
+    const { data: allDesa } = await admin
+      .from("desa")
+      .select("id, name");
+    for (const d of ((allDesa ?? []) as Array<{ id: string; name: string }>)) {
+      if (d.name) globalDesaByName.set(d.name.toLowerCase().trim(), d.id);
+    }
+  }
+  function resolveDesaId(desaName: string | null | undefined): string | null {
+    if (!desaName) return null;
+    return globalDesaByName.get(desaName.toLowerCase().trim()) ?? null;
+  }
+
+  async function autoAttachPesertaToAllMatchingProjects(
+    userId: string,
+    desaId: string,
+  ) {
+    const { data: pdRows } = await admin
+      .from("project_desa")
+      .select("project_id, desa_id")
+      .eq("desa_id", desaId);
+    for (const pd of ((pdRows ?? []) as Array<{
+      project_id: string;
+      desa_id: string;
+    }>)) {
+      await admin.from("project_memberships").upsert(
+        {
+          project_id: pd.project_id,
+          user_id: userId,
+          role: "peserta",
+          desa_id: pd.desa_id,
+          status: "active",
+        },
+        { onConflict: "project_id,user_id,role" },
+      );
+    }
+  }
+
   async function attachToProject(
     userId: string,
     role: string,
@@ -408,11 +448,20 @@ export async function commitBulkImport(
       .maybeSingle();
     if (existing) {
       skipped++;
-      await attachToProject(
-        (existing as { id: string }).id,
-        row.role,
-        row.desa_name,
-      );
+      const existingId = (existing as { id: string }).id;
+      await attachToProject(existingId, row.role, row.desa_name);
+      // Backfill representing_desa_id for peserta if it was missing
+      if (row.role === "peserta") {
+        const desaId = resolveDesaId(row.desa_name);
+        if (desaId) {
+          await admin
+            .from("users")
+            .update({ representing_desa_id: desaId })
+            .eq("id", existingId)
+            .is("representing_desa_id", null);
+          await autoAttachPesertaToAllMatchingProjects(existingId, desaId);
+        }
+      }
       continue;
     }
 
@@ -446,6 +495,10 @@ export async function commitBulkImport(
       birthdate: row.birthdate || null,
       global_role: row.role,
     };
+    if (row.role === "peserta") {
+      const desaId = resolveDesaId(row.desa_name);
+      if (desaId) userPayload.representing_desa_id = desaId;
+    }
     if (row.role === "narasumber") {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const r = row as any;
@@ -466,6 +519,11 @@ export async function commitBulkImport(
 
     created++;
     await attachToProject(authResult.user.id, row.role, row.desa_name);
+    if (row.role === "peserta") {
+      const desaId = resolveDesaId(row.desa_name);
+      if (desaId)
+        await autoAttachPesertaToAllMatchingProjects(authResult.user.id, desaId);
+    }
 
     if (!emailArtificial) {
       credentials.push({

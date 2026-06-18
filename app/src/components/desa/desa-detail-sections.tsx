@@ -67,6 +67,29 @@ export function DesaDetailSections({
   const arr = (k: string): string[] | null => (b[k] as string[] | null) ?? null;
   const rep = (k: string): Array<Record<string, unknown>> =>
     Array.isArray(b[k]) ? (b[k] as Array<Record<string, unknown>>) : [];
+  // Latest-year row (by max `tahun`) from a Data Tahunan repeater
+  const latestYear = (
+    k: string,
+  ): { row: Record<string, unknown> | null; tahun: number | null } => {
+    const rows = rep(k);
+    if (!rows.length) return { row: null, tahun: null };
+    let best: Record<string, unknown> | null = null;
+    let bestY = -Infinity;
+    for (const r of rows) {
+      const t = Number(r.tahun ?? 0);
+      if (Number.isFinite(t) && t >= bestY) {
+        bestY = t;
+        best = r;
+      }
+    }
+    return { row: best, tahun: Number.isFinite(bestY) ? bestY : null };
+  };
+  const nNum = (v: unknown): number | null => {
+    const n = Number(v);
+    return Number.isFinite(n) && v !== null && v !== undefined && v !== ""
+      ? n
+      : null;
+  };
 
   const kontak_hp = str("kontak_hp");
   const kontak_email = str("kontak_email");
@@ -79,7 +102,38 @@ export function DesaDetailSections({
   const jumlah_rw = num("jumlah_rw");
   const jenis_wisata = arr("jenis_wisata_utama");
   const kategori_desa = arr("kategori_desa");
-  const kunjungan = num("kunjungan_tahunan");
+  // Kunjungan: derive from kunjungan_per_tahun (latest year), fallback to legacy field
+  const kunjLatest = latestYear("kunjungan_per_tahun");
+  const kunj_wni = nNum(kunjLatest.row?.wni);
+  const kunj_wna = nNum(kunjLatest.row?.wna);
+  const kunjungan =
+    kunjLatest.row && (kunj_wni !== null || kunj_wna !== null)
+      ? (kunj_wni ?? 0) + (kunj_wna ?? 0)
+      : num("kunjungan_tahunan");
+  const kunjungan_domestik = kunj_wni ?? num("kunjungan_domestik");
+  const kunjungan_mancanegara = kunj_wna ?? num("kunjungan_mancanegara");
+  // Pendapatan: latest year of pendapatan_per_tahun, fallback to legacy
+  const pendLatest = latestYear("pendapatan_per_tahun");
+  const pendapatan_tahunan =
+    nNum(pendLatest.row?.jumlah_rp) ?? num("pendapatan_tahunan");
+  // Pengurus Pokdarwis: latest year repeater (pria+wanita), fallback legacy
+  const pengLatest = latestYear("pengurus_pokdarwis_per_tahun");
+  const peng_pria = nNum(pengLatest.row?.pria);
+  const peng_wanita = nNum(pengLatest.row?.wanita);
+  const pengurus_pokdarwis =
+    pengLatest.row && (peng_pria !== null || peng_wanita !== null)
+      ? (peng_pria ?? 0) + (peng_wanita ?? 0)
+      : num("pengurus_pokdarwis");
+  // Warga terlibat: latest year of tenaga_kerja_per_tahun, fallback legacy
+  const tkLatest = latestYear("tenaga_kerja_per_tahun");
+  const tk_pria = nNum(tkLatest.row?.pria);
+  const tk_wanita = nNum(tkLatest.row?.wanita);
+  const warga_l = tk_pria ?? num("jumlah_terlibat_l");
+  const warga_p = tk_wanita ?? num("jumlah_terlibat_p");
+  const warga_total =
+    tkLatest.row && (tk_pria !== null || tk_wanita !== null)
+      ? (tk_pria ?? 0) + (tk_wanita ?? 0)
+      : num("jumlah_warga_terlibat");
   const homestay = num("jumlah_homestay");
   const daya_tarik = num("jumlah_daya_tarik");
   const pokdarwis = bool("punya_pokdarwis");
@@ -236,8 +290,8 @@ export function DesaDetailSections({
                 label="Kunjungan/Tahun"
                 value={kunjungan ? kunjungan.toLocaleString("id-ID") : null}
               />
-              <Detail label="Domestik/Th" value={num("kunjungan_domestik")?.toLocaleString("id-ID") ?? null} />
-              <Detail label="Mancanegara/Th" value={num("kunjungan_mancanegara")?.toLocaleString("id-ID") ?? null} />
+              <Detail label="Domestik/Th" value={kunjungan_domestik?.toLocaleString("id-ID") ?? null} />
+              <Detail label="Mancanegara/Th" value={kunjungan_mancanegara?.toLocaleString("id-ID") ?? null} />
               <Detail label="Asal Domestik" value={str("asal_domestik")} />
               <Detail label="Asal Mancanegara" value={str("asal_mancanegara")} />
               <Detail label="Kondisi Atraksi" value={str("kondisi_atraksi")} />
@@ -252,10 +306,38 @@ export function DesaDetailSections({
                 )}
               </div>
             ) : null}
-            <Para label="Wisata Alam" value={str("wisata_alam")} />
-            <Para label="Wisata Budaya" value={str("wisata_budaya")} />
-            <Para label="Wisata Buatan / Kreatif" value={str("wisata_buatan")} />
-            <Para label="Kegiatan Wisatawan" value={str("kegiatan_wisatawan")} />
+            <ParaOrTable
+              label="Wisata Alam"
+              value={b.wisata_alam}
+              cols={[
+                { key: "nama", label: "Nama" },
+                { key: "deskripsi", label: "Deskripsi" },
+              ]}
+            />
+            <ParaOrTable
+              label="Wisata Budaya"
+              value={b.wisata_budaya}
+              cols={[
+                { key: "nama", label: "Atraksi / Tradisi" },
+                { key: "deskripsi", label: "Deskripsi" },
+              ]}
+            />
+            <ParaOrTable
+              label="Wisata Buatan / Kreatif"
+              value={b.wisata_buatan}
+              cols={[
+                { key: "nama", label: "Nama" },
+                { key: "deskripsi", label: "Deskripsi" },
+              ]}
+            />
+            <ParaOrTable
+              label="Kegiatan Wisatawan"
+              value={b.kegiatan_wisatawan}
+              cols={[
+                { key: "nama", label: "Kegiatan" },
+                { key: "durasi", label: "Durasi" },
+              ]}
+            />
             <Para label="Potensi Belum Dikembangkan" value={str("potensi_daya_tarik")} />
             <Para label="Kendala Pengembangan" value={str("kendala_atraksi")} />
             <Para label="Program yang Diperlukan" value={str("program_atraksi")} />
@@ -327,11 +409,29 @@ export function DesaDetailSections({
             {arr("jenis_paket")?.length ? (
               <ChipList label="Jenis Paket" items={arr("jenis_paket") ?? []} />
             ) : null}
-            <Para label="Daftar Paket Wisata" value={str("daftar_paket")} />
+            <ParaOrTable
+              label="Daftar Paket Wisata"
+              value={b.daftar_paket}
+              cols={[
+                { key: "nama", label: "Paket" },
+                { key: "harga", label: "Harga (Rp)", align: "right",
+                  render: (v) => v == null || v === "" ? "-" : Number(v).toLocaleString("id-ID") },
+                { key: "durasi", label: "Durasi" },
+                { key: "deskripsi", label: "Inklusi" },
+              ]}
+            />
             {arr("media_sosial")?.length ? (
               <ChipList label="Media Sosial" items={arr("media_sosial") ?? []} />
             ) : null}
-            <Para label="Akun Sosmed" value={str("akun_sosmed")} />
+            <ParaOrTable
+              label="Akun Media Sosial"
+              value={b.akun_sosmed}
+              cols={[
+                { key: "platform", label: "Platform" },
+                { key: "handle", label: "Handle" },
+                { key: "url", label: "URL" },
+              ]}
+            />
             {arr("marketplace")?.length ? (
               <ChipList label="Marketplace / OTA" items={arr("marketplace") ?? []} />
             ) : null}
@@ -354,13 +454,13 @@ export function DesaDetailSections({
             <div className="grid grid-cols-2 gap-3 text-sm sm:grid-cols-4">
               <Detail label="Pihak Pengelola" value={str("pihak_pengelola")} />
               <Detail label="Frekuensi Rapat" value={str("frekuensi_pertemuan")} />
-              <Detail label="Pengurus Pokdarwis" value={num("pengurus_pokdarwis")?.toString() ?? null} />
+              <Detail label="Pengurus Pokdarwis" value={pengurus_pokdarwis?.toString() ?? null} />
               <Detail label="Pemandu Wisata" value={num("jumlah_pemandu")?.toString() ?? null} />
               <Detail label="Pemandu Tersertifikasi" value={num("jumlah_pemandu_sertifikat")?.toString() ?? null} />
-              <Detail label="Total Warga Terlibat" value={num("jumlah_warga_terlibat")?.toString() ?? null} />
-              <Detail label="Warga L Terlibat" value={num("jumlah_terlibat_l")?.toString() ?? null} />
-              <Detail label="Warga P Terlibat" value={num("jumlah_terlibat_p")?.toString() ?? null} />
-              <Detail label="Pendapatan Wisata/Th" value={num("pendapatan_tahunan") ? "Rp " + num("pendapatan_tahunan")!.toLocaleString("id-ID") : null} />
+              <Detail label="Total Warga Terlibat" value={warga_total?.toString() ?? null} />
+              <Detail label="Warga L Terlibat" value={warga_l?.toString() ?? null} />
+              <Detail label="Warga P Terlibat" value={warga_p?.toString() ?? null} />
+              <Detail label="Pendapatan Wisata/Th" value={pendapatan_tahunan ? "Rp " + pendapatan_tahunan.toLocaleString("id-ID") : null} />
             </div>
             <div className="flex flex-wrap gap-1.5 text-xs">
               <BoolChip label="Pokdarwis aktif" value={pokdarwis} />
@@ -380,15 +480,44 @@ export function DesaDetailSections({
       <Section title="Ekonomi Kreatif" icon={Sparkles}>
         {baseline && (str("produk_ekraf") || num("jumlah_kriya") || num("jumlah_kuliner") || num("jumlah_fesyen")) ? (
           <div className="space-y-4">
-            <Para label="Produk Ekraf Unggulan" value={str("produk_ekraf")} />
+            <ParaOrTable
+              label="Produk Ekraf Unggulan"
+              value={b.produk_ekraf}
+              cols={[
+                { key: "nama", label: "Produk" },
+                { key: "kategori", label: "Kategori" },
+                { key: "harga", label: "Harga" },
+              ]}
+            />
             <div className="grid grid-cols-2 gap-3 text-sm sm:grid-cols-3">
               <Detail label="Pelaku Kriya" value={num("jumlah_kriya")?.toString() ?? null} />
               <Detail label="Pelaku Kuliner" value={num("jumlah_kuliner")?.toString() ?? null} />
               <Detail label="Pelaku Fesyen" value={num("jumlah_fesyen")?.toString() ?? null} />
             </div>
-            <Para label="Jenis Kriya" value={str("jenis_kriya")} />
-            <Para label="Jenis Kuliner" value={str("jenis_kuliner")} />
-            <Para label="Jenis Fesyen" value={str("jenis_fesyen")} />
+            <ParaOrTable
+              label="Usaha Kriya"
+              value={b.jenis_kriya}
+              cols={[
+                { key: "nama", label: "Nama Usaha" },
+                { key: "produk", label: "Produk" },
+              ]}
+            />
+            <ParaOrTable
+              label="Usaha Kuliner"
+              value={b.jenis_kuliner}
+              cols={[
+                { key: "nama", label: "Nama Usaha" },
+                { key: "menu", label: "Menu Khas" },
+              ]}
+            />
+            <ParaOrTable
+              label="Usaha Fesyen"
+              value={b.jenis_fesyen}
+              cols={[
+                { key: "nama", label: "Nama Usaha" },
+                { key: "produk", label: "Produk Fesyen" },
+              ]}
+            />
             <Para label="Kendala Ekraf" value={str("kendala_ekraf")} />
             <Para label="Program yang Diperlukan" value={str("program_ekraf")} />
             <Para label="Dampak Ekonomi" value={str("dampak_ekonomi")} />
@@ -475,7 +604,15 @@ export function DesaDetailSections({
                 </div>
               </div>
             )}
-            <Para label="Sarana Keselamatan Wisatawan" value={str("sarana_keselamatan")} />
+            <ParaOrTable
+              label="Sarana Keselamatan Wisatawan"
+              value={b.sarana_keselamatan}
+              cols={[
+                { key: "nama", label: "Sarana" },
+                { key: "jumlah", label: "Jumlah / Lokasi" },
+                { key: "kondisi", label: "Kondisi" },
+              ]}
+            />
             <Para label="Kendala Pelestarian Lingkungan" value={str("kendala_lingkungan")} />
           </div>
         ) : (
@@ -1005,6 +1142,34 @@ function Para({ label, value }: { label: string; value: string | null }) {
       <p className="mt-1 whitespace-pre-line text-sm text-atr-fg">{value}</p>
     </div>
   );
+}
+
+// Renders array data as a small repeater table, or string/legacy data as
+// a paragraph. Used for fields recently converted from textarea→repeater.
+function ParaOrTable({
+  label,
+  value,
+  cols,
+}: {
+  label: string;
+  value: unknown;
+  cols: RepeaterCol[];
+}) {
+  if (Array.isArray(value) && value.length > 0) {
+    return (
+      <div>
+        <div className="mb-2 text-[10px] font-bold uppercase tracking-wide text-atr-fg-muted">
+          {label}
+          <CountBadge n={value.length} />
+        </div>
+        <RepeaterTable rows={value as Array<Record<string, unknown>>} cols={cols} />
+      </div>
+    );
+  }
+  if (typeof value === "string" && value.trim() !== "") {
+    return <Para label={label} value={value} />;
+  }
+  return null;
 }
 
 function BoolChip({ label, value }: { label: string; value: boolean | undefined }) {

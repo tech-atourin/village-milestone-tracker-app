@@ -5,6 +5,7 @@ import { Upload, Users as UsersIcon } from "lucide-react";
 import { requireRole } from "@/lib/auth/rbac";
 import { createAdminClient } from "@/lib/supabase/server";
 import { listOrgsDetailed } from "@/server/queries/orgs";
+import { listDesa } from "@/server/queries/desa";
 import type { UserListRow } from "@/server/queries/users";
 import { UsersTable } from "@/app/atourin/users/users-table";
 import { AddUserButton } from "@/app/atourin/users/add-user-button";
@@ -22,20 +23,22 @@ export default async function MitraUsersListPage() {
   // users' rows). Scope: only roles relevant to a mitra — peserta, narasumber,
   // desa_wisata. Superadmin + mitra_admin tidak ditampilkan.
   const admin = createAdminClient();
-  const [{ data }, orgs] = await Promise.all([
+  const [{ data }, orgs, desa] = await Promise.all([
     admin
       .from("users")
       .select(
-        "id, full_name, email, email_artificial, phone, global_role, created_at, last_login_at, organization:organizations(id, name)",
+        "id, full_name, email, email_artificial, phone, global_role, representing_desa_id, created_at, last_login_at, organization:organizations(id, name)",
       )
       .in("global_role", ["peserta", "narasumber", "desa_wisata"])
       .is("deleted_at", null)
       .order("created_at", { ascending: false })
       .limit(500),
     listOrgsDetailed(),
+    listDesa(),
   ]);
   const users = (data ?? []) as unknown as UserListRow[];
   const orgOptions = orgs.map((o) => ({ id: o.id, name: o.name }));
+  const desaOptions = desa.map((d) => ({ id: d.id, name: d.name }));
 
   return (
     <div className="space-y-6">
@@ -52,6 +55,7 @@ export default async function MitraUsersListPage() {
         <div className="flex items-center gap-2">
           <AddUserButton
             orgOptions={orgOptions}
+            desaOptions={desaOptions}
             allowedRoles={["peserta", "narasumber", "desa_wisata"]}
           />
           <Link
@@ -80,6 +84,7 @@ export default async function MitraUsersListPage() {
           detailHrefBase="/mitra/users"
           roleFilterOptions={MITRA_ROLE_FILTERS}
           orgOptions={orgOptions}
+          desaOptions={desaOptions}
           allowedRoles={["peserta", "narasumber", "desa_wisata"]}
         />
       )}

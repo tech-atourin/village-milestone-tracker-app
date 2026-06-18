@@ -212,6 +212,26 @@ export async function importHubDesaToProject(
     }
   }
 
+  // Auto-attach peserta whose home desa = this desa
+  const { data: pesertaByDesa } = await supabase
+    .from("users")
+    .select("id")
+    .eq("global_role", "peserta")
+    .eq("representing_desa_id", vmtDesaId)
+    .is("deleted_at", null);
+  for (const u of ((pesertaByDesa ?? []) as Array<{ id: string }>)) {
+    await supabase.from("project_memberships").upsert(
+      {
+        project_id: parsed.data.project_id,
+        user_id: u.id,
+        role: "peserta",
+        desa_id: vmtDesaId,
+        status: "active",
+      },
+      { onConflict: "project_id,user_id,role" },
+    );
+  }
+
   // 3. Pre-fill baseline data from hub profile (if no existing baseline)
   const { data: projDesa } = await supabase
     .from("project_desa")
@@ -254,6 +274,23 @@ export async function importHubDesaToProject(
         });
       }
 
+      const currentYear = new Date().getFullYear();
+      const kunjungan_per_tahun =
+        profile.desa.jumlah_kunjungan != null
+          ? [{ tahun: currentYear, wni: profile.desa.jumlah_kunjungan, wna: 0 }]
+          : [];
+      const pendapatan_per_tahun =
+        profile.desa.pendapatan != null
+          ? [{ tahun: currentYear, jumlah_rp: profile.desa.pendapatan }]
+          : [];
+      const tenaga_kerja_per_tahun =
+        profile.desa.tenaga_kerja != null
+          ? [{ tahun: currentYear, pria: 0, wanita: 0 }]
+          : [];
+      const umkm_per_tahun =
+        profile.desa.jumlah_umkm != null
+          ? [{ tahun: currentYear, jumlah: profile.desa.jumlah_umkm }]
+          : [];
       const baselineData: Record<string, unknown> = {
         // Informasi Dasar
         kontak_nama: profile.kontak?.contact_person ?? null,
@@ -261,14 +298,15 @@ export async function importHubDesaToProject(
         kontak_email: profile.kontak?.email ?? null,
         // Daya Tarik Wisata
         tematik_desa: profile.desa.deskripsi ?? null,
-        kunjungan_tahunan: profile.desa.jumlah_kunjungan ?? null,
-        // Kelembagaan
-        pendapatan_tahunan: profile.desa.pendapatan ?? null,
-        jumlah_warga_terlibat: profile.desa.tenaga_kerja ?? null,
         // Ekonomi Kreatif (proxy: total UMKM count)
         jumlah_kios_ekraf: profile.desa.jumlah_umkm ?? null,
         // Pencapaian (auto-fed from Hub history)
         penghargaan,
+        // Data Tahunan (single-value Hub fields seeded into the current-year repeater row)
+        kunjungan_per_tahun,
+        pendapatan_per_tahun,
+        tenaga_kerja_per_tahun,
+        umkm_per_tahun,
         // Meta
         meta_fasilitas: profile.fasilitas,
         _imported_from_hub: true,
@@ -286,7 +324,7 @@ export async function importHubDesaToProject(
 
       await supabase.from("desa_baseline_data").insert({
         project_desa_id: pdId,
-        schema_version: "1.2.0-adwi-jadesta-hub",
+        schema_version: "1.3.0-adwi-jadesta-hub",
         data: baselineData,
       });
     }

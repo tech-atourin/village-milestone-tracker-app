@@ -27,6 +27,7 @@ const upsertSchema = z.object({
   phone: z.string().min(6).max(30).optional().nullable(),
   global_role: z.enum(ROLES),
   organization_id: z.string().uuid().optional().nullable(),
+  representing_desa_id: z.string().uuid().optional().nullable(),
   // Narasumber-specific extras (ignored for other roles)
   kategori_narasumber: z.string().max(40).optional().nullable(),
   kompetensi: z.string().max(500).optional().nullable(),
@@ -84,6 +85,13 @@ export async function upsertUser(input: z.input<typeof upsertSchema>): Promise<
     global_role: body.global_role,
     organization_id: body.organization_id ?? null,
   };
+  // representing_desa_id used by:
+  // - desa_wisata: the desa they represent on the platform
+  // - peserta: their "home" desa, used for auto-assign to project_memberships
+  //   when that desa joins a project
+  if (body.global_role === "peserta" || body.global_role === "desa_wisata") {
+    profile.representing_desa_id = body.representing_desa_id ?? null;
+  }
   if (body.global_role === "narasumber") {
     profile.kategori_narasumber = body.kategori_narasumber ?? null;
     profile.kompetensi = body.kompetensi ?? null;
@@ -154,6 +162,38 @@ export async function upsertUser(input: z.input<typeof upsertSchema>): Promise<
       .single();
     if (error) return { error: error.message };
     userId = (data as { id: string }).id;
+  }
+
+  // Auto-attach peserta to existing projects whose project_desa includes the
+  // user's representing_desa_id. This way a peserta added later still lands
+  // in every relevant project automatically.
+  if (
+    body.global_role === "peserta" &&
+    body.representing_desa_id
+  ) {
+    try {
+      const { data: pdRows } = await admin
+        .from("project_desa")
+        .select("project_id, desa_id")
+        .eq("desa_id", body.representing_desa_id);
+      for (const pd of ((pdRows ?? []) as Array<{
+        project_id: string;
+        desa_id: string;
+      }>)) {
+        await admin.from("project_memberships").upsert(
+          {
+            project_id: pd.project_id,
+            user_id: userId,
+            role: "peserta",
+            desa_id: pd.desa_id,
+            status: "active",
+          },
+          { onConflict: "project_id,user_id,role" },
+        );
+      }
+    } catch (e) {
+      console.warn("auto-attach peserta failed:", e);
+    }
   }
 
   await audit({
