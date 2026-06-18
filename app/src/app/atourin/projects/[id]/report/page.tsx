@@ -15,5 +15,11 @@ export default async function FinalReportPage({
   await requireRole("superadmin");
   const project = await getProject(params.id);
   if (!project) notFound();
-  return <ReportBody projectId={params.id} aiOn={searchParams.ai === "1"} />;
+  return (
+    <ReportBody
+      projectId={params.id}
+      aiOn={searchParams.ai === "1"}
+      backHref={`/atourin/projects/${params.id}`}
+    />
+  );
 }

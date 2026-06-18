@@ -1,4 +1,7 @@
 import Image from "next/image";
+import Link from "next/link";
+import { ArrowLeft } from "lucide-react";
+import { PrintButton } from "@/components/ui/print-button";
 import { getProject } from "@/server/queries/projects";
 import { listProjectDesa } from "@/server/queries/desa";
 import { listProjectTopikWithItems } from "@/server/queries/topik";
@@ -22,9 +25,11 @@ async function tryGetSummary(
 export async function ReportBody({
   projectId,
   aiOn,
+  backHref,
 }: {
   projectId: string;
   aiOn: boolean;
+  backHref?: string;
 }) {
   const project = await getProject(projectId);
   if (!project) return null;
@@ -149,22 +154,17 @@ export async function ReportBody({
         }}
       />
 
-      <div className="no-print mb-6 flex items-center justify-between rounded-lg border border-atr-outline bg-atr-bg-soft p-3 text-xs text-atr-fg-muted">
-        <span>
-          <strong className="text-atr-fg">Tips:</strong> Cetak (Ctrl/⌘+P) atau
-          &quot;Save as PDF&quot;.{" "}
-          {aiActuallyOn
-            ? "AI summary aktif."
-            : "Tambah ?ai=1 di URL untuk include AI summary per desa."}
-        </span>
-        {!aiActuallyOn && aiProvider().isReady() && (
-          <a
-            href={`?ai=1`}
-            className="font-bold text-atr-purple hover:underline"
+      <div className="no-print mb-6 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-atr-outline bg-atr-bg-soft p-3 text-xs text-atr-fg-muted">
+        {backHref ? (
+          <Link
+            href={backHref}
+            className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-atr-outline bg-white px-3 text-xs font-bold text-atr-fg transition hover:bg-atr-bg-soft"
           >
-            Aktifkan AI summary →
-          </a>
-        )}
+            <ArrowLeft className="h-3.5 w-3.5" />
+            Kembali
+          </Link>
+        ) : <span />}
+        <PrintButton />
       </div>
 
       {/* Cover */}
@@ -196,7 +196,7 @@ export async function ReportBody({
         )}
         <div className="grid grid-cols-3 gap-4 sm:grid-cols-6">
           <Kpi
-            label="Progress overall"
+            label="Progress"
             value={`${Math.round(overall)}%`}
             tone="purple"
           />
@@ -398,7 +398,7 @@ export async function ReportBody({
 
       <div className="mt-8 flex items-center justify-between text-[10px] text-atr-fg-muted">
         <span>
-          Generated{" "}
+          Final Report -{" "}
           {new Date().toLocaleDateString("id-ID", {
             day: "numeric",
             month: "long",

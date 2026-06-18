@@ -22,5 +22,11 @@ export default async function MitraFinalReportPage({
     project.organization.id !== user.organization_id
   )
     notFound();
-  return <ReportBody projectId={params.id} aiOn={searchParams.ai === "1"} />;
+  return (
+    <ReportBody
+      projectId={params.id}
+      aiOn={searchParams.ai === "1"}
+      backHref={`/mitra/projects/${params.id}`}
+    />
+  );
 }

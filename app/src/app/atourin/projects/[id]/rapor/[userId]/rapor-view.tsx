@@ -205,7 +205,7 @@ export function RaporView({
           href={`/${scope}/projects/${project.id}/rapor`}
           className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-atr-outline bg-white px-3 text-xs font-bold text-atr-fg transition hover:bg-atr-bg-soft"
         >
-          ← Kembali ke daftar rapor
+          ← Kembali
         </a>
         <div className="flex flex-wrap items-center gap-2">
           <PrintButton />
