@@ -108,6 +108,20 @@ export async function ReportBody({
   const actionPlansTotal =
     apStatus.rencana + apStatus.on_track + apStatus.selesai + apStatus.ditunda;
 
+  // Peserta + narasumber counts for the executive summary.
+  const { data: pesertaRows } = await admin
+    .from("project_memberships")
+    .select("user_id")
+    .eq("project_id", projectId)
+    .eq("role", "peserta")
+    .eq("status", "active");
+  const pesertaCount = new Set(
+    ((pesertaRows ?? []) as Array<{ user_id: string }>).map((r) => r.user_id),
+  ).size;
+  const narasumberCount = new Set(
+    ratingArr.map((r) => r.narasumber_id),
+  ).size;
+
   const summaries: Record<string, DesaSummary | null> = {};
   if (aiActuallyOn) {
     for (const pd of desa) {
@@ -180,15 +194,32 @@ export async function ReportBody({
             {project.description}
           </p>
         )}
-        <div className="grid grid-cols-4 gap-4">
-          <Kpi label="Progress overall" value={`${Math.round(overall)}%`} />
-          <Kpi label="Desa terlibat" value={desa.length.toString()} />
-          <Kpi label="Topik" value={topik.length.toString()} />
+        <div className="grid grid-cols-3 gap-4 sm:grid-cols-6">
+          <Kpi
+            label="Progress overall"
+            value={`${Math.round(overall)}%`}
+            tone="purple"
+          />
+          <Kpi
+            label="Desa terlibat"
+            value={desa.length.toString()}
+            tone="green"
+          />
+          <Kpi
+            label="Peserta"
+            value={pesertaCount.toString()}
+            tone="purple-soft"
+          />
+          <Kpi
+            label="Narasumber"
+            value={narasumberCount.toString()}
+            tone="yellow"
+          />
+          <Kpi label="Topik" value={topik.length.toString()} tone="muted" />
           <Kpi
             label="Checklist items"
-            value={topik
-              .reduce((a, t) => a + t.items.length, 0)
-              .toString()}
+            value={topik.reduce((a, t) => a + t.items.length, 0).toString()}
+            tone="muted"
           />
         </div>
       </section>
@@ -302,10 +333,26 @@ export async function ReportBody({
             ditunda.
           </p>
           <div className="grid grid-cols-4 gap-3 text-center text-xs">
-            <ReportStat label="Rencana" value={String(apStatus.rencana)} />
-            <ReportStat label="On Track" value={String(apStatus.on_track)} />
-            <ReportStat label="Selesai" value={String(apStatus.selesai)} />
-            <ReportStat label="Ditunda" value={String(apStatus.ditunda)} />
+            <ReportStat
+              label="Rencana"
+              value={String(apStatus.rencana)}
+              tone="muted"
+            />
+            <ReportStat
+              label="On Track"
+              value={String(apStatus.on_track)}
+              tone="purple-soft"
+            />
+            <ReportStat
+              label="Selesai"
+              value={String(apStatus.selesai)}
+              tone="green"
+            />
+            <ReportStat
+              label="Ditunda"
+              value={String(apStatus.ditunda)}
+              tone="yellow"
+            />
           </div>
         </section>
       )}
@@ -372,24 +419,71 @@ export async function ReportBody({
   );
 }
 
-function ReportStat({ label, value }: { label: string; value: string }) {
+type Tone =
+  | "purple"
+  | "purple-soft"
+  | "green"
+  | "yellow"
+  | "muted"
+  | "red";
+
+const TONE_STYLES: Record<Tone, { card: string; value: string }> = {
+  purple: {
+    card: "border-atr-purple/40 bg-atr-purple-50",
+    value: "text-atr-purple-600",
+  },
+  "purple-soft": {
+    card: "border-atr-purple/20 bg-atr-purple-50/40",
+    value: "text-atr-purple-600",
+  },
+  green: { card: "border-atr-arti/30 bg-atr-arti/10", value: "text-atr-arti" },
+  yellow: {
+    card: "border-atr-yellow/40 bg-atr-yellow/15",
+    value: "text-atr-fg",
+  },
+  muted: {
+    card: "border-atr-outline bg-atr-bg-soft/40",
+    value: "text-atr-fg",
+  },
+  red: { card: "border-atr-red/30 bg-atr-red/5", value: "text-atr-red" },
+};
+
+function ReportStat({
+  label,
+  value,
+  tone = "muted",
+}: {
+  label: string;
+  value: string;
+  tone?: Tone;
+}) {
+  const s = TONE_STYLES[tone];
   return (
-    <div className="rounded-lg border border-atr-outline p-3">
+    <div className={`rounded-lg border p-3 shadow-sm ${s.card}`}>
       <div className="text-[10px] font-bold uppercase tracking-wide text-atr-fg-muted">
         {label}
       </div>
-      <div className="mt-1 text-xl font-bold text-atr-fg">{value}</div>
+      <div className={`mt-1 text-xl font-bold ${s.value}`}>{value}</div>
     </div>
   );
 }
 
-function Kpi({ label, value }: { label: string; value: string }) {
+function Kpi({
+  label,
+  value,
+  tone = "muted",
+}: {
+  label: string;
+  value: string;
+  tone?: Tone;
+}) {
+  const s = TONE_STYLES[tone];
   return (
-    <div className="rounded-xl border border-atr-outline p-3 text-center">
+    <div className={`rounded-xl border p-3 text-center shadow-sm ${s.card}`}>
       <div className="text-[10px] font-bold uppercase tracking-wide text-atr-fg-muted">
         {label}
       </div>
-      <div className="mt-1 text-xl font-bold text-atr-fg">{value}</div>
+      <div className={`mt-1 text-xl font-bold ${s.value}`}>{value}</div>
     </div>
   );
 }

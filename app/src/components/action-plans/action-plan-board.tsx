@@ -16,6 +16,8 @@ import {
   Save,
   Upload,
   Paperclip,
+  ChevronDown,
+  ChevronRight,
 } from "lucide-react";
 import type { ActionPlanRow } from "@/server/queries/action-plans";
 import {
@@ -83,10 +85,21 @@ export function ActionPlanBoard({
   const [filter, setFilter] = useState<"all" | (typeof STATUSES)[number]["key"]>("all");
   const [showCreate, setShowCreate] = useState(false);
   const [editing, setEditing] = useState<string | null>(null);
+  const [openDesa, setOpenDesa] = useState<Set<string>>(new Set());
+  const [desaSearch, setDesaSearch] = useState("");
 
   const filtered = rows.filter((r) =>
     filter === "all" ? true : r.status === filter,
   );
+
+  function toggleDesa(name: string) {
+    setOpenDesa((prev) => {
+      const next = new Set(prev);
+      if (next.has(name)) next.delete(name);
+      else next.add(name);
+      return next;
+    });
+  }
 
   function remove(id: string) {
     if (!confirm("Hapus rencana aksi ini?")) return;
@@ -161,50 +174,124 @@ export function ActionPlanBoard({
           </p>
         </div>
       ) : showDesa ? (
-        // Cross-desa view (atourin/mitra/narasumber): group by desa so it
-        // doesn't read as one big mixed list.
-        <div className="space-y-6">
-          {groupByDesa(filtered).map(([desaName, items]) => (
-            <section key={desaName} className="space-y-3">
-              <header className="flex items-center justify-between gap-2 border-b border-atr-outline pb-2">
-                <h4 className="inline-flex items-center gap-2 text-sm font-bold text-atr-fg">
-                  <span className="inline-flex h-5 items-center rounded-full bg-atr-purple-50 px-2 text-[10px] font-bold text-atr-purple-600">
-                    {desaName}
-                  </span>
-                  <span className="text-xs font-normal text-atr-fg-muted">
-                    {items.length} rencana
-                  </span>
-                </h4>
-              </header>
-              <div className="space-y-3">
-                {items.map((p) =>
-                  editing === p.id ? (
-                    <PlanForm
-                      key={p.id}
-                      desaOptions={desaOptions}
-                      initial={p}
-                      onCancel={() => setEditing(null)}
-                      onDone={() => {
-                        setEditing(null);
-                        router.refresh();
-                      }}
-                    />
-                  ) : (
-                    <PlanCard
-                      key={p.id}
-                      p={p}
-                      canEdit={canEdit}
-                      pending={pending}
-                      onEdit={() => setEditing(p.id)}
-                      onDelete={() => remove(p.id)}
-                      showDesa={false}
-                    />
-                  ),
-                )}
+        // Cross-desa view: collapsible accordion so dozens of desa stay scannable.
+        (() => {
+          const grouped = groupByDesa(filtered);
+          const q = desaSearch.trim().toLowerCase();
+          const visible = q
+            ? grouped.filter(([name]) => name.toLowerCase().includes(q))
+            : grouped;
+          const allOpen = visible.length > 0 &&
+            visible.every(([name]) => openDesa.has(name));
+          return (
+            <div className="space-y-3">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <input
+                  type="search"
+                  value={desaSearch}
+                  onChange={(e) => setDesaSearch(e.target.value)}
+                  placeholder={`Cari desa… (${grouped.length} total)`}
+                  className="h-9 w-full max-w-xs rounded-lg border border-atr-outline bg-white px-3 text-sm outline-none focus:border-atr-purple"
+                />
+                <div className="flex items-center gap-2 text-xs">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (allOpen) setOpenDesa(new Set());
+                      else setOpenDesa(new Set(visible.map(([n]) => n)));
+                    }}
+                    className="inline-flex h-8 items-center gap-1 rounded-md border border-atr-outline bg-white px-2.5 font-bold text-atr-fg-muted hover:bg-atr-bg-soft"
+                  >
+                    {allOpen ? "Tutup semua" : "Buka semua"}
+                  </button>
+                </div>
               </div>
-            </section>
-          ))}
-        </div>
+              {visible.length === 0 ? (
+                <p className="rounded-2xl border border-dashed border-atr-outline bg-white p-6 text-center text-sm italic text-atr-fg-muted">
+                  Tidak ada desa cocok dengan pencarian.
+                </p>
+              ) : (
+                <ul className="divide-y divide-atr-outline overflow-hidden rounded-2xl border border-atr-outline bg-white shadow-atr-1">
+                  {visible.map(([desaName, items]) => {
+                    const isOpen = openDesa.has(desaName);
+                    const counts = {
+                      selesai: items.filter((i) => i.status === "selesai").length,
+                      ontrack: items.filter((i) => i.status === "on_track").length,
+                      ditunda: items.filter((i) => i.status === "ditunda").length,
+                    };
+                    return (
+                      <li key={desaName}>
+                        <button
+                          type="button"
+                          onClick={() => toggleDesa(desaName)}
+                          className="flex w-full items-center gap-3 px-4 py-3 text-left transition hover:bg-atr-bg-soft"
+                          aria-expanded={isOpen}
+                        >
+                          {isOpen ? (
+                            <ChevronDown className="h-4 w-4 shrink-0 text-atr-fg-muted" />
+                          ) : (
+                            <ChevronRight className="h-4 w-4 shrink-0 text-atr-fg-muted" />
+                          )}
+                          <span className="inline-flex h-5 items-center rounded-full bg-atr-purple-50 px-2 text-[10px] font-bold text-atr-purple-600">
+                            {desaName}
+                          </span>
+                          <span className="text-xs text-atr-fg-muted">
+                            {items.length} rencana
+                          </span>
+                          <span className="ml-auto flex items-center gap-1.5 text-[10px] font-bold">
+                            {counts.selesai > 0 && (
+                              <span className="inline-flex items-center gap-1 rounded-full bg-atr-arti/15 px-1.5 py-0.5 text-atr-arti">
+                                ✓ {counts.selesai}
+                              </span>
+                            )}
+                            {counts.ontrack > 0 && (
+                              <span className="inline-flex items-center gap-1 rounded-full bg-atr-purple-50 px-1.5 py-0.5 text-atr-purple-600">
+                                ⏱ {counts.ontrack}
+                              </span>
+                            )}
+                            {counts.ditunda > 0 && (
+                              <span className="inline-flex items-center gap-1 rounded-full bg-atr-yellow/20 px-1.5 py-0.5 text-atr-fg">
+                                ⏸ {counts.ditunda}
+                              </span>
+                            )}
+                          </span>
+                        </button>
+                        {isOpen && (
+                          <div className="space-y-3 border-t border-atr-outline bg-atr-bg-soft/40 p-3">
+                            {items.map((p) =>
+                              editing === p.id ? (
+                                <PlanForm
+                                  key={p.id}
+                                  desaOptions={desaOptions}
+                                  initial={p}
+                                  onCancel={() => setEditing(null)}
+                                  onDone={() => {
+                                    setEditing(null);
+                                    router.refresh();
+                                  }}
+                                />
+                              ) : (
+                                <PlanCard
+                                  key={p.id}
+                                  p={p}
+                                  canEdit={canEdit}
+                                  pending={pending}
+                                  onEdit={() => setEditing(p.id)}
+                                  onDelete={() => remove(p.id)}
+                                  showDesa={false}
+                                />
+                              ),
+                            )}
+                          </div>
+                        )}
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+            </div>
+          );
+        })()
       ) : (
         <div className="space-y-3">
           {filtered.map((p) =>

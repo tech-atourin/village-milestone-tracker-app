@@ -1,6 +1,6 @@
 import "server-only";
 
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/server";
 
 // =====================================================
 // Rapor Desa - aggregated per (project, desa)
@@ -39,7 +39,7 @@ function avg(nums: Array<number | null | undefined>): number | null {
 export async function listProjectRaporDesa(
   projectId: string,
 ): Promise<RaporDesaRow[]> {
-  const supabase = createClient();
+  const supabase = createAdminClient();
 
   const { data: projectDesa } = await supabase
     .from("project_desa")
@@ -126,17 +126,20 @@ export async function listProjectRaporDesa(
     completionByPd.set(i.project_desa_id, arr);
   }
 
+  // checklist_progress doesn't have project_desa_id; join via desa_topik_instance.
   const { data: evidenceRows } = await supabase
     .from("checklist_progress")
-    .select("project_desa_id, status")
-    .in("project_desa_id", projectDesaIds)
-    .eq("status", "approved");
+    .select(
+      "desa_topik_instance:desa_topik_instance!inner(project_desa_id)",
+    )
+    .eq("status", "approved")
+    .in("desa_topik_instance.project_desa_id", projectDesaIds);
   const evidenceByPd = new Map<string, number>();
-  for (const e of (evidenceRows ?? []) as Array<{ project_desa_id: string }>) {
-    evidenceByPd.set(
-      e.project_desa_id,
-      (evidenceByPd.get(e.project_desa_id) ?? 0) + 1,
-    );
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  for (const e of (evidenceRows ?? []) as any[]) {
+    const pdId = e.desa_topik_instance?.project_desa_id;
+    if (!pdId) continue;
+    evidenceByPd.set(pdId, (evidenceByPd.get(pdId) ?? 0) + 1);
   }
 
   // 4. Assemble
@@ -236,7 +239,7 @@ export async function getRaporDesaDetail(
   projectId: string,
   desaId: string,
 ): Promise<RaporDesaDetail | null> {
-  const supabase = createClient();
+  const supabase = createAdminClient();
 
   const [{ data: project }, { data: desa }] = await Promise.all([
     supabase
@@ -315,22 +318,25 @@ export async function getRaporDesaDetail(
     }),
   }));
 
-  // Topik completion for this desa
+  // Topik completion for this desa. desa_topik_instance is keyed by
+  // project_desa_id (we already know it via aggregate.project_desa_id), so
+  // filter directly instead of relying on a deep embed.
   const { data: instances } = await supabase
     .from("desa_topik_instance")
     .select(
-      "completion_percent, project_topik:project_topik!inner(id, title, project_desa:project_desa!inner(desa_id, project_id))",
+      "completion_percent, project_topik:project_topik(id, name, sort_order)",
     )
-    .eq("project_topik.project_desa.project_id", projectId);
+    .eq("project_desa_id", aggregate.project_desa_id);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const topikRaw = ((instances ?? []) as any[]).filter(
-    (i) => i.project_topik?.project_desa?.desa_id === desaId,
-  );
-  const topik = topikRaw.map((i) => ({
-    topik_id: i.project_topik?.id as string,
-    title: (i.project_topik?.title as string) ?? "-",
-    completion_percent: Number(i.completion_percent ?? 0),
-  }));
+  const topik = ((instances ?? []) as any[])
+    .map((i) => ({
+      topik_id: (i.project_topik?.id as string) ?? "",
+      title: (i.project_topik?.name as string) ?? "-",
+      completion_percent: Number(i.completion_percent ?? 0),
+      sort_order: Number(i.project_topik?.sort_order ?? 0),
+    }))
+    .sort((a, b) => a.sort_order - b.sort_order)
+    .map(({ sort_order: _, ...rest }) => rest);
 
   // Kuisioner narasumber - only ratings from this desa's peserta in this
   // project. Group by narasumber to surface per-narasumber averages.
@@ -515,7 +521,7 @@ export type DesaProgramHistoryRow = {
 export async function listDesaProgramHistory(
   desaId: string,
 ): Promise<DesaProgramHistoryRow[]> {
-  const supabase = createClient();
+  const supabase = createAdminClient();
 
   const { data: pdRows } = await supabase
     .from("project_desa")

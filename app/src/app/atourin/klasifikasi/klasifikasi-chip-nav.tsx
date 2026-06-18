@@ -40,7 +40,7 @@ export function KlasifikasiChipNav({
       </nav>
 
       {active === "v1" && v1Pending > 0 && (
-        <p className="text-[11px] text-atr-yellow">
+        <p className="inline-flex items-center gap-1.5 rounded-full bg-atr-yellow/20 px-2.5 py-1 text-[11px] font-bold text-atr-fg">
           ⏳ {v1Pending} kriteria menunggu review di seluruh desa
         </p>
       )}

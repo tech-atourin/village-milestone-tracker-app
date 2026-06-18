@@ -14,11 +14,12 @@ import {
   Lightbulb,
 } from "lucide-react";
 import type { RaporDesaDetail } from "@/server/queries/rapor-desa";
+import { PrintButton } from "@/components/ui/print-button";
 
 function formatDate(iso: string | null) {
   if (!iso) return "-";
   return new Intl.DateTimeFormat("id-ID", {
-    day: "numeric",
+    day: "2-digit",
     month: "short",
     year: "numeric",
   }).format(new Date(iso));
@@ -35,9 +36,11 @@ const TIER_LABEL: Record<string, string> = {
 export function RaporDesaPrintable({
   data,
   backHref,
+  sertifikatHref,
 }: {
   data: RaporDesaDetail;
   backHref: string;
+  sertifikatHref?: string;
 }) {
   const {
     project,
@@ -67,17 +70,26 @@ export function RaporDesaPrintable({
         }}
       />
 
-      <div className="no-print mb-6 flex items-center justify-between">
+      <div className="no-print mb-6 flex flex-wrap items-center justify-between gap-2">
         <Link
           href={backHref}
-          className="inline-flex items-center gap-1.5 text-sm text-atr-fg-muted hover:text-atr-fg"
+          className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-atr-outline bg-white px-3 text-xs font-bold text-atr-fg transition hover:bg-atr-bg-soft"
         >
-          <ArrowLeft className="h-4 w-4" />
+          <ArrowLeft className="h-3.5 w-3.5" />
           Kembali
         </Link>
-        <div className="rounded-lg border border-atr-outline bg-atr-bg-soft px-3 py-1.5 text-xs text-atr-fg-muted">
-          <strong className="text-atr-fg">Tips:</strong> Ctrl/⌘+P → Save as
-          PDF
+        <div className="flex items-center gap-2">
+          <PrintButton />
+          {sertifikatHref && (
+            <a
+              href={sertifikatHref}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-atr-purple px-3 text-xs font-bold text-white transition hover:bg-atr-purple-600"
+            >
+              🏆 Buka Sertifikat Desa
+            </a>
+          )}
         </div>
       </div>
 
@@ -138,23 +150,27 @@ export function RaporDesaPrintable({
       </section>
 
       {/* Aggregate scores */}
-      <section className="mb-8 rounded-2xl border border-atr-outline p-6">
-        <h2 className="mb-4 text-sm font-bold uppercase tracking-wide text-atr-fg-muted">
+      <section className="mb-8 overflow-hidden rounded-2xl border border-atr-purple/20 bg-gradient-to-br from-atr-purple-50/40 to-white p-6 shadow-atr-1">
+        <h2 className="mb-4 flex items-center gap-2 text-sm font-bold uppercase tracking-wide text-atr-purple-600">
+          <Users className="h-3.5 w-3.5" />
           Hasil Akumulasi Perwakilan Peserta
         </h2>
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           <ScoreCard
             label="Peserta"
             value={`${aggregate.peserta_with_rapor}/${aggregate.peserta_count}`}
             hint="dengan rapor"
+            palette="purple"
           />
           <ScoreCard
             label="Avg Pre"
             value={aggregate.avg_pre != null ? String(aggregate.avg_pre) : "-"}
+            palette="yellow"
           />
           <ScoreCard
             label="Avg Post"
             value={aggregate.avg_post != null ? String(aggregate.avg_post) : "-"}
+            palette="green"
           />
           <ScoreCard
             label="Avg Improvement"
@@ -163,42 +179,42 @@ export function RaporDesaPrintable({
                 ? `${aggregate.avg_improvement > 0 ? "+" : ""}${aggregate.avg_improvement}%`
                 : "-"
             }
+            palette="purple-strong"
             accent
           />
         </div>
-        <div className="mt-4 grid grid-cols-2 gap-4 text-xs text-atr-fg-muted">
-          <div>
-            Avg attendance:{" "}
+        <div className="mt-4 grid grid-cols-2 gap-4 text-xs">
+          <div className="rounded-lg bg-white/60 px-3 py-2">
+            <span className="text-atr-fg-muted">Avg kehadiran: </span>
             <strong className="text-atr-fg">
               {aggregate.avg_attendance != null
                 ? `${aggregate.avg_attendance}%`
                 : "-"}
             </strong>
           </div>
-          <div>
-            Evidence approved:{" "}
+          <div className="rounded-lg bg-white/60 px-3 py-2">
+            <span className="text-atr-fg-muted">Bukti disetujui: </span>
             <strong className="text-atr-fg">{aggregate.evidence_approved}</strong>
           </div>
         </div>
       </section>
 
       {/* Checklist completion */}
-      <section className="mb-8 rounded-2xl border border-atr-outline p-6">
-        <h2 className="mb-4 text-sm font-bold uppercase tracking-wide text-atr-fg-muted">
-          Progress Pendampingan (Checklist)
+      <section className="mb-8 rounded-2xl border border-atr-outline bg-white p-6 shadow-atr-1">
+        <h2 className="mb-4 flex items-center gap-2 text-sm font-bold uppercase tracking-wide text-atr-fg">
+          <ClipboardList className="h-3.5 w-3.5 text-atr-purple" />
+          Progress Pendampingan per Materi
         </h2>
-        <div className="mb-4">
+        <div className="mb-5 rounded-xl bg-atr-purple-50/40 p-4">
           <div className="flex items-center justify-between text-sm">
-            <span className="font-bold text-atr-fg">
-              Overall completion
-            </span>
-            <span className="font-bold text-atr-purple-600">
+            <span className="font-bold text-atr-fg">Overall completion</span>
+            <span className="text-2xl font-bold text-atr-purple-600">
               {Math.round(aggregate.checklist_completion_pct)}%
             </span>
           </div>
-          <div className="mt-2 h-2 overflow-hidden rounded-full bg-atr-bg-soft">
+          <div className="mt-2 h-3 overflow-hidden rounded-full bg-white shadow-inner">
             <div
-              className="h-full bg-atr-purple transition-all"
+              className="h-full rounded-full bg-gradient-to-r from-atr-purple to-atr-purple-600 transition-all"
               style={{
                 width: `${Math.round(aggregate.checklist_completion_pct)}%`,
               }}
@@ -206,18 +222,53 @@ export function RaporDesaPrintable({
           </div>
         </div>
         {topik.length > 0 && (
-          <ul className="space-y-2">
-            {topik.map((t) => (
-              <li
-                key={t.topik_id}
-                className="flex items-center justify-between text-sm"
-              >
-                <span className="text-atr-fg">{t.title}</span>
-                <span className="font-bold text-atr-fg-muted">
-                  {Math.round(t.completion_percent)}%
-                </span>
-              </li>
-            ))}
+          <ul className="space-y-3">
+            {topik.map((t, i) => {
+              const pct = Math.round(t.completion_percent);
+              const isDone = pct >= 100;
+              const isHigh = pct >= 70;
+              const isMid = pct >= 40;
+              const barColor = isDone
+                ? "from-atr-arti to-atr-arti"
+                : isHigh
+                  ? "from-atr-purple to-atr-purple-600"
+                  : isMid
+                    ? "from-atr-yellow to-atr-yellow"
+                    : "from-atr-red/60 to-atr-red/80";
+              const pctColor = isDone
+                ? "text-atr-arti"
+                : isHigh
+                  ? "text-atr-purple-600"
+                  : isMid
+                    ? "text-atr-fg"
+                    : "text-atr-red";
+              return (
+                <li key={t.topik_id || i} className="space-y-1.5">
+                  <div className="flex items-center justify-between gap-2 text-sm">
+                    <div className="inline-flex items-center gap-2">
+                      <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-atr-purple-50 text-[10px] font-bold text-atr-purple-600">
+                        {i + 1}
+                      </span>
+                      <span className="font-bold text-atr-fg">{t.title}</span>
+                      {isDone && (
+                        <span className="inline-flex items-center rounded-full bg-atr-arti/15 px-2 py-0.5 text-[10px] font-bold text-atr-arti">
+                          Selesai
+                        </span>
+                      )}
+                    </div>
+                    <span className={`text-sm font-bold ${pctColor}`}>
+                      {pct}%
+                    </span>
+                  </div>
+                  <div className="h-2 overflow-hidden rounded-full bg-atr-bg-soft">
+                    <div
+                      className={`h-full rounded-full bg-gradient-to-r ${barColor} transition-all`}
+                      style={{ width: `${pct}%` }}
+                    />
+                  </div>
+                </li>
+              );
+            })}
           </ul>
         )}
       </section>
@@ -279,14 +330,26 @@ export function RaporDesaPrintable({
             Rencana Aksi Desa ({action_plans.total})
           </h2>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-            <Mini label="Rencana" value={String(action_plans.by_status.rencana)} />
-            <Mini label="On Track" value={String(action_plans.by_status.on_track)} />
+            <Mini
+              label="Rencana"
+              value={String(action_plans.by_status.rencana)}
+              tone="muted"
+            />
+            <Mini
+              label="On Track"
+              value={String(action_plans.by_status.on_track)}
+              tone="purple"
+            />
             <Mini
               label="Selesai"
               value={String(action_plans.by_status.selesai)}
               accent
             />
-            <Mini label="Ditunda" value={String(action_plans.by_status.ditunda)} />
+            <Mini
+              label="Ditunda"
+              value={String(action_plans.by_status.ditunda)}
+              tone="yellow"
+            />
           </div>
         </section>
       )}
@@ -409,7 +472,14 @@ export function RaporDesaPrintable({
       </footer>
 
       <div className="mt-8 flex items-center justify-between text-[10px] text-atr-fg-muted">
-        <span>Rapor Desa · digenerate dari akumulasi peserta</span>
+        <span>
+          Rapor Desa ·{" "}
+          {new Intl.DateTimeFormat("id-ID", {
+            day: "2-digit",
+            month: "long",
+            year: "numeric",
+          }).format(new Date())}
+        </span>
         <div className="flex items-center gap-2">
           <Image src="/logo/vmt/vmt-mark.svg" alt="VMT" width={20} height={20} />
           <span className="font-bold">Village Milestone Tracker</span>
@@ -470,29 +540,39 @@ function Mini({
   label,
   value,
   accent,
+  tone,
 }: {
   label: string;
   value: string;
   accent?: boolean;
+  tone?: "purple" | "green" | "yellow" | "muted";
 }) {
+  const palette = accent ? "green" : tone ?? "muted";
+  const styles: Record<string, { card: string; value: string }> = {
+    purple: {
+      card: "border-atr-purple/30 bg-atr-purple-50/60",
+      value: "text-atr-purple-600",
+    },
+    green: {
+      card: "border-atr-arti/40 bg-atr-arti/10",
+      value: "text-atr-arti",
+    },
+    yellow: {
+      card: "border-atr-yellow/40 bg-atr-yellow/15",
+      value: "text-atr-fg",
+    },
+    muted: {
+      card: "border-atr-outline bg-atr-bg-soft/60",
+      value: "text-atr-fg",
+    },
+  };
+  const s = styles[palette];
   return (
-    <div
-      className={`rounded-lg border p-2.5 text-center ${
-        accent
-          ? "border-atr-arti/30 bg-atr-arti/10"
-          : "border-atr-outline bg-atr-bg-soft/60"
-      }`}
-    >
+    <div className={`rounded-lg border p-2.5 text-center ${s.card}`}>
       <div className="text-[10px] font-bold uppercase tracking-wide text-atr-fg-muted">
         {label}
       </div>
-      <div
-        className={`mt-1 text-lg font-bold ${
-          accent ? "text-atr-arti" : "text-atr-fg"
-        }`}
-      >
-        {value}
-      </div>
+      <div className={`mt-1 text-lg font-bold ${s.value}`}>{value}</div>
     </div>
   );
 }
@@ -502,33 +582,45 @@ function ScoreCard({
   value,
   hint,
   accent,
+  palette,
 }: {
   label: string;
   value: string;
   hint?: string;
   accent?: boolean;
+  palette?: "purple" | "purple-strong" | "yellow" | "green" | "red";
 }) {
+  const paletteStyle: Record<string, { card: string; value: string }> = {
+    purple: {
+      card: "border-atr-purple/20 bg-white",
+      value: "text-atr-purple-600",
+    },
+    "purple-strong": {
+      card: "border-atr-purple/40 bg-atr-purple-50",
+      value: "text-atr-purple-600",
+    },
+    yellow: {
+      card: "border-atr-yellow/40 bg-atr-yellow/10",
+      value: "text-atr-fg",
+    },
+    green: {
+      card: "border-atr-arti/30 bg-atr-arti/10",
+      value: "text-atr-arti",
+    },
+    red: { card: "border-atr-red/30 bg-atr-red/5", value: "text-atr-red" },
+  };
+  const cls = palette
+    ? paletteStyle[palette]
+    : accent
+      ? paletteStyle["purple-strong"]
+      : { card: "border-atr-outline bg-white", value: "text-atr-fg" };
   return (
-    <div
-      className={`rounded-xl border p-4 ${
-        accent
-          ? "border-atr-purple/30 bg-atr-purple-50"
-          : "border-atr-outline"
-      }`}
-    >
+    <div className={`rounded-xl border p-4 shadow-sm ${cls.card}`}>
       <div className="text-xs font-bold uppercase tracking-wide text-atr-fg-muted">
         {label}
       </div>
-      <div
-        className={`mt-2 text-2xl font-bold ${
-          accent ? "text-atr-purple-600" : "text-atr-fg"
-        }`}
-      >
-        {value}
-      </div>
-      {hint && (
-        <div className="text-[10px] text-atr-fg-muted">{hint}</div>
-      )}
+      <div className={`mt-2 text-2xl font-bold ${cls.value}`}>{value}</div>
+      {hint && <div className="text-[10px] text-atr-fg-muted">{hint}</div>}
     </div>
   );
 }

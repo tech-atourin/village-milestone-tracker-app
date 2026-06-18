@@ -1,6 +1,6 @@
 import "server-only";
 
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/server";
 
 export type DesaListRow = {
   id: string;
@@ -22,7 +22,7 @@ export type DesaListRow = {
 export async function listAllDesa(opts: {
   scopeProjectIds?: string[];
 } = {}): Promise<DesaListRow[]> {
-  const supabase = createClient();
+  const supabase = createAdminClient();
   let q = supabase
     .from("desa")
     .select(
@@ -201,7 +201,7 @@ export type DesaDetail = {
 export async function getDesaDetail(
   desaId: string,
 ): Promise<DesaDetail | null> {
-  const supabase = createClient();
+  const supabase = createAdminClient();
   const list = await listAllDesa();
   const base = list.find((r) => r.id === desaId);
   if (!base) return null;

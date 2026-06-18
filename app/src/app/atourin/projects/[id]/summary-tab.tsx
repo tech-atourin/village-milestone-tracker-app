@@ -458,7 +458,9 @@ export async function SummaryTab({
                   </span>
                 </div>
                 <Link
-                  href={`/${scope}/projects/${projectId}/desa/${d.project_desa_id}`}
+                  href={`/${scope}/projects/${projectId}/desa/${d.project_desa_id}?from=${encodeURIComponent(
+                    `/${scope}/projects/${projectId}?tab=summary`,
+                  )}`}
                   className="shrink-0 text-xs font-bold text-atr-purple-600 hover:underline"
                 >
                   Detail

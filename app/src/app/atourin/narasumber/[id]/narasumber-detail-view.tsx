@@ -38,9 +38,11 @@ function fmtDate(iso: string | null) {
 export function NarasumberDetailView({
   data,
   backHref,
+  backLabel = "Kembali ke daftar narasumber",
 }: {
   data: NarasumberDetail;
   backHref: string;
+  backLabel?: string;
 }) {
   return (
     <div className="space-y-6">
@@ -49,7 +51,7 @@ export function NarasumberDetailView({
         className="inline-flex items-center gap-1.5 text-sm text-atr-fg-muted hover:text-atr-fg"
       >
         <ArrowLeft className="h-4 w-4" />
-        Kembali ke daftar narasumber
+        {backLabel}
       </Link>
 
       {/* Profile card */}

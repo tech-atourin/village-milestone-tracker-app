@@ -59,10 +59,16 @@ export function DesaTab({
 
   async function searchHub() {
     setHubSearching(true);
+    setError(null);
     try {
       const r = await fetch(`/api/hub/search-desa?q=${encodeURIComponent(hubQ)}`);
       const data = await r.json();
+      if (!r.ok || data.error) {
+        setError(`Gagal cari di Hub: ${data.error ?? r.statusText}`);
+      }
       setHubResults(data.results ?? []);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Gagal cari di Hub");
     } finally {
       setHubSearching(false);
     }

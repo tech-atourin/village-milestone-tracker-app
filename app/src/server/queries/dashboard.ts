@@ -1,6 +1,6 @@
 import "server-only";
 
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/server";
 
 export type AttentionItem = {
   id: string;
@@ -14,7 +14,9 @@ export type AttentionItem = {
 const STAGNANT_DAYS = 14;
 
 export async function getAttentionItems(): Promise<AttentionItem[]> {
-  const supabase = createClient();
+  // Caller is /atourin/dashboard which already requires superadmin; admin
+  // client avoids the RLS-on-helper-functions trap that returned 0 items.
+  const supabase = createAdminClient();
   const items: AttentionItem[] = [];
 
   // 1. Pending checklist review

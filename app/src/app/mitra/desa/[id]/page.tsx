@@ -12,11 +12,14 @@ import {
   listCommentsForCriteriaItem,
   listCommentsForHubAssessment,
 } from "@/server/queries/assessment-comments";
+import { sanitizeBackHref } from "@/lib/nav/back-href";
 
 export default async function MitraDesaDetailPage({
   params,
+  searchParams,
 }: {
   params: { id: string };
+  searchParams: { from?: string };
 }) {
   await requireRole("mitra_admin");
   const user = await getCurrentUser();
@@ -53,13 +56,20 @@ export default async function MitraDesaDetailPage({
 
   return (
     <div className="space-y-6">
-      <Link
-        href="/mitra/desa"
-        className="inline-flex items-center gap-1.5 text-sm text-atr-fg-muted hover:text-atr-fg"
-      >
-        <ArrowLeft className="h-4 w-4" />
-        Kembali ke daftar desa
-      </Link>
+      {(() => {
+        const backHref = sanitizeBackHref(searchParams.from, "/mitra/desa");
+        const backLabel =
+          backHref === "/mitra/desa" ? "Kembali ke daftar desa" : "Kembali";
+        return (
+          <Link
+            href={backHref}
+            className="inline-flex items-center gap-1.5 text-sm text-atr-fg-muted hover:text-atr-fg"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            {backLabel}
+          </Link>
+        );
+      })()}
       <DesaDetailSections data={data} viewerRole="mitra" journey={journey} />
       {(criteriaCount > 0 || hubCount > 0) && (
         <article className="rounded-2xl border border-atr-purple/30 bg-atr-purple-50/30 p-5 shadow-atr-1">

@@ -14,5 +14,11 @@ export default async function RaporDesaDetailPage({
   const data = await getRaporDesaDetail(params.id, params.desaId);
   if (!data) notFound();
 
-  return <RaporDesaPrintable data={data} backHref={`/atourin/projects/${params.id}/rapor-desa`} />;
+  return (
+    <RaporDesaPrintable
+      data={data}
+      backHref={`/atourin/projects/${params.id}/rapor-desa`}
+      sertifikatHref={`/atourin/projects/${params.id}/rapor-desa/${params.desaId}/sertifikat`}
+    />
+  );
 }

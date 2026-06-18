@@ -1,5 +1,6 @@
 import Image from "next/image";
 import { createAdminClient } from "@/lib/supabase/server";
+import { PrintButton } from "@/components/ui/print-button";
 
 export async function loadRapor(projectId: string, userId: string) {
   // Admin client so mitra (and any reviewer) can render a peserta's rapor even
@@ -129,6 +130,23 @@ export async function loadRapor(projectId: string, userId: string) {
   return { project, user, rapor, membership, narasumber, materi_scores };
 }
 
+function fmtDateIdn(iso: string | null): string {
+  if (!iso) return "-";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return iso;
+  return new Intl.DateTimeFormat("id-ID", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  }).format(d);
+}
+
+function avg(nums: Array<number | null | undefined>): number | null {
+  const valid = nums.filter((n): n is number => typeof n === "number");
+  if (valid.length === 0) return null;
+  return Math.round(valid.reduce((a, b) => a + b, 0) / valid.length);
+}
+
 export function RaporView({
   data,
   scope = "atourin",
@@ -158,8 +176,11 @@ export function RaporView({
 }) {
   const { project, user, rapor, membership, narasumber, materi_scores } = data;
 
-  const pre = rapor?.pre_test_score ?? null;
-  const post = rapor?.post_test_score ?? null;
+  // Fall back to per-materi averages when the aggregate is not stored.
+  const pre =
+    rapor?.pre_test_score ?? avg(materi_scores.map((m) => m.pre));
+  const post =
+    rapor?.post_test_score ?? avg(materi_scores.map((m) => m.post));
   const delta =
     pre !== null && post !== null
       ? Math.round(((post - pre) / Math.max(pre, 1)) * 100)
@@ -180,19 +201,23 @@ export function RaporView({
       />
 
       <div className="no-print mb-6 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-atr-outline bg-atr-bg-soft p-3 text-xs text-atr-fg-muted">
-        <div>
-          <strong className="text-atr-fg">Tips:</strong> Cetak halaman ini
-          (Ctrl/⌘+P) atau &quot;Save as PDF&quot; di dialog print untuk RAPOR
-          final.
-        </div>
         <a
-          href={`/${scope}/projects/${project.id}/rapor/${user.id}/sertifikat`}
-          target="_blank"
-          rel="noreferrer"
-          className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-atr-purple px-3 text-xs font-bold text-white transition hover:bg-atr-purple-600"
+          href={`/${scope}/projects/${project.id}/rapor`}
+          className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-atr-outline bg-white px-3 text-xs font-bold text-atr-fg transition hover:bg-atr-bg-soft"
         >
-          🏆 Buka Sertifikat
+          ← Kembali ke daftar rapor
         </a>
+        <div className="flex flex-wrap items-center gap-2">
+          <PrintButton />
+          <a
+            href={`/${scope}/projects/${project.id}/rapor/${user.id}/sertifikat`}
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-atr-purple px-3 text-xs font-bold text-white transition hover:bg-atr-purple-600"
+          >
+            🏆 Buka Sertifikat
+          </a>
+        </div>
       </div>
 
       {/* Header */}
@@ -243,7 +268,7 @@ export function RaporView({
             Periode
           </div>
           <div className="mt-1 font-bold text-atr-fg">
-            {project.period_start} – {project.period_end}
+            {fmtDateIdn(project.period_start)} – {fmtDateIdn(project.period_end)}
           </div>
         </div>
       </section>

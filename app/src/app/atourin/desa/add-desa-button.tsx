@@ -67,12 +67,18 @@ export function AddDesaButton() {
   async function searchHub() {
     if (hubQ.trim().length < 2) return;
     setHubSearching(true);
+    setError(null);
     try {
       const r = await fetch(
         `/api/hub/search-desa?q=${encodeURIComponent(hubQ.trim())}`,
       );
       const data = await r.json();
+      if (!r.ok || data.error) {
+        setError(`Gagal cari di Hub: ${data.error ?? r.statusText}`);
+      }
       setHubResults((data.results ?? []) as HubResult[]);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Gagal cari di Hub");
     } finally {
       setHubSearching(false);
     }

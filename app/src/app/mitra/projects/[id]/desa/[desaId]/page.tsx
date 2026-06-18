@@ -8,8 +8,10 @@ import { getProjectDesa } from "@/server/queries/desa";
 
 export default async function MitraDesaDetailPage({
   params,
+  searchParams,
 }: {
   params: { id: string; desaId: string };
+  searchParams: { from?: string };
 }) {
   await requireRole("mitra_admin");
   const user = await getCurrentUser();
@@ -26,6 +28,7 @@ export default async function MitraDesaDetailPage({
       projectId={params.id}
       projectDesaId={params.desaId}
       scope="mitra"
+      backFrom={searchParams.from}
     />
   );
 }

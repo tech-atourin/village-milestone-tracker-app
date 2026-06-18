@@ -87,7 +87,7 @@ export default async function MitraProjectDetailPage({
   searchParams,
 }: {
   params: { id: string };
-  searchParams: { tab?: string };
+  searchParams: { tab?: string; topik?: string; desa?: string };
 }) {
   await requireRole("mitra_admin");
   const user = await getCurrentUser();
@@ -187,7 +187,13 @@ export default async function MitraProjectDetailPage({
       {activeTab === "rencana-aksi" && (
         <RencanaAksiTabLoader projectId={project.id} />
       )}
-      {activeTab === "evidence" && <EvidenceTabLoader projectId={project.id} />}
+      {activeTab === "evidence" && (
+        <EvidenceTabLoader
+          projectId={project.id}
+          filterTopikId={searchParams.topik}
+          filterDesaId={searchParams.desa}
+        />
+      )}
       {activeTab === "gforms" && <GformsAndResultsLoader projectId={project.id} />}
       {activeTab === "settings" && (
         <SettingsTab
@@ -302,8 +308,22 @@ async function TopikTabLoader({ projectId }: { projectId: string }) {
   return <TopikTab projectId={projectId} topik={topik} editable />;
 }
 
-async function EvidenceTabLoader({ projectId }: { projectId: string }) {
-  return <EvidenceTab projectId={projectId} />;
+async function EvidenceTabLoader({
+  projectId,
+  filterTopikId,
+  filterDesaId,
+}: {
+  projectId: string;
+  filterTopikId?: string;
+  filterDesaId?: string;
+}) {
+  return (
+    <EvidenceTab
+      projectId={projectId}
+      filterTopikId={filterTopikId}
+      filterDesaId={filterDesaId}
+    />
+  );
 }
 
 async function RencanaAksiTabLoader({ projectId }: { projectId: string }) {

@@ -11,6 +11,7 @@ import { createClient } from "@/lib/supabase/server";
 import { HubAssessmentForm } from "@/components/hub-assessment/hub-form";
 import { HubVerifyBar } from "./verify-bar";
 import { listCommentsForHubAssessment } from "@/server/queries/assessment-comments";
+import { sanitizeBackHref } from "@/lib/nav/back-href";
 import type {
   HubAssessmentTemplate,
   HubAssessmentResponse,
@@ -36,8 +37,10 @@ function fmt(iso: string | null) {
 
 export default async function HubAssessmentViewerPage({
   params,
+  searchParams,
 }: {
   params: { assessmentId: string };
+  searchParams: { from?: string };
 }) {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
@@ -83,13 +86,25 @@ export default async function HubAssessmentViewerPage({
 
   return (
     <div className="space-y-6">
-      <Link
-        href="/atourin/klasifikasi"
-        className="inline-flex items-center gap-1.5 text-sm text-atr-fg-muted hover:text-atr-fg"
-      >
-        <ArrowLeft className="h-4 w-4" />
-        Kembali ke Verifikasi Klasifikasi
-      </Link>
+      {(() => {
+        const backHref = sanitizeBackHref(
+          searchParams.from,
+          "/atourin/klasifikasi",
+        );
+        const backLabel =
+          backHref === "/atourin/klasifikasi"
+            ? "Kembali ke Verifikasi Klasifikasi"
+            : "Kembali";
+        return (
+          <Link
+            href={backHref}
+            className="inline-flex items-center gap-1.5 text-sm text-atr-fg-muted hover:text-atr-fg"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            {backLabel}
+          </Link>
+        );
+      })()}
 
       <header className="rounded-2xl border border-atr-outline bg-gradient-to-br from-atr-purple-50 to-white p-6 shadow-atr-1">
         <div className="flex items-start justify-between gap-4">
@@ -142,7 +157,9 @@ export default async function HubAssessmentViewerPage({
               )}
             </div>
             <Link
-              href={`/atourin/desa/${a.desa_id}`}
+              href={`/atourin/desa/${a.desa_id}?from=${encodeURIComponent(
+                `/atourin/klasifikasi/v2/${a.id}`,
+              )}`}
               className="text-[11px] font-bold text-atr-purple-600 hover:underline"
             >
               Lihat profil desa →

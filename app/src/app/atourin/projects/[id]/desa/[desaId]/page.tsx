@@ -7,8 +7,10 @@ import { getProjectDesa } from "@/server/queries/desa";
 
 export default async function AtourinDesaDetailPage({
   params,
+  searchParams,
 }: {
   params: { id: string; desaId: string };
+  searchParams: { from?: string };
 }) {
   await requireRole("superadmin");
   const detail = await getProjectDesa(params.id, params.desaId);
@@ -18,6 +20,7 @@ export default async function AtourinDesaDetailPage({
       projectId={params.id}
       projectDesaId={params.desaId}
       scope="atourin"
+      backFrom={searchParams.from}
     />
   );
 }

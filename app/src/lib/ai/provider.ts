@@ -85,7 +85,20 @@ class GeminiProvider implements AiProvider {
     try {
       parsed = JSON.parse(text) as T;
     } catch {
-      throw new Error("AI response was not valid JSON");
+      // Gemini sometimes wraps JSON in ```json fences or adds a preface,
+      // even with responseMimeType set. Strip fences and extract the first
+      // {...} or [...] block before giving up.
+      const cleaned = extractJsonBlock(text);
+      if (!cleaned) {
+        console.error("[ai] response was not valid JSON. Raw text:", text);
+        throw new Error("AI response was not valid JSON");
+      }
+      try {
+        parsed = JSON.parse(cleaned) as T;
+      } catch {
+        console.error("[ai] response was not valid JSON after cleanup:", cleaned);
+        throw new Error("AI response was not valid JSON");
+      }
     }
 
     return {
@@ -95,6 +108,29 @@ class GeminiProvider implements AiProvider {
         result.response.usageMetadata?.candidatesTokenCount ?? 0,
     };
   }
+}
+
+function extractJsonBlock(raw: string): string | null {
+  // Strip leading ```json / ``` and trailing ```
+  const fence = raw
+    .trim()
+    .replace(/^```(?:json)?\s*/i, "")
+    .replace(/```\s*$/, "")
+    .trim();
+  if (fence.startsWith("{") || fence.startsWith("[")) return fence;
+
+  // Last-ditch: find first { ... last matching } or first [ ... last ].
+  const firstObj = raw.indexOf("{");
+  const lastObj = raw.lastIndexOf("}");
+  if (firstObj >= 0 && lastObj > firstObj) {
+    return raw.slice(firstObj, lastObj + 1);
+  }
+  const firstArr = raw.indexOf("[");
+  const lastArr = raw.lastIndexOf("]");
+  if (firstArr >= 0 && lastArr > firstArr) {
+    return raw.slice(firstArr, lastArr + 1);
+  }
+  return null;
 }
 
 let cached: AiProvider | null = null;

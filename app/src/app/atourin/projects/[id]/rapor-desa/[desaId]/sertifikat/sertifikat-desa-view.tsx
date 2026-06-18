@@ -1,30 +1,20 @@
 import Image from "next/image";
+import type { RaporDesaDetail } from "@/server/queries/rapor-desa";
 
-const ELIGIBILITY_THRESHOLD = 20;
+const ELIGIBILITY_THRESHOLD = 60;
 
-export function SertifikatView({
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  data,
-}: {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  data: any;
-}) {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const project = data.project as any;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const user = data.user as any;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const rapor = data.rapor as any;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const membership = data.membership as any;
+const TIER_LABEL: Record<string, string> = {
+  unclassified: "Belum Diklasifikasi",
+  rintisan: "Rintisan",
+  berkembang: "Berkembang",
+  maju: "Maju",
+  mandiri: "Mandiri",
+};
 
-  const pre = rapor?.pre_test_score ?? null;
-  const post = rapor?.post_test_score ?? null;
-  const delta =
-    pre !== null && post !== null
-      ? Math.round(((post - pre) / Math.max(pre, 1)) * 100)
-      : null;
-  const eligible = delta != null && delta >= ELIGIBILITY_THRESHOLD;
+export function SertifikatDesaView({ data }: { data: RaporDesaDetail }) {
+  const { project, desa, aggregate } = data;
+  const checklist = Math.round(aggregate.checklist_completion_pct ?? 0);
+  const eligible = checklist >= ELIGIBILITY_THRESHOLD;
   const dateFmt = (iso: string | null) =>
     iso
       ? new Intl.DateTimeFormat("id-ID", {
@@ -54,7 +44,7 @@ export function SertifikatView({
         layout <strong>landscape</strong> + ukuran A4 → Save as PDF.
         {!eligible && (
           <span className="ml-2 rounded-md bg-atr-yellow/20 px-1.5 py-0.5 font-bold text-atr-fg">
-            Catatan: peningkatan {delta ?? "-"}% belum mencapai ambang batas
+            Catatan: progress checklist {checklist}% belum mencapai ambang
             ({ELIGIBILITY_THRESHOLD}%). Sertifikat tetap bisa dicetak sebagai
             tanda partisipasi.
           </span>
@@ -69,7 +59,12 @@ export function SertifikatView({
 
         <header className="flex items-start justify-between">
           <div className="flex items-center gap-3">
-            <Image src="/logo/vmt/vmt-app-icon.svg" alt="VMT" width={48} height={48} />
+            <Image
+              src="/logo/vmt/vmt-app-icon.svg"
+              alt="VMT"
+              width={48}
+              height={48}
+            />
             <div>
               <div className="text-sm font-bold tracking-wide text-atr-purple-600">
                 Village Milestone Tracker
@@ -97,40 +92,53 @@ export function SertifikatView({
 
         <div className="mt-8 text-center">
           <h1 className="text-sm font-bold uppercase tracking-[0.25em] text-atr-purple-600">
-            Sertifikat Penghargaan
+            Sertifikat Pendampingan Desa Wisata
           </h1>
           <p className="mt-2 text-xs uppercase tracking-widest text-atr-fg-muted">
             Diberikan kepada
           </p>
           <h2 className="mt-4 text-4xl font-bold tracking-tight text-atr-fg">
-            {user.full_name}
+            {desa.name}
           </h2>
           <p className="mt-2 text-sm text-atr-fg-muted">
-            {membership?.desa?.name ?? "-"}
-            {membership?.desa?.kabupaten &&
-              ` · ${membership.desa.kabupaten}, ${membership.desa.provinsi}`}
+            {[desa.kabupaten, desa.provinsi].filter(Boolean).join(", ") || "-"}
+            {desa.current_classification && (
+              <>
+                {" · Klasifikasi: "}
+                <strong className="text-atr-fg">
+                  {TIER_LABEL[desa.current_classification] ??
+                    desa.current_classification}
+                </strong>
+              </>
+            )}
           </p>
 
           <p className="mx-auto mt-8 max-w-2xl text-sm leading-relaxed text-atr-fg">
-            Atas partisipasi aktif dan{" "}
-            {eligible ? "pencapaian signifikan" : "kontribusi"} dalam program
+            Atas {eligible ? "pencapaian dan komitmen" : "partisipasi"} dalam
+            program
             <br />
             <strong className="text-atr-purple-600">{project.name}</strong>
             <br />
             periode {dateFmt(project.period_start)} – {dateFmt(project.period_end)}.
           </p>
 
-          {pre != null && post != null && (
-            <div className="mx-auto mt-6 flex max-w-md justify-center gap-6 text-center text-xs">
-              <ScoreCell label="Pre-test" value={pre} />
-              <ScoreCell label="Post-test" value={post} highlight />
+          <div className="mx-auto mt-6 flex max-w-md justify-center gap-6 text-center text-xs">
+            <ScoreCell label="Peserta" value={aggregate.peserta_count} />
+            <ScoreCell
+              label="Progress Materi"
+              value={`${checklist}%`}
+              highlight
+            />
+            {aggregate.avg_improvement != null && (
               <ScoreCell
                 label="Peningkatan"
-                value={`${delta! > 0 ? "+" : ""}${delta}%`}
+                value={`${aggregate.avg_improvement > 0 ? "+" : ""}${
+                  aggregate.avg_improvement
+                }%`}
                 emphasis={eligible ? "green" : "muted"}
               />
-            </div>
-          )}
+            )}
+          </div>
         </div>
 
         <footer className="absolute bottom-10 left-10 right-10 grid grid-cols-2 gap-10 text-center text-xs">
@@ -149,8 +157,8 @@ export function SertifikatView({
         </footer>
 
         <div className="absolute bottom-2 left-0 right-0 text-center text-[9px] uppercase tracking-widest text-atr-fg-muted">
-          Diterbitkan {dateFmt(rapor?.generated_at ?? new Date().toISOString())}{" "}
-          · ID {user.id?.slice(0, 8) ?? "-"}-{project.id?.slice(0, 8) ?? "-"}
+          Diterbitkan {dateFmt(new Date().toISOString())} · ID{" "}
+          {desa.id?.slice(0, 8) ?? "-"}-{project.id?.slice(0, 8) ?? "-"}
         </div>
       </article>
     </main>

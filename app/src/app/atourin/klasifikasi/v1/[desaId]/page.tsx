@@ -11,6 +11,7 @@ import {
 } from "@/server/queries/self-assessment";
 import { listCommentsForCriteriaItem } from "@/server/queries/assessment-comments";
 import { V1ReviewList } from "./review-list";
+import { sanitizeBackHref } from "@/lib/nav/back-href";
 
 const TIER_BADGE: Record<string, string> = {
   rintisan: "bg-atr-yellow/20 text-atr-fg",
@@ -29,12 +30,19 @@ const TIER_LABEL: Record<string, string> = {
 
 export default async function V1ReviewPage({
   params,
+  searchParams,
 }: {
   params: { desaId: string };
+  searchParams: { from?: string };
 }) {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
   if (user.global_role !== "superadmin") redirect("/dashboard");
+  const backHref = sanitizeBackHref(searchParams.from, "/atourin/klasifikasi");
+  const backLabel =
+    backHref === "/atourin/klasifikasi"
+      ? "Kembali ke Verifikasi Klasifikasi"
+      : "Kembali";
 
   const supabase = createClient();
   const { data: desa } = await supabase
@@ -56,11 +64,11 @@ export default async function V1ReviewPage({
     return (
       <div className="space-y-4">
         <Link
-          href="/atourin/klasifikasi"
+          href={backHref}
           className="inline-flex items-center gap-1.5 text-sm text-atr-fg-muted hover:text-atr-fg"
         >
           <ArrowLeft className="h-4 w-4" />
-          Kembali
+          {backLabel}
         </Link>
         <div className="rounded-2xl border border-atr-yellow/30 bg-atr-yellow/10 p-6 text-center">
           <AlertTriangle className="mx-auto mb-2 h-5 w-5 text-atr-yellow" />
@@ -120,7 +128,9 @@ export default async function V1ReviewPage({
                 · Master {master.version}
               </span>
               <Link
-                href={`/atourin/desa/${d.id}`}
+                href={`/atourin/desa/${d.id}?from=${encodeURIComponent(
+                  `/atourin/klasifikasi/v1/${d.id}`,
+                )}`}
                 className="text-atr-purple-600 hover:underline"
               >
                 Profil desa →

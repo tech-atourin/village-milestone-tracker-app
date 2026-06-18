@@ -208,7 +208,7 @@ function SummariesPanel({ rows }: { rows: InsightRow[] }) {
             </div>
             <p className="mt-3 line-clamp-3 text-xs text-atr-fg">{overview}</p>
             <Link
-              href={`/atourin/projects/${r.project_id}/desa/${r.target_id}`}
+              href={`/atourin/projects/${r.project_id}/desa/${r.target_id}?from=${encodeURIComponent("/atourin/insights")}`}
               className="mt-3 inline-flex items-center gap-1 text-xs font-bold text-atr-purple hover:text-atr-purple-600"
             >
               Lihat detail
@@ -259,7 +259,7 @@ function RecommendationsPanel({ rows }: { rows: InsightRow[] }) {
                 ))}
               </div>
               <Link
-                href={`/atourin/projects/${r.project_id}/desa/${r.target_id}`}
+                href={`/atourin/projects/${r.project_id}/desa/${r.target_id}?from=${encodeURIComponent("/atourin/insights")}`}
                 className="shrink-0 text-xs font-bold text-atr-purple hover:text-atr-purple-600"
               >
                 Lihat →
@@ -297,7 +297,7 @@ function StagnationsPanel({ rows }: { rows: InsightRow[] }) {
               </div>
             </div>
             <Link
-              href={`/atourin/projects/${r.project_id}/desa/${r.target_id}`}
+              href={`/atourin/projects/${r.project_id}/desa/${r.target_id}?from=${encodeURIComponent("/atourin/insights")}`}
               className="text-xs font-bold text-atr-red hover:underline"
             >
               Intervensi →

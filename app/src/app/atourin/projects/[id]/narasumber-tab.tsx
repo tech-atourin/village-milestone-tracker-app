@@ -230,7 +230,9 @@ export function NarasumberTab({
                 </div>
                 <div className="min-w-0 flex-1">
                   <Link
-                    href={`${narasumberDetailBase}/${a.user.id}`}
+                    href={`${narasumberDetailBase}/${a.user.id}?from=${encodeURIComponent(
+                      `${narasumberDetailBase === "/atourin/narasumber" ? "/atourin" : "/mitra"}/projects/${projectId}?tab=narasumber`,
+                    )}`}
                     className="inline-flex items-center gap-1 text-sm font-bold text-atr-fg hover:text-atr-purple-600"
                   >
                     {a.user.full_name}

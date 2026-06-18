@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { requireRole } from "@/lib/auth/rbac";
 
 const createDesaSchema = z.object({
@@ -21,7 +21,8 @@ export async function createDesaAction(input: CreateDesaInput) {
   if (!parsed.success) {
     return { error: "Input tidak valid", fieldErrors: parsed.error.flatten().fieldErrors };
   }
-  const supabase = createClient();
+  // RLS on vmt.desa has no INSERT policy. Role guarded above; use admin client.
+  const supabase = createAdminClient();
   const { data, error } = await supabase
     .from("desa")
     .insert(parsed.data)

@@ -19,6 +19,7 @@ import type { DesaRecommendation } from "@/lib/ai/desa-recommendation";
 import { AiSummaryCard } from "./ai-summary-card";
 import { AiRecommendationCard } from "./ai-recommendation-card";
 import { SwotCard } from "./swot-card";
+import { sanitizeBackHref } from "@/lib/nav/back-href";
 
 export type DesaSwot = {
   strengths: string[];
@@ -67,11 +68,17 @@ export async function ProjectDesaDetailView({
   projectId,
   projectDesaId,
   scope,
+  backFrom,
 }: {
   projectId: string;
   projectDesaId: string;
   scope: "atourin" | "mitra";
+  backFrom?: string;
 }) {
+  const defaultBack = `/${scope}/projects/${projectId}?tab=desa`;
+  const backHref = sanitizeBackHref(backFrom, defaultBack);
+  const backLabel =
+    backHref === defaultBack ? "Kembali ke daftar desa" : "Kembali";
   // NOTE: param is `desaId` in the route but it actually carries project_desa.id
   const detail = await getProjectDesa(projectId, projectDesaId);
   if (!detail) return null;
@@ -94,11 +101,11 @@ export async function ProjectDesaDetailView({
   return (
     <div className="space-y-6">
       <Link
-        href={`/${scope}/projects/${projectId}?tab=desa`}
+        href={backHref}
         className="inline-flex items-center gap-1.5 text-sm text-atr-fg-muted hover:text-atr-fg"
       >
         <ArrowLeft className="h-4 w-4" />
-        Kembali ke daftar desa
+        {backLabel}
       </Link>
 
       <header className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
@@ -116,8 +123,10 @@ export async function ProjectDesaDetailView({
                 .join(" · ") || "Lokasi belum diisi"}
             </div>
             <div className="text-xs text-atr-fg-muted">
-              Project: {detail.project.name} · Mitra:{" "}
-              {detail.project.organization.name}
+              Project: {detail.project.name}
+            </div>
+            <div className="text-xs text-atr-fg-muted">
+              Mitra: {detail.project.organization.name}
             </div>
             {detail.coordinator && (
               <div className="text-xs text-atr-fg-muted">
@@ -198,10 +207,23 @@ export async function ProjectDesaDetailView({
                       <CheckCircle2 className="h-3 w-3 text-atr-arti" />
                       {t.approved_items} approved
                     </span>
-                    <span className="inline-flex items-center gap-1">
-                      <Clock className="h-3 w-3 text-atr-yellow" />
-                      {t.pending_items} pending
-                    </span>
+                    {t.pending_items > 0 ? (
+                      <Link
+                        href={`/${scope}/projects/${projectId}?tab=evidence&topik=${t.project_topik_id}&desa=${projectDesaId}`}
+                        className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 font-bold text-atr-fg transition hover:bg-atr-yellow/20"
+                      >
+                        <Clock className="h-3 w-3 text-atr-yellow" />
+                        {t.pending_items} pending
+                        <span className="text-[10px] text-atr-purple-600">
+                          → tinjau
+                        </span>
+                      </Link>
+                    ) : (
+                      <span className="inline-flex items-center gap-1">
+                        <Clock className="h-3 w-3 text-atr-yellow" />
+                        {t.pending_items} pending
+                      </span>
+                    )}
                     <span>{t.total_items} total</span>
                   </div>
                   <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-atr-bg-soft">

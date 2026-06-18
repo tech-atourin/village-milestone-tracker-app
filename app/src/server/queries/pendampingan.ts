@@ -1,6 +1,6 @@
 import "server-only";
 
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/server";
 
 export type SessionRow = {
   id: string;
@@ -18,7 +18,7 @@ export type SessionRow = {
 export async function listNarasumberSessions(
   narasumberId: string,
 ): Promise<SessionRow[]> {
-  const supabase = createClient();
+  const supabase = createAdminClient();
   const { data } = await supabase
     .from("pendampingan_sessions")
     .select(
@@ -52,7 +52,7 @@ export type ProjectScope = {
 export async function listNarasumberProjects(
   narasumberId: string,
 ): Promise<ProjectScope[]> {
-  const supabase = createClient();
+  const supabase = createAdminClient();
   const { data: m } = await supabase
     .from("project_memberships")
     .select("project_id, project:projects(id, name, total_pendampingan_days)")
@@ -134,7 +134,7 @@ export type SessionDetail = {
 export async function getSessionDetail(
   sessionId: string,
 ): Promise<SessionDetail | null> {
-  const supabase = createClient();
+  const supabase = createAdminClient();
   const { data: s } = await supabase
     .from("pendampingan_sessions")
     .select(
@@ -210,7 +210,7 @@ export async function getSessionDetail(
 
 // Group sessions across all days for one project_desa (for the 4-tab view)
 export async function getProjectDesaSessions(projectDesaId: string) {
-  const supabase = createClient();
+  const supabase = createAdminClient();
   const { data } = await supabase
     .from("pendampingan_sessions")
     .select("id, day_number, session_date, materi, tindak_lanjut, status")

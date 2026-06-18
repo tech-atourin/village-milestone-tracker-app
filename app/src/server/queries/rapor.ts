@@ -1,6 +1,6 @@
 import "server-only";
 
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/server";
 
 export type RaporRow = {
   user_id: string;
@@ -15,7 +15,9 @@ export type RaporRow = {
 };
 
 export async function listProjectRapor(projectId: string): Promise<RaporRow[]> {
-  const supabase = createClient();
+  // rapor_peserta RLS only opens to desa_wisata; staff readers (superadmin,
+  // mitra, narasumber) need admin client. Callers gate by role.
+  const supabase = createAdminClient();
 
   const { data: members } = await supabase
     .from("project_memberships")

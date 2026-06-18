@@ -1,6 +1,6 @@
 import "server-only";
 
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/server";
 
 export type ActionPlanRow = {
   id: string;
@@ -27,7 +27,7 @@ export async function listActionPlans(opts: {
   projectDesaId?: string;
   desaId?: string;
 }): Promise<ActionPlanRow[]> {
-  const supabase = createClient();
+  const supabase = createAdminClient();
   let q = supabase
     .from("desa_action_plans")
     .select(
@@ -66,7 +66,7 @@ export async function listActionPlans(opts: {
 
   if (opts.desaId) {
     // post-filter by desa
-    const supabase2 = createClient();
+    const supabase2 = createAdminClient();
     const { data: pds } = await supabase2
       .from("project_desa")
       .select("id")

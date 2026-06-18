@@ -18,16 +18,36 @@ import type { ReviewQueueItem } from "@/server/queries/review";
 
 export function ReviewQueue({
   projectId,
-  items,
+  items: allItems,
+  filterTopikId,
+  filterDesaId,
 }: {
   projectId: string;
   items: ReviewQueueItem[];
+  filterTopikId?: string;
+  filterDesaId?: string;
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [expanded, setExpanded] = useState<string | null>(null);
   const [note, setNote] = useState("");
   const [selected, setSelected] = useState<Set<string>>(new Set());
+
+  // Server-side filter chips arrive via URL; surface them as visible chips
+  // so the reviewer can clear them.
+  const items = allItems.filter((it) => {
+    if (filterTopikId && it.topik.id !== filterTopikId) return false;
+    if (filterDesaId && it.project_desa_id !== filterDesaId) return false;
+    return true;
+  });
+
+  const activeFilter = filterTopikId || filterDesaId;
+  const filteredTopikName = filterTopikId
+    ? allItems.find((it) => it.topik.id === filterTopikId)?.topik.name
+    : null;
+  const filteredDesaName = filterDesaId
+    ? allItems.find((it) => it.project_desa_id === filterDesaId)?.desa.name
+    : null;
 
   function toggleAll() {
     if (selected.size === items.length) {
@@ -108,6 +128,27 @@ export function ReviewQueue({
 
   return (
     <div className="space-y-3">
+      {activeFilter && (
+        <div className="flex flex-wrap items-center gap-2 rounded-lg border border-atr-purple/30 bg-atr-purple-50/40 p-3 text-xs">
+          <span className="font-bold text-atr-fg">Difilter ke:</span>
+          {filteredTopikName && (
+            <span className="inline-flex items-center rounded-full bg-white px-2 py-0.5 font-bold text-atr-purple-600">
+              Topik: {filteredTopikName}
+            </span>
+          )}
+          {filteredDesaName && (
+            <span className="inline-flex items-center rounded-full bg-white px-2 py-0.5 font-bold text-atr-purple-600">
+              Desa: {filteredDesaName}
+            </span>
+          )}
+          <a
+            href={`?tab=evidence`}
+            className="ml-auto text-atr-purple-600 hover:underline"
+          >
+            Lihat semua
+          </a>
+        </div>
+      )}
       <div className="flex items-center justify-between gap-3">
         <div>
           <h3 className="text-base font-bold text-atr-fg">
