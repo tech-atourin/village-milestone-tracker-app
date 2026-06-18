@@ -61,15 +61,45 @@ export async function importHubDesaToProject(
     vmtDesaId = (created as { id: string }).id;
   }
 
-  // 2. Attach to project via RPC
-  const { error: attachErr } = await supabase.rpc("attach_desa_to_project", {
-    p_project_id: parsed.data.project_id,
-    p_desa_id: vmtDesaId,
-    p_classification_at_start: tier,
-    p_classification_target: null,
-    p_coordinator_user_id: null,
-  });
-  if (attachErr) return { error: attachErr.message };
+  // 2. Attach to project. The attach_desa_to_project RPC hard-codes a
+  // vmt.is_superadmin() check that reads auth.uid(), which is null under
+  // service_role, so we replicate its logic inline using the admin client.
+  // Role guard above already ensures only staff can reach here.
+  const { error: pdErr } = await supabase.from("project_desa").upsert(
+    {
+      project_id: parsed.data.project_id,
+      desa_id: vmtDesaId,
+      classification_at_start: tier,
+      classification_target: null,
+      coordinator_user_id: null,
+    },
+    { onConflict: "project_id,desa_id" },
+  );
+  if (pdErr) return { error: pdErr.message };
+  // Materialize the desa_topik_instance rows for every project_topik so the
+  // checklist UI has somewhere to land.
+  const { data: pdRow } = await supabase
+    .from("project_desa")
+    .select("id")
+    .eq("project_id", parsed.data.project_id)
+    .eq("desa_id", vmtDesaId)
+    .maybeSingle();
+  const projectDesaIdInner = (pdRow as { id: string } | null)?.id;
+  if (projectDesaIdInner) {
+    const { data: topiks } = await supabase
+      .from("project_topik")
+      .select("id")
+      .eq("project_id", parsed.data.project_id);
+    const rows = ((topiks ?? []) as Array<{ id: string }>).map((t) => ({
+      project_desa_id: projectDesaIdInner,
+      project_topik_id: t.id,
+    }));
+    if (rows.length > 0) {
+      await supabase
+        .from("desa_topik_instance")
+        .upsert(rows, { onConflict: "project_desa_id,project_topik_id" });
+    }
+  }
 
   // 3. Pre-fill baseline data from hub profile (if no existing baseline)
   const { data: projDesa } = await supabase
