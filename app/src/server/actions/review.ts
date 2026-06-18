@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { createAdminClient } from "@/lib/supabase/server";
-import { notify } from "@/lib/notify";
+import { notifyMany } from "@/lib/notify";
 import { audit } from "@/lib/audit";
 import { getCurrentUser } from "@/lib/auth/rbac";
 
@@ -117,30 +117,44 @@ export async function reviewChecklistItem(input: z.input<typeof reviewSchema>) {
     after: { note: parsed.data.note },
   });
 
-  // Notify peserta (best-effort).
+  // Notify peserta (submitter) + desa_wisata user(s) representing this desa,
+  // via both in_app + email so it shows in the bell AND inbox.
   try {
     const admin = createAdminClient();
     const { data: cp } = await admin
       .from("checklist_progress")
       .select(
-        "submitted_by, project_checklist_item:project_checklist_item(title, project_topik:project_topik(name))",
+        "submitted_by, project_checklist_item:project_checklist_item(title, project_topik:project_topik(name)), desa_topik_instance:desa_topik_instance(project_desa:project_desa(desa_id))",
       )
       .eq("id", parsed.data.checklist_progress_id)
       .maybeSingle();
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const c = cp as any;
-    if (c?.submitted_by) {
-      await notify({
-        user_id: c.submitted_by,
+    const recipients = new Set<string>();
+    if (c?.submitted_by) recipients.add(c.submitted_by);
+    const desaId = c?.desa_topik_instance?.project_desa?.desa_id ?? null;
+    if (desaId) {
+      const { data: desaUsers } = await admin
+        .from("users")
+        .select("id")
+        .eq("representing_desa_id", desaId)
+        .eq("global_role", "desa_wisata")
+        .is("deleted_at", null);
+      for (const d of ((desaUsers ?? []) as Array<{ id: string }>))
+        recipients.add(d.id);
+    }
+    if (recipients.size > 0) {
+      await notifyMany({
+        user_ids: Array.from(recipients),
         template_key:
           parsed.data.decision === "approved"
             ? "checklist_approved"
             : "checklist_rejected",
-        channel: "email",
         payload: {
           checklist_title: c.project_checklist_item?.title,
           topik_name: c.project_checklist_item?.project_topik?.name,
           note: parsed.data.note,
+          project_id: parsed.data.project_id,
         },
       });
     }

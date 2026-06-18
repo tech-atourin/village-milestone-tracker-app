@@ -303,6 +303,15 @@ function ItemRow({
         </div>
       )}
 
+      {item.checklist_progress_id && (
+        <div className="mt-3">
+          <ChecklistDiscussion
+            checklistProgressId={item.checklist_progress_id}
+            currentUserId={currentUserId}
+          />
+        </div>
+      )}
+
       {canReview && isPending && (
         <div className="mt-3 space-y-2 border-t border-atr-outline pt-3">
           {error && (
@@ -356,15 +365,6 @@ function ItemRow({
               Setujui
             </button>
           </div>
-        </div>
-      )}
-
-      {item.checklist_progress_id && (
-        <div className="mt-3">
-          <ChecklistDiscussion
-            checklistProgressId={item.checklist_progress_id}
-            currentUserId={currentUserId}
-          />
         </div>
       )}
     </article>

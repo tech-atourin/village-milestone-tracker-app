@@ -11,6 +11,7 @@ import {
   Loader2,
   Paperclip,
   ChevronRight,
+  MessageSquare,
 } from "lucide-react";
 import { submitChecklistItem } from "@/server/actions/checklist";
 import type { ChecklistItemRow } from "@/server/queries/peserta";
@@ -137,6 +138,15 @@ export function ChecklistItemList({
                       <span className="inline-flex items-center gap-1 rounded-full bg-atr-purple-50 px-2 py-0.5 text-[10px] font-bold text-atr-purple-600">
                         <Paperclip className="h-2.5 w-2.5" />
                         {item.evidence_count} evidence
+                      </span>
+                    )}
+                    {item.has_unanswered_review && (
+                      <span
+                        className="inline-flex items-center gap-1 rounded-full bg-atr-red/15 px-2 py-0.5 text-[10px] font-bold text-atr-red"
+                        title="Reviewer kirim catatan, perlu Anda respons"
+                      >
+                        <MessageSquare className="h-2.5 w-2.5" />
+                        Perlu respons
                       </span>
                     )}
                   </div>

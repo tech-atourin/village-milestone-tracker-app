@@ -121,7 +121,43 @@ export type PesertaTopikRow = {
   total_items: number;
   approved_items: number;
   pending_items: number;
+  unanswered_review_count: number;
 };
+
+const REVIEWER_ROLES = new Set([
+  "superadmin",
+  "mitra_admin",
+  "narasumber",
+]);
+
+// Returns Set<checklist_progress_id> where the latest discussion comment
+// was posted by a reviewer (i.e. peserta/desa has not replied yet).
+async function getUnansweredCpIds(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  supabase: any,
+  cpIds: string[],
+): Promise<Set<string>> {
+  if (cpIds.length === 0) return new Set();
+  const { data } = await supabase
+    .from("assessment_comments")
+    .select("target_id, author_role, created_at")
+    .eq("target_type", "checklist_progress")
+    .in("target_id", cpIds)
+    .order("created_at", { ascending: true });
+  // Track the latest author_role per cp
+  const latest = new Map<string, string>();
+  for (const r of (data ?? []) as Array<{
+    target_id: string;
+    author_role: string;
+  }>) {
+    latest.set(r.target_id, r.author_role);
+  }
+  const unanswered = new Set<string>();
+  latest.forEach((role, cpId) => {
+    if (REVIEWER_ROLES.has(role)) unanswered.add(cpId);
+  });
+  return unanswered;
+}
 
 export async function listPesertaTopik(
   projectDesaId: string,
@@ -195,19 +231,22 @@ export async function listPesertaTopik(
     );
   }
 
-  // Progress counts per instance
+  // Progress counts per instance + unanswered review comments per instance
   const instanceIds = Array.from(instMap.values()).map((i) => i.id);
   const approvedByInst = new Map<string, number>();
   const pendingByInst = new Map<string, number>();
+  const unansweredByInst = new Map<string, number>();
   if (instanceIds.length) {
     const { data: progress } = await supabase
       .from("checklist_progress")
-      .select("desa_topik_instance_id, status")
+      .select("id, desa_topik_instance_id, status")
       .in("desa_topik_instance_id", instanceIds);
-    for (const p of (progress ?? []) as Array<{
+    const progressRows = (progress ?? []) as Array<{
+      id: string;
       desa_topik_instance_id: string;
       status: string;
-    }>) {
+    }>;
+    for (const p of progressRows) {
       if (p.status === "approved") {
         approvedByInst.set(
           p.desa_topik_instance_id,
@@ -217,6 +256,19 @@ export async function listPesertaTopik(
         pendingByInst.set(
           p.desa_topik_instance_id,
           (pendingByInst.get(p.desa_topik_instance_id) ?? 0) + 1,
+        );
+      }
+    }
+    // Per-instance unanswered review counts
+    const unansweredCpIds = await getUnansweredCpIds(
+      supabase,
+      progressRows.map((p) => p.id),
+    );
+    for (const p of progressRows) {
+      if (unansweredCpIds.has(p.id)) {
+        unansweredByInst.set(
+          p.desa_topik_instance_id,
+          (unansweredByInst.get(p.desa_topik_instance_id) ?? 0) + 1,
         );
       }
     }
@@ -235,6 +287,9 @@ export async function listPesertaTopik(
       total_items: totalByTopik.get(t.id) ?? 0,
       approved_items: inst ? approvedByInst.get(inst.id) ?? 0 : 0,
       pending_items: inst ? pendingByInst.get(inst.id) ?? 0 : 0,
+      unanswered_review_count: inst
+        ? unansweredByInst.get(inst.id) ?? 0
+        : 0,
     };
   });
 }
@@ -252,6 +307,7 @@ export type ChecklistItemRow = {
   status: "not_started" | "submitted" | "approved" | "rejected";
   review_note: string | null;
   evidence_count: number;
+  has_unanswered_review: boolean;
 };
 
 export async function listChecklistItems(
@@ -331,6 +387,9 @@ export async function listChecklistItems(
     }
   }
 
+  // Per-item unanswered review flag
+  const unansweredCpIds = await getUnansweredCpIds(supabase, progressIds);
+
   return {
     topik: topikInfo as { id: string; name: string; description: string | null } | null,
     desa_topik_instance_id: instanceId,
@@ -346,6 +405,7 @@ export async function listChecklistItems(
         status: p?.status ?? "not_started",
         review_note: p?.review_note ?? null,
         evidence_count: p ? evCounts.get(p.id) ?? 0 : 0,
+        has_unanswered_review: p ? unansweredCpIds.has(p.id) : false,
       };
     }),
   };

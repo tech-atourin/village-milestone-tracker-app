@@ -90,6 +90,15 @@ function linkFor(
         return `/${scope}/klasifikasi/v1/${desaId}`;
       return null;
     case "comment_added":
+      // Checklist discussion (payload has project_id) → project review queue
+      if (projectId && scope === "peserta")
+        return `/peserta/projects/${projectId}`;
+      if (
+        projectId &&
+        (scope === "atourin" || scope === "mitra" || scope === "narasumber")
+      )
+        return `/${scope}/projects/${projectId}?tab=review`;
+      // V1 assessment comment → klasifikasi review / desa self-assessment
       if (scope === "desa") return "/desa/self-assessment";
       if (desaId && (scope === "atourin" || scope === "mitra"))
         return `/${scope}/klasifikasi/v1/${desaId}`;

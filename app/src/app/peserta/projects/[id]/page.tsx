@@ -1,7 +1,13 @@
 export const metadata = { title: "Detail Project" };
 
 import Link from "next/link";
-import { ArrowLeft, CheckCircle2, AlertCircle, Clock } from "lucide-react";
+import {
+  ArrowLeft,
+  CheckCircle2,
+  AlertCircle,
+  Clock,
+  MessageSquare,
+} from "lucide-react";
 import { notFound } from "next/navigation";
 import { listPesertaTopik } from "@/server/queries/peserta";
 import { createClient } from "@/lib/supabase/server";
@@ -117,18 +123,6 @@ export default async function PesertaProjectPage({
           <span className="text-xs font-bold text-atr-purple-600">Isi →</span>
         </Link>
         <Link
-          href={`/peserta/projects/${params.id}/diskusi`}
-          className="flex items-center justify-between rounded-2xl border border-atr-outline bg-white p-4 shadow-atr-1 transition hover:bg-atr-bg-soft"
-        >
-          <div>
-            <div className="text-sm font-bold text-atr-fg">Diskusi</div>
-            <div className="text-xs text-atr-fg-muted">
-              Tanya tim mentor atau peserta desa lain.
-            </div>
-          </div>
-          <span className="text-xs font-bold text-atr-purple-600">Buka →</span>
-        </Link>
-        <Link
           href={`/peserta/projects/${params.id}/evidence`}
           className="flex items-center justify-between rounded-2xl border border-atr-outline bg-white p-4 shadow-atr-1 transition hover:bg-atr-bg-soft"
         >
@@ -161,7 +155,7 @@ export default async function PesertaProjectPage({
                     {t.sort_order || "•"}
                   </span>
                   <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
                       <h3 className="text-sm font-bold text-atr-fg">
                         {t.name}
                       </h3>
@@ -170,6 +164,15 @@ export default async function PesertaProjectPage({
                       >
                         {STATUS_LABEL[t.status]}
                       </span>
+                      {t.unanswered_review_count > 0 && (
+                        <span
+                          className="inline-flex items-center gap-1 rounded-full bg-atr-red/15 px-2 py-0.5 text-[10px] font-bold text-atr-red"
+                          title="Ada catatan reviewer yang belum direspons"
+                        >
+                          <MessageSquare className="h-3 w-3" />
+                          {t.unanswered_review_count} perlu respons
+                        </span>
+                      )}
                     </div>
                     <div className="mt-1 flex items-center gap-3 text-xs text-atr-fg-muted">
                       <span className="inline-flex items-center gap-1">
