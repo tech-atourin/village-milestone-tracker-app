@@ -70,7 +70,7 @@ export async function exportProjectExcel(projectId: string) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     for (const inst of (instances ?? []) as any[]) {
       if (inst.project_topik_id !== t.id) continue;
-      const desaName = desaNameById.get(inst.project_desa_id) ?? "—";
+      const desaName = desaNameById.get(inst.project_desa_id) ?? "-";
       row[desaName] = Math.round(Number(inst.completion_percent));
     }
     return row;

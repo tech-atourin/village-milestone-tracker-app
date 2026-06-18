@@ -80,7 +80,7 @@ async function readSheet(
   });
   if (!res.ok) {
     throw new Error(
-      `Sheets read error: ${res.status} — pastikan service account sudah di-share access ke sheet`,
+      `Sheets read error: ${res.status} - pastikan service account sudah di-share access ke sheet`,
     );
   }
   const { values } = (await res.json()) as { values: string[][] };

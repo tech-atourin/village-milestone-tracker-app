@@ -104,7 +104,7 @@ export async function importHubDesaToProject(
         // Meta
         meta_fasilitas: profile.fasilitas,
         meta_adwi_history: profile.riwayat_adwi.map(
-          (r) => `${r.tahun}: ${r.peringkat ?? "—"}`,
+          (r) => `${r.tahun}: ${r.peringkat ?? "-"}`,
         ),
         _imported_from_hub: true,
         _hub_desa_id: parsed.data.hub_desa_id,
@@ -132,7 +132,7 @@ export async function importHubDesaToProject(
 }
 
 // =====================================================
-// importHubDesaToMaster — adds a Hub desa into the master
+// importHubDesaToMaster - adds a Hub desa into the master
 // vmt.desa table without attaching it to any project.
 // Used by /atourin/desa "Import dari Hub" flow.
 // =====================================================

@@ -145,7 +145,7 @@ function Quad({
         {title}
       </header>
       {items.length === 0 ? (
-        <p className="text-xs italic opacity-70">—</p>
+        <p className="text-xs italic opacity-70">-</p>
       ) : (
         <ul className="space-y-1.5 text-xs text-atr-fg">
           {items.map((it, i) => (

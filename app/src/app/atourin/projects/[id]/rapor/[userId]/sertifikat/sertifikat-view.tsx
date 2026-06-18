@@ -32,7 +32,7 @@ export function SertifikatView({
           month: "long",
           year: "numeric",
         }).format(new Date(iso))
-      : "—";
+      : "-";
 
   return (
     <main className="mx-auto max-w-4xl bg-white p-8 print:p-0">
@@ -54,7 +54,7 @@ export function SertifikatView({
         layout <strong>landscape</strong> + ukuran A4 → Save as PDF.
         {!eligible && (
           <span className="ml-2 text-atr-yellow">
-            Catatan: peningkatan {delta ?? "—"}% belum mencapai ambang batas
+            Catatan: peningkatan {delta ?? "-"}% belum mencapai ambang batas
             ({ELIGIBILITY_THRESHOLD}%). Sertifikat tetap bisa dicetak sebagai
             tanda partisipasi.
           </span>
@@ -106,7 +106,7 @@ export function SertifikatView({
             {user.full_name}
           </h2>
           <p className="mt-2 text-sm text-atr-fg-muted">
-            {membership?.desa?.name ?? "—"}
+            {membership?.desa?.name ?? "-"}
             {membership?.desa?.kabupaten &&
               ` · ${membership.desa.kabupaten}, ${membership.desa.provinsi}`}
           </p>
@@ -150,7 +150,7 @@ export function SertifikatView({
 
         <div className="absolute bottom-2 left-0 right-0 text-center text-[9px] uppercase tracking-widest text-atr-fg-muted">
           Diterbitkan {dateFmt(rapor?.generated_at ?? new Date().toISOString())}{" "}
-          · ID {user.id?.slice(0, 8) ?? "—"}-{project.id?.slice(0, 8) ?? "—"}
+          · ID {user.id?.slice(0, 8) ?? "-"}-{project.id?.slice(0, 8) ?? "-"}
         </div>
       </article>
     </main>

@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Bell } from "lucide-react";
 
 /**
- * Topbar bell — links to /notifications. Dropdown was removed in favor
+ * Topbar bell - links to /notifications. Dropdown was removed in favor
  * of a dedicated page that gives notifications full room (filters,
  * group-by-day, mark-as-read). The badge shows the unread count.
  */

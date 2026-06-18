@@ -305,7 +305,7 @@ export function V1ReviewList({
   );
 }
 
-// Lazy-loads evidence tagged to a criteria progress row — both files
+// Lazy-loads evidence tagged to a criteria progress row - both files
 // uploaded directly by the desa and files cross-linked from peserta
 // project evidence. Auto-loads on mount.
 function CriteriaEvidenceList({ progressId }: { progressId: string }) {
@@ -357,7 +357,7 @@ function CriteriaEvidenceList({ progressId }: { progressId: string }) {
               }`}
               title={
                 ev.source === "linked"
-                  ? `Dari project ${ev.source_project_name ?? "—"}`
+                  ? `Dari project ${ev.source_project_name ?? "-"}`
                   : "Upload langsung oleh desa"
               }
             >

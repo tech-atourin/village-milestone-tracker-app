@@ -417,7 +417,7 @@ export async function linkPesertaEvidenceToCriteria(
       .maybeSingle();
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const m = meta as any;
-    // ok rows have e.id (evidence) and e.uploaded_by from join-less query —
+    // ok rows have e.id (evidence) and e.uploaded_by from join-less query -
     // we need to refetch uploader ids.
     const { data: evWithUploader } = await admin
       .from("evidence_files")
@@ -579,7 +579,7 @@ export async function listPesertaEvidenceForDesa(
       uploaded_at: e.uploaded_at,
       uploaded_by_name: e.uploader?.full_name ?? null,
       project_id: proj?.id ?? "",
-      project_name: proj?.name ?? "—",
+      project_name: proj?.name ?? "-",
       topik_name: tag?.topik ?? null,
       checklist_title: tag?.checklist ?? null,
     };

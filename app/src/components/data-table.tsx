@@ -64,7 +64,7 @@ export function DataTable<T>({
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [globalFilter, setGlobalFilter] = useState("");
 
-  // Custom global filter — case-insensitive contains across searchKeys.
+  // Custom global filter - case-insensitive contains across searchKeys.
   const globalFilterFn = useMemo(
     () => (row: { original: T }, _columnId: string, value: string) => {
       if (!value) return true;
@@ -108,7 +108,7 @@ export function DataTable<T>({
 
   return (
     <div className="space-y-3">
-      {/* Toolbar — search + select filters + single range picker on one row */}
+      {/* Toolbar - search + select filters + single range picker on one row */}
       <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
         <div className="relative min-w-[220px] flex-1">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-atr-fg-muted" />
@@ -121,7 +121,7 @@ export function DataTable<T>({
           />
         </div>
 
-        {/* Inline select filters — label folded into the default option */}
+        {/* Inline select filters - label folded into the default option */}
         {selectFilters.map((f) => {
           const column = table.getColumn(f.key);
           if (!column) return null;
@@ -150,7 +150,7 @@ export function DataTable<T>({
           );
         })}
 
-        {/* Date-range filters — single popover trigger, no separate label */}
+        {/* Date-range filters - single popover trigger, no separate label */}
         {dateRangeFilters.map((f) => {
           const column = table.getColumn(f.key);
           if (!column || f.type !== "dateRange") return null;
@@ -188,7 +188,7 @@ export function DataTable<T>({
         )}
       </div>
 
-      {/* Row count — separate line for breathing room, consistent across pages */}
+      {/* Row count - separate line for breathing room, consistent across pages */}
       <div className="text-xs text-atr-fg-muted">
         {table.getFilteredRowModel().rows.length} dari {data.length} baris
       </div>

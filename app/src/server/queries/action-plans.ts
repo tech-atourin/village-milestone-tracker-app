@@ -47,9 +47,9 @@ export async function listActionPlans(opts: {
   let rows = ((data ?? []) as any[]).map((r) => ({
     id: r.id,
     project_id: r.project_id,
-    project_name: r.project?.name ?? "—",
+    project_name: r.project?.name ?? "-",
     project_desa_id: r.project_desa_id,
-    desa_name: r.project_desa?.desa?.name ?? "—",
+    desa_name: r.project_desa?.desa?.name ?? "-",
     timeframe: r.timeframe,
     title: r.title,
     description: r.description,
@@ -60,7 +60,7 @@ export async function listActionPlans(opts: {
     status: r.status,
     evidence_path: r.evidence_path,
     created_by: r.created_by,
-    creator_name: r.creator?.full_name ?? "—",
+    creator_name: r.creator?.full_name ?? "-",
     created_at: r.created_at,
   })) as ActionPlanRow[];
 

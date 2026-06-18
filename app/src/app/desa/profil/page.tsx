@@ -250,7 +250,7 @@ export default async function DesaProfilPage() {
             </div>
             <div className="min-w-0 flex-1">
               <h2 className="text-xl font-bold text-atr-fg">{desa.name}</h2>
-              <p className="text-sm text-atr-fg-muted">{lokasi || "—"}</p>
+              <p className="text-sm text-atr-fg-muted">{lokasi || "-"}</p>
               <div className="mt-2 flex flex-wrap items-center gap-2">
                 <span className="inline-flex items-center gap-1.5 rounded-full bg-atr-purple-50 px-2.5 py-0.5 text-xs font-bold text-atr-purple-600">
                   <Award className="h-3 w-3" />
@@ -494,7 +494,7 @@ function Detail({
       </div>
       <div className="mt-0.5 flex items-center gap-1.5 text-atr-fg">
         {Icon && value && <Icon className="h-3.5 w-3.5 text-atr-fg-muted" />}
-        {value ?? <span className="italic text-atr-fg-muted">—</span>}
+        {value ?? <span className="italic text-atr-fg-muted">-</span>}
       </div>
     </div>
   );

@@ -35,7 +35,7 @@ const SYSTEM_PROMPT = `Anda adalah mentor program pendampingan desa wisata Atour
 Tugas: ringkas kondisi desa berdasarkan data baseline + progress topik + evidence yang sudah diapprove,
 lalu rekomendasikan 3 highlight positif, 3 area yang perlu didorong, dan 3 quick wins.
 Tulis dalam Bahasa Indonesia yang ramah, konkret, dan actionable.
-Jangan halusinasi data — kalau informasi tidak ada, sebutkan "belum ada data".`;
+Jangan halusinasi data - kalau informasi tidak ada, sebutkan "belum ada data".`;
 
 // Shared context assembly for all desa-level AI insights.
 // Pulls: project header, baseline data, topik progress, checklist counts,
@@ -82,11 +82,11 @@ export async function assembleContext(projectDesaId: string): Promise<string> {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const pdAny = pd as any;
   if (pdAny) {
-    lines.push(`Desa: ${pdAny.desa?.name ?? "—"}`);
+    lines.push(`Desa: ${pdAny.desa?.name ?? "-"}`);
     lines.push(
-      `Lokasi: ${[pdAny.desa?.kabupaten, pdAny.desa?.provinsi].filter(Boolean).join(", ") || "—"}`,
+      `Lokasi: ${[pdAny.desa?.kabupaten, pdAny.desa?.provinsi].filter(Boolean).join(", ") || "-"}`,
     );
-    lines.push(`Project: ${pdAny.project?.name ?? "—"}`);
+    lines.push(`Project: ${pdAny.project?.name ?? "-"}`);
     lines.push(
       `Klasifikasi nasional saat ini: ${pdAny.desa?.current_classification ?? "belum diklasifikasi"}`,
     );
@@ -111,7 +111,7 @@ export async function assembleContext(projectDesaId: string): Promise<string> {
     project_topik: { name: string };
   }>) {
     lines.push(
-      `  - ${inst.project_topik?.name ?? "—"}: ${Math.round(Number(inst.completion_percent))}% (${inst.status})`,
+      `  - ${inst.project_topik?.name ?? "-"}: ${Math.round(Number(inst.completion_percent))}% (${inst.status})`,
     );
   }
 
@@ -134,7 +134,7 @@ export async function assembleContext(projectDesaId: string): Promise<string> {
     }
   }
 
-  // Narasumber daily session reports — the richest qualitative input.
+  // Narasumber daily session reports - the richest qualitative input.
   const projectId = (pdAny?.project as { id?: string })?.id;
   const { data: sessions } = await supabase
     .from("pendampingan_sessions")
@@ -149,7 +149,7 @@ export async function assembleContext(projectDesaId: string): Promise<string> {
     lines.push(`\nLaporan narasumber (${sessRows.length} sesi):`);
     for (const s of sessRows) {
       lines.push(
-        `  Hari ${s.day_number ?? "?"} (${s.session_date ?? "—"}) · ${s.materi ?? "—"} · narasumber: ${s.narasumber?.full_name ?? "—"}`,
+        `  Hari ${s.day_number ?? "?"} (${s.session_date ?? "-"}) · ${s.materi ?? "-"} · narasumber: ${s.narasumber?.full_name ?? "-"}`,
       );
       if (s.maksud_tujuan) lines.push(`    Tujuan: ${s.maksud_tujuan}`);
       if (s.aktivitas) lines.push(`    Aktivitas: ${s.aktivitas}`);
@@ -179,11 +179,11 @@ export async function assembleContext(projectDesaId: string): Promise<string> {
     const by = { rencana: 0, on_track: 0, selesai: 0, ditunda: 0 } as Record<string, number>;
     for (const r of apRows) if (r.status in by) by[r.status as string]++;
     lines.push(
-      `\nRencana aksi (${apRows.length}) — ${by.selesai} selesai, ${by.on_track} on track, ${by.rencana} rencana, ${by.ditunda} ditunda:`,
+      `\nRencana aksi (${apRows.length}) - ${by.selesai} selesai, ${by.on_track} on track, ${by.rencana} rencana, ${by.ditunda} ditunda:`,
     );
     for (const r of apRows.slice(0, 10)) {
       lines.push(
-        `  - [${r.status}] ${r.timeframe ?? "—"} · ${r.title}` +
+        `  - [${r.status}] ${r.timeframe ?? "-"} · ${r.title}` +
           (r.output_target ? ` → ${r.output_target}` : "") +
           (r.pihak_terlibat ? ` (${r.pihak_terlibat})` : ""),
       );
@@ -205,7 +205,7 @@ export async function assembleContext(projectDesaId: string): Promise<string> {
     const byMateri = new Map<string, Agg>();
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     for (const r of ((testRows ?? []) as any[])) {
-      const name = r.project_topik?.name ?? "—";
+      const name = r.project_topik?.name ?? "-";
       const cur = byMateri.get(name) ?? { pre: [], post: [] };
       if (r.gform?.form_type === "pre_test") cur.pre.push(Number(r.score));
       else if (r.gform?.form_type === "post_test") cur.post.push(Number(r.score));
@@ -220,7 +220,7 @@ export async function assembleContext(projectDesaId: string): Promise<string> {
         const post = avg(agg.post);
         const delta = pre != null && post != null ? post - pre : null;
         lines.push(
-          `  - ${name}: pre ${pre ?? "—"} → post ${post ?? "—"} (Δ ${delta != null ? (delta > 0 ? "+" : "") + delta : "—"})`,
+          `  - ${name}: pre ${pre ?? "-"} → post ${post ?? "-"} (Δ ${delta != null ? (delta > 0 ? "+" : "") + delta : "-"})`,
         );
       }
     }

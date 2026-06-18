@@ -130,7 +130,7 @@ export async function listAllDesa(opts: {
   });
 }
 
-// Detail loader — full sections
+// Detail loader - full sections
 export type DesaDetail = {
   base: DesaListRow;
   profile: {
@@ -312,10 +312,10 @@ export async function getDesaDetail(
 
   const projects = pds.map((p) => ({
     project_id: p.project_id as string,
-    project_name: (p.project?.name as string) ?? "—",
+    project_name: (p.project?.name as string) ?? "-",
     period_start: (p.project?.period_start as string) ?? null,
     period_end: (p.project?.period_end as string) ?? null,
-    status: (p.project?.status as string) ?? "—",
+    status: (p.project?.status as string) ?? "-",
     peserta_count: pesertaByProject.get(p.project_id as string) ?? 0,
   }));
 

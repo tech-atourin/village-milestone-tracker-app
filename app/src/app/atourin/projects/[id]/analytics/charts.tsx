@@ -84,7 +84,7 @@ export function AnalyticsCharts({ data }: { data: ProjectAnalytics }) {
     desa_total: m.desa_total,
   }));
 
-  // Rating distribution histogram (1..5 stars) — sourced from kuisioner.
+  // Rating distribution histogram (1..5 stars) - sourced from kuisioner.
   const ratingDist = (
     ["1", "2", "3", "4", "5"] as Array<"1" | "2" | "3" | "4" | "5">
   ).map((k) => ({
@@ -215,7 +215,7 @@ export function AnalyticsCharts({ data }: { data: ProjectAnalytics }) {
               <p className="mb-3 text-[11px] text-atr-fg-muted">
                 Rata-rata % checklist yang sudah dikerjakan tiap topik
                 pendampingan, dihitung lintas desa. Checklist adalah milik
-                desa — peserta dari desa yang sama berbagi progress.
+                desa - peserta dari desa yang sama berbagi progress.
               </p>
               <div className="h-72">
                 <ResponsiveContainer width="100%" height="100%">
@@ -287,7 +287,7 @@ export function AnalyticsCharts({ data }: { data: ProjectAnalytics }) {
               <span className="text-[11px] text-atr-fg-muted">
                 Rata-rata{" "}
                 <strong className="text-atr-fg">
-                  ★ {data.kuisioner.avg_rating?.toFixed(2) ?? "—"}
+                  ★ {data.kuisioner.avg_rating?.toFixed(2) ?? "-"}
                 </strong>
               </span>
             )}
@@ -611,7 +611,7 @@ export function AnalyticsCharts({ data }: { data: ProjectAnalytics }) {
                         <span className="text-xs font-bold text-atr-fg">
                           {d.action_plans_total > 0
                             ? `${d.action_plans_pct}% (${d.action_plans_done}/${d.action_plans_total})`
-                            : "—"}
+                            : "-"}
                         </span>
                       </div>
                     </td>
@@ -625,7 +625,7 @@ export function AnalyticsCharts({ data }: { data: ProjectAnalytics }) {
 
       {/* Klasifikasi desa (V1 ADWI / V2 Atourin) intentionally NOT shown
           here. Project pendampingan is conceptually separate from desa
-          classification — those results live on the desa's own profil page
+          classification - those results live on the desa's own profil page
           and at /atourin/klasifikasi. What carries over from project →
           classification is the project checklist evidence, which is
           auto-linkable to desa V1 criteria (no re-upload needed). */}

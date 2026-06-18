@@ -74,7 +74,7 @@ const TABS = [
 ] as const;
 
 function formatDate(iso: string | null) {
-  if (!iso) return "—";
+  if (!iso) return "-";
   return new Intl.DateTimeFormat("id-ID", {
     day: "numeric",
     month: "short",
@@ -126,7 +126,7 @@ export default async function MitraProjectDetailPage({
             </span>
           </div>
           <div className="text-sm text-atr-fg-muted">
-            Mitra: {project.organization?.name ?? "—"} ·{" "}
+            Mitra: {project.organization?.name ?? "-"} ·{" "}
             {formatDate(project.period_start)} – {formatDate(project.period_end)}
           </div>
           {project.template && (
@@ -319,8 +319,8 @@ async function RencanaAksiTabLoader({ projectId }: { projectId: string }) {
   const desaOptions = ((pd ?? []) as any[]).map((r) => ({
     project_desa_id: r.id,
     project_id: r.project_id,
-    project_name: r.project?.name ?? "—",
-    desa_name: r.desa?.name ?? "—",
+    project_name: r.project?.name ?? "-",
+    desa_name: r.desa?.name ?? "-",
   }));
   return (
     <ActionPlanBoard rows={rows} desaOptions={desaOptions} canEdit={false} />

@@ -31,7 +31,7 @@ export function UsersTable({ users }: { users: UserListRow[] }) {
     () =>
       users.map((u) => ({
         ...u,
-        organization_name: u.organization?.name ?? "—",
+        organization_name: u.organization?.name ?? "-",
         role_label: ROLE_LABEL[u.global_role] ?? u.global_role,
       })),
     [users],
@@ -56,7 +56,7 @@ export function UsersTable({ users }: { users: UserListRow[] }) {
               {row.original.email_artificial ? (
                 <span className="text-xs italic">(no email)</span>
               ) : (
-                row.original.email ?? "—"
+                row.original.email ?? "-"
               )}
             </div>
             {row.original.phone && (
@@ -105,7 +105,7 @@ export function UsersTable({ users }: { users: UserListRow[] }) {
   const orgOptions = useMemo(() => {
     const set = new Set(data.map((r) => r.organization_name));
     return Array.from(set)
-      .filter((s) => s !== "—")
+      .filter((s) => s !== "-")
       .sort()
       .map((s) => ({ value: s, label: s }));
   }, [data]);

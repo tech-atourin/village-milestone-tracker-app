@@ -244,18 +244,18 @@ export function BulkImportFlow({
                         )}
                       </td>
                       <td className="px-3 py-2">
-                        {r.data?.full_name ?? (r.raw.full_name as string) ?? "—"}
+                        {r.data?.full_name ?? (r.raw.full_name as string) ?? "-"}
                       </td>
                       <td className="px-3 py-2 text-atr-fg-muted">
-                        {r.data?.email ?? (r.raw.email as string) ?? "—"}
+                        {r.data?.email ?? (r.raw.email as string) ?? "-"}
                       </td>
                       <td className="px-3 py-2 text-atr-fg-muted">
                         {r.data?.normalized_phone ??
                           (r.raw.phone as string) ??
-                          "—"}
+                          "-"}
                       </td>
                       <td className="px-3 py-2 text-atr-fg-muted">
-                        {r.data?.role ?? "—"}
+                        {r.data?.role ?? "-"}
                       </td>
                       <td className="px-3 py-2 text-xs text-atr-fg-muted">
                         {!r.ok &&

@@ -120,12 +120,12 @@ export function SelfAssessmentList({
       <div className="rounded-lg border border-atr-purple/30 bg-atr-purple-50/40 p-3 text-xs text-atr-fg">
         <strong className="inline-flex items-center gap-1.5">
           <ListChecks className="h-3.5 w-3.5 text-atr-purple" />
-          Assessment Klasifikasi — beda dengan tugas pendampingan project.
+          Assessment Klasifikasi - beda dengan tugas pendampingan project.
         </strong>{" "}
         Checklist ini menentukan tier desa (Rintisan → Mandiri). Setiap
         kriteria wajib disertai bukti. <em>Tip:</em> kalau bukti sudah pernah
         di-upload peserta saat kegiatan project, klik
-        &quot;Lampirkan&quot; → tab &quot;Pilih dari Peserta&quot; — gak perlu
+        &quot;Lampirkan&quot; → tab &quot;Pilih dari Peserta&quot; - gak perlu
         upload dua kali.
       </div>
 

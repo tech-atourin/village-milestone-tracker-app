@@ -101,7 +101,7 @@ export function RaporEntryTable({
                     )}
                   </td>
                   <td className="px-4 py-3 text-atr-fg-muted">
-                    {r.desa_name ?? "—"}
+                    {r.desa_name ?? "-"}
                   </td>
                   <td className="px-4 py-3">
                     <ScoreInput
@@ -136,7 +136,7 @@ export function RaporEntryTable({
                         {r.improvement_percent}%
                       </span>
                     ) : (
-                      <span className="text-xs text-atr-fg-muted">—</span>
+                      <span className="text-xs text-atr-fg-muted">-</span>
                     )}
                   </td>
                   <td className="px-4 py-3">
@@ -176,7 +176,7 @@ export function RaporEntryTable({
                       </div>
                     ) : (
                       <span className="text-xs text-atr-fg-muted">
-                        —
+                        -
                       </span>
                     )}
                   </td>
@@ -205,7 +205,7 @@ function ScoreInput({
       step={1}
       value={value}
       onChange={(e) => onChange(e.target.value)}
-      placeholder="—"
+      placeholder="-"
       className="h-8 w-20 rounded-md border border-atr-outline px-2 text-sm outline-none focus:border-atr-purple focus:ring-2 focus:ring-atr-purple/15"
     />
   );

@@ -32,7 +32,7 @@ export async function ReportBody({
   const topik = await listProjectTopikWithItems(projectId);
   const aiActuallyOn = aiOn && aiProvider().isReady();
 
-  // Per-topik completion across desa — fix the bug where every topik used to
+  // Per-topik completion across desa - fix the bug where every topik used to
   // show the same project-wide average. We join desa_topik_instance back to
   // project_topik so each topik's pct is the mean of its instances.
   const admin = createAdminClient();
@@ -53,7 +53,7 @@ export async function ReportBody({
     topikAggByPt.set(ptId, cur);
   }
 
-  // Kuisioner narasumber — project-wide avg + per-narasumber breakdown
+  // Kuisioner narasumber - project-wide avg + per-narasumber breakdown
   const { data: ratingRows } = await admin
     .from("narasumber_ratings")
     .select(
@@ -240,7 +240,7 @@ export async function ReportBody({
                 <td className="py-2 text-atr-fg-muted">
                   {[d.desa.kabupaten, d.desa.provinsi]
                     .filter(Boolean)
-                    .join(", ") || "—"}
+                    .join(", ") || "-"}
                 </td>
                 <td className="py-2 text-right font-bold text-atr-fg">
                   {Math.round(d.topik_summary.avg_pct)}%
@@ -260,7 +260,7 @@ export async function ReportBody({
           <p className="mb-3 text-sm text-atr-fg">
             Rata-rata penilaian peserta ke narasumber:{" "}
             <strong>
-              ★ {ratingAvg != null ? ratingAvg.toFixed(2) : "—"}
+              ★ {ratingAvg != null ? ratingAvg.toFixed(2) : "-"}
             </strong>{" "}
             dari {ratingArr.length} penilaian.
           </p>

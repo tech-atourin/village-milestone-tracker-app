@@ -163,7 +163,7 @@ async function loadProjectSummary(projectId: string): Promise<{
     return {
       project_desa_id: pd.id,
       desa_id: pd.desa_id,
-      desa_name: pd.desa?.name ?? "—",
+      desa_name: pd.desa?.name ?? "-",
       tier: pd.desa?.current_classification ?? "unclassified",
       checklist_pct: td?.completion_pct ?? 0,
       peserta_count: pesertaByDesa.get(pd.desa_id) ?? 0,
@@ -212,11 +212,11 @@ async function loadProjectSummary(projectId: string): Promise<{
   ).length;
   if (highTier > 0)
     strengths.push(
-      `${highTier} desa sudah di tier Maju/Mandiri — siap jadi best-practice case study.`,
+      `${highTier} desa sudah di tier Maju/Mandiri - siap jadi best-practice case study.`,
     );
   if (avgDelta != null && avgDelta > 10)
     strengths.push(
-      `Rata-rata peningkatan post-test +${avgDelta} poin — pelatihan efektif.`,
+      `Rata-rata peningkatan post-test +${avgDelta} poin - pelatihan efektif.`,
     );
   if (analytics.sessions_verified > 0)
     strengths.push(
@@ -224,13 +224,13 @@ async function loadProjectSummary(projectId: string): Promise<{
     );
   if (ratingAvg != null && ratingAvg >= 4)
     strengths.push(
-      `Rata-rata kuisioner narasumber ★ ${ratingAvg.toFixed(1)} dari ${ratingArr.length} penilaian — kualitas narasumber dipersepsi tinggi.`,
+      `Rata-rata kuisioner narasumber ★ ${ratingAvg.toFixed(1)} dari ${ratingArr.length} penilaian - kualitas narasumber dipersepsi tinggi.`,
     );
 
   const lowChecklist = desaCards.filter((d) => d.checklist_pct < 50).length;
   if (lowChecklist > 0)
     weaknesses.push(
-      `${lowChecklist} desa progress checklist-nya < 50% — perlu dorongan kelengkapan evidence.`,
+      `${lowChecklist} desa progress checklist-nya < 50% - perlu dorongan kelengkapan evidence.`,
     );
   const noSessions = desaCards.filter((d) => d.sessions_count === 0).length;
   if (noSessions > 0)
@@ -239,28 +239,28 @@ async function loadProjectSummary(projectId: string): Promise<{
     );
   if (avgDelta != null && avgDelta < 5)
     weaknesses.push(
-      `Peningkatan test masih rendah (${avgDelta} poin) — review materi & pendekatan.`,
+      `Peningkatan test masih rendah (${avgDelta} poin) - review materi & pendekatan.`,
     );
   if (ratingAvg != null && ratingAvg < 3.5)
     weaknesses.push(
-      `Kuisioner narasumber baru ★ ${ratingAvg.toFixed(1)} — peserta belum sepenuhnya puas dengan pendampingan.`,
+      `Kuisioner narasumber baru ★ ${ratingAvg.toFixed(1)} - peserta belum sepenuhnya puas dengan pendampingan.`,
     );
 
   const submitted = analytics.hub_assessment_results.length;
   if (submitted > 0)
     opportunities.push(
-      `${submitted} desa sudah mengisi Assessment Klasifikasi Desa V2 (Atourin) — bisa langsung diverifikasi.`,
+      `${submitted} desa sudah mengisi Assessment Klasifikasi Desa V2 (Atourin) - bisa langsung diverifikasi.`,
     );
   opportunities.push(
     "Linked Hub Atourin (5.964 desa) memungkinkan benchmarking lintas project.",
   );
   if (analytics.action_plans_total > 0)
     opportunities.push(
-      `${analytics.action_plans_total} rencana aksi tercatat — kerangka follow-up sudah jelas.`,
+      `${analytics.action_plans_total} rencana aksi tercatat - kerangka follow-up sudah jelas.`,
     );
   if (narasumberIds.size > 0)
     opportunities.push(
-      `${narasumberIds.size} narasumber aktif — kapasitas pendampingan tersedia.`,
+      `${narasumberIds.size} narasumber aktif - kapasitas pendampingan tersedia.`,
     );
 
   const stagnantDesa = desaCards.filter(
@@ -268,14 +268,14 @@ async function loadProjectSummary(projectId: string): Promise<{
   ).length;
   if (stagnantDesa > 0)
     threats.push(
-      `${stagnantDesa} desa tanpa rencana aksi & tanpa sesi — risiko stagnasi.`,
+      `${stagnantDesa} desa tanpa rencana aksi & tanpa sesi - risiko stagnasi.`,
     );
   if (
     analytics.action_plans_total > 0 &&
     analytics.action_plans_by_status.selesai === 0
   )
     threats.push(
-      "Belum ada rencana aksi yang sudah selesai — tindak lanjut belum membuahkan bukti.",
+      "Belum ada rencana aksi yang sudah selesai - tindak lanjut belum membuahkan bukti.",
     );
   if (
     desaCards.filter((d) => d.tier === "unclassified" || d.tier === "rintisan")
@@ -284,7 +284,7 @@ async function loadProjectSummary(projectId: string): Promise<{
     0.6
   )
     threats.push(
-      "> 60% desa masih Rintisan/Unclassified — gap antar-desa cukup lebar.",
+      "> 60% desa masih Rintisan/Unclassified - gap antar-desa cukup lebar.",
     );
 
   // Overall overview (deterministic narrative from data)

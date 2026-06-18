@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
 
 // =====================================================
-// RouteProgress — top-of-page nprogress-style bar that
+// RouteProgress - top-of-page nprogress-style bar that
 // shows during client-side navigations. Triggered by:
 // - Any anchor click whose href starts with "/"
 // - Any pathname/searchParams change (completion)

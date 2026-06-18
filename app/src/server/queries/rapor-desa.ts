@@ -3,13 +3,13 @@ import "server-only";
 import { createClient } from "@/lib/supabase/server";
 
 // =====================================================
-// Rapor Desa — aggregated per (project, desa)
+// Rapor Desa - aggregated per (project, desa)
 // =====================================================
 // Each desa in a project may have multiple peserta. The desa-level
 // rapor accumulates pre/post/attendance averages across those peserta
 // AND surfaces project-level metrics (checklist completion, evidence
 // approved). This is what the desa wisata role sees as "program
-// history" — one row per project the desa has joined.
+// history" - one row per project the desa has joined.
 // =====================================================
 
 export type RaporDesaRow = {
@@ -52,7 +52,7 @@ export async function listProjectRaporDesa(
   const pdRows = ((projectDesa ?? []) as any[]).map((r) => ({
     project_desa_id: r.id as string,
     desa_id: r.desa_id as string,
-    desa_name: (r.desa?.name as string) ?? "—",
+    desa_name: (r.desa?.name as string) ?? "-",
     kabupaten: (r.desa?.kabupaten as string) ?? null,
     provinsi: (r.desa?.provinsi as string) ?? null,
   }));
@@ -171,7 +171,7 @@ export async function listProjectRaporDesa(
 }
 
 // =====================================================
-// Detail for one (project, desa) — for printable rapor page
+// Detail for one (project, desa) - for printable rapor page
 // =====================================================
 
 export type RaporDesaDetail = {
@@ -255,7 +255,7 @@ export async function getRaporDesaDetail(
 
   if (!project || !desa) return null;
 
-  // Aggregates — reuse listProjectRaporDesa and pick this desa
+  // Aggregates - reuse listProjectRaporDesa and pick this desa
   const all = await listProjectRaporDesa(projectId);
   const aggregate = all.find((r) => r.desa_id === desaId);
   if (!aggregate) return null;
@@ -272,7 +272,7 @@ export async function getRaporDesaDetail(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const memberRows = ((members ?? []) as any[]).map((r) => ({
     user_id: r.user_id as string,
-    full_name: (r.user?.full_name as string) ?? "—",
+    full_name: (r.user?.full_name as string) ?? "-",
     email: (r.user?.email as string) ?? null,
   }));
 
@@ -328,11 +328,11 @@ export async function getRaporDesaDetail(
   );
   const topik = topikRaw.map((i) => ({
     topik_id: i.project_topik?.id as string,
-    title: (i.project_topik?.title as string) ?? "—",
+    title: (i.project_topik?.title as string) ?? "-",
     completion_percent: Number(i.completion_percent ?? 0),
   }));
 
-  // Kuisioner narasumber — only ratings from this desa's peserta in this
+  // Kuisioner narasumber - only ratings from this desa's peserta in this
   // project. Group by narasumber to surface per-narasumber averages.
   const projectDesaId = aggregate.project_desa_id;
   const { data: desaSessions } = await supabase
@@ -497,7 +497,7 @@ export async function getRaporDesaDetail(
 }
 
 // =====================================================
-// Desa program history — used by /desa role
+// Desa program history - used by /desa role
 // =====================================================
 
 export type DesaProgramHistoryRow = {

@@ -6,7 +6,7 @@ import { createAdminClient } from "@/lib/supabase/server";
 import { requireRole } from "@/lib/auth/rbac";
 
 // =====================================================
-// Template CRUD — superadmin only
+// Template CRUD - superadmin only
 // Templates are a name + description + default_modules
 // + ordered list of topik, each with ordered checklist items.
 //
@@ -54,7 +54,7 @@ export async function upsertTemplate(
   if (!parsed.success) {
     const issue = parsed.error.issues[0];
     return {
-      error: `Input tidak valid: ${issue.path.join(".") || "field"} — ${issue.message}`,
+      error: `Input tidak valid: ${issue.path.join(".") || "field"} - ${issue.message}`,
     };
   }
   const body = parsed.data;

@@ -21,7 +21,7 @@ async function loadV2Queue(): Promise<HubSubmissionRow[]> {
   return ((data ?? []) as any[]).map((r) => ({
     id: r.id,
     desa_id: r.desa_id,
-    desa_name: r.desa?.name ?? "—",
+    desa_name: r.desa?.name ?? "-",
     level_hasil: r.level_hasil,
     skor_total: r.skor_total,
     status: r.status,

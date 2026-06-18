@@ -150,10 +150,10 @@ export async function getNarasumberDetail(
   for (const s of (sessions ?? []) as any[]) {
     const existing = projMap.get(s.project_id) ?? {
       project_id: s.project_id,
-      project_name: s.project?.name ?? "—",
+      project_name: s.project?.name ?? "-",
       period_start: s.project?.period_start ?? null,
       period_end: s.project?.period_end ?? null,
-      status: s.project?.status ?? "—",
+      status: s.project?.status ?? "-",
       sessions_count: 0,
       desa_set: new Set<string>(),
     };

@@ -136,10 +136,10 @@ export default async function ProfilePage() {
                   <div className="flex items-start justify-between gap-3">
                     <div>
                       <div className="text-sm font-bold text-atr-fg">
-                        {h.project?.name ?? "—"}
+                        {h.project?.name ?? "-"}
                       </div>
                       <div className="text-xs text-atr-fg-muted">
-                        {h.project?.organization?.name ?? "—"} ·{" "}
+                        {h.project?.organization?.name ?? "-"} ·{" "}
                         <span className="capitalize">{h.role}</span>
                         {h.desa?.name && ` · ${h.desa.name}`}
                       </div>
@@ -153,7 +153,7 @@ export default async function ProfilePage() {
                             : "bg-atr-bg-soft text-atr-fg-muted"
                       }`}
                     >
-                      {h.project?.status ?? "—"}
+                      {h.project?.status ?? "-"}
                     </span>
                   </div>
                   {h.rapor && (
@@ -161,13 +161,13 @@ export default async function ProfilePage() {
                       <div>
                         <div className="text-atr-fg-muted">Pre</div>
                         <div className="font-bold text-atr-fg">
-                          {h.rapor.pre ?? "—"}
+                          {h.rapor.pre ?? "-"}
                         </div>
                       </div>
                       <div>
                         <div className="text-atr-fg-muted">Post</div>
                         <div className="font-bold text-atr-fg">
-                          {h.rapor.post ?? "—"}
+                          {h.rapor.post ?? "-"}
                         </div>
                       </div>
                       <div>
@@ -183,7 +183,7 @@ export default async function ProfilePage() {
                         >
                           {h.rapor.improvement != null
                             ? `${h.rapor.improvement > 0 ? "+" : ""}${h.rapor.improvement}%`
-                            : "—"}
+                            : "-"}
                         </div>
                       </div>
                     </div>

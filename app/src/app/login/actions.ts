@@ -111,6 +111,6 @@ export async function forgotPasswordAction(
 
   if (error) return { error: error.message };
 
-  // Always show success — don't leak whether the email exists.
+  // Always show success - don't leak whether the email exists.
   return { success: true };
 }

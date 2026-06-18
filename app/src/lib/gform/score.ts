@@ -1,4 +1,4 @@
-// Pure scoring helper — no server-only imports so it's unit-testable.
+// Pure scoring helper - no server-only imports so it's unit-testable.
 export function calcScore(
   row: Record<string, string>,
   identifierField: string,

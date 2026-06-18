@@ -104,7 +104,7 @@ export function NarasumberTab({
             Narasumber project
           </h3>
           <p className="text-sm text-atr-fg-muted">
-            {assignments.length} narasumber terdaftar — penilaian dari
+            {assignments.length} narasumber terdaftar - penilaian dari
             kuisioner peserta diakumulasi otomatis.
           </p>
         </div>
@@ -237,7 +237,7 @@ export function NarasumberTab({
                     <ChevronRight className="h-3 w-3" />
                   </Link>
                   <div className="truncate text-[11px] text-atr-fg-muted">
-                    {a.user.email ?? "—"}
+                    {a.user.email ?? "-"}
                   </div>
                 </div>
                 {a.membership_id && (
@@ -256,7 +256,7 @@ export function NarasumberTab({
                 <div className="flex items-center gap-1.5">
                   <Star className="h-3.5 w-3.5 fill-atr-yellow text-atr-yellow" />
                   <span className="font-bold text-atr-fg">
-                    {a.avg_rating != null ? a.avg_rating.toFixed(2) : "—"}
+                    {a.avg_rating != null ? a.avg_rating.toFixed(2) : "-"}
                   </span>
                   <span className="text-atr-fg-muted">
                     ({a.rating_count} kuisioner)

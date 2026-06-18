@@ -45,7 +45,7 @@ export type TierJourney = {
  *
  * Algorithm:
  *  1. Get the desa's current_classification (default 'rintisan' if null/unclassified).
- *  2. Determine the next tier — if Mandiri already, return null.
+ *  2. Determine the next tier - if Mandiri already, return null.
  *  3. Pull all criteria at next tier from national_criteria_item.
  *  4. Pull this desa's national_criteria_progress, group by criteria_item_id.
  *  5. Anything not 'approved' is part of the gap. Sort by weight desc, take top 6.

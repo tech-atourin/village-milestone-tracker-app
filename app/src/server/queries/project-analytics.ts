@@ -195,7 +195,7 @@ export async function getProjectAnalytics(
     ([kompetensi, sessions]) => ({ kompetensi, sessions }),
   );
 
-  // Top narasumber by kuisioner rating — average of peserta ratings, scoped
+  // Top narasumber by kuisioner rating - average of peserta ratings, scoped
   // to this project. Include narasumber that have a rating even if they didn't
   // run a session in our session list (covers seeded data).
   const { data: ratingRows } = await supabase
@@ -310,7 +310,7 @@ export async function getProjectAnalytics(
       const apPct = ap.total > 0 ? (ap.done / ap.total) * 100 : 0;
       return {
         desa_id: d.desa_id as string,
-        desa_name: (d.desa?.name as string) ?? "—",
+        desa_name: (d.desa?.name as string) ?? "-",
         completion_pct: avg,
         peserta_count: pesertaByDesa.get(d.desa_id) ?? 0,
         sessions_done: sessionsByDesa.get(d.id) ?? 0,
@@ -353,7 +353,7 @@ export async function getProjectAnalytics(
     for (const r of (ncp ?? []) as any[]) {
       const id = r.desa_id as string;
       const cur = agg.get(id) ?? {
-        name: r.desa?.name ?? "—",
+        name: r.desa?.name ?? "-",
         approved: 0,
         submitted: 0,
         rejected: 0,
@@ -387,14 +387,14 @@ export async function getProjectAnalytics(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     hub_assessment_results = ((hubA ?? []) as any[]).map((r) => ({
       desa_id: r.desa_id,
-      desa_name: r.desa?.name ?? "—",
+      desa_name: r.desa?.name ?? "-",
       level_hasil: r.level_hasil,
       skor_total: r.skor_total,
       status: r.status,
     }));
   }
 
-  // Narasumber roster — union of memberships (role=narasumber) and anyone
+  // Narasumber roster - union of memberships (role=narasumber) and anyone
   // running a session in this project. Plus distinct kompetensi covered.
   const narasumberIds = new Set<string>();
   const kompetensiSet = new Set<string>();
@@ -416,7 +416,7 @@ export async function getProjectAnalytics(
     if (s.narasumber?.kompetensi) kompetensiSet.add(s.narasumber.kompetensi);
   }
 
-  // Kuisioner aggregate — also produce 1..5 distribution for the histogram.
+  // Kuisioner aggregate - also produce 1..5 distribution for the histogram.
   const distribution = { "1": 0, "2": 0, "3": 0, "4": 0, "5": 0 };
   let kuisionerSum = 0;
   let kuisionerCount = 0;
@@ -455,7 +455,7 @@ export async function getProjectAnalytics(
     const pt = r.project_topik;
     if (!pt) continue;
     const cur = topikAgg.get(pt.id) ?? {
-      name: pt.name ?? pt.title ?? "—",
+      name: pt.name ?? pt.title ?? "-",
       sum: 0,
       count: 0,
       done: 0,
@@ -497,7 +497,7 @@ export async function getProjectAnalytics(
   >();
   for (const r of ((ratingsByTopik ?? []) as unknown) as TopikRatingRow[]) {
     const id = r.project_topik_id;
-    const name = r.project_topik?.name ?? "—";
+    const name = r.project_topik?.name ?? "-";
     const cur = ratingByMateriAgg.get(id) ?? { name, sum: 0, count: 0 };
     cur.sum += Number(r.rating);
     cur.count += 1;
@@ -540,7 +540,7 @@ export async function getProjectAnalytics(
     if (!r.project_topik_id || r.score == null) continue;
     const id = r.project_topik_id;
     const cur = testAgg.get(id) ?? {
-      name: r.project_topik?.name ?? "—",
+      name: r.project_topik?.name ?? "-",
       pre_sum: 0,
       pre_count: 0,
       post_sum: 0,
@@ -576,7 +576,7 @@ export async function getProjectAnalytics(
   return {
     project: {
       id: project?.id ?? projectId,
-      name: project?.name ?? "—",
+      name: project?.name ?? "-",
       total_days: project?.total_pendampingan_days ?? 5,
     },
     peserta_total: peserta.length,

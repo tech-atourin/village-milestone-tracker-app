@@ -73,7 +73,7 @@ const TABS = [
 ] as const;
 
 function formatDate(iso: string | null) {
-  if (!iso) return "—";
+  if (!iso) return "-";
   return new Intl.DateTimeFormat("id-ID", {
     day: "numeric",
     month: "short",
@@ -118,7 +118,7 @@ export default async function ProjectDetailPage({
             </span>
           </div>
           <div className="text-sm text-atr-fg-muted">
-            Mitra: {project.organization?.name ?? "—"} ·{" "}
+            Mitra: {project.organization?.name ?? "-"} ·{" "}
             {formatDate(project.period_start)} – {formatDate(project.period_end)}
           </div>
           {project.template && (
@@ -253,8 +253,8 @@ async function RencanaAksiTabLoader({ projectId }: { projectId: string }) {
   const desaOptions = ((pd ?? []) as any[]).map((r) => ({
     project_desa_id: r.id,
     project_id: r.project_id,
-    project_name: r.project?.name ?? "—",
-    desa_name: r.desa?.name ?? "—",
+    project_name: r.project?.name ?? "-",
+    desa_name: r.desa?.name ?? "-",
   }));
   return (
     <ActionPlanBoard rows={rows} desaOptions={desaOptions} canEdit={false} />
@@ -302,7 +302,7 @@ async function GformsAndResultsLoader({ projectId }: { projectId: string }) {
     }));
   }
 
-  // Narasumber kuisioner data — joined separately because it lives in
+  // Narasumber kuisioner data - joined separately because it lives in
   // narasumber_ratings (not synced from a gform).
   const { data: nrData } = await supabase
     .from("narasumber_ratings")

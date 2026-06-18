@@ -112,7 +112,7 @@ export async function loadRapor(projectId: string, userId: string) {
     const cur =
       materiMap.get(id) ??
       ({
-        name: r.project_topik?.name ?? "—",
+        name: r.project_topik?.name ?? "-",
         sort_order: r.project_topik?.sort_order ?? 0,
         pre: null,
         post: null,
@@ -205,7 +205,7 @@ export function RaporView({
             {user.full_name}
           </h1>
           <p className="mt-1 text-sm text-atr-fg-muted">
-            {membership?.desa?.name ?? "—"} ·{" "}
+            {membership?.desa?.name ?? "-"} ·{" "}
             {[membership?.desa?.kabupaten, membership?.desa?.provinsi]
               .filter(Boolean)
               .join(", ")}
@@ -222,7 +222,7 @@ export function RaporView({
           ) : (
             <div className="text-right text-xs text-atr-fg-muted">
               <div className="font-bold text-atr-fg">
-                {project.organization?.name ?? "—"}
+                {project.organization?.name ?? "-"}
               </div>
               <div>powered by Atourin</div>
             </div>
@@ -261,16 +261,16 @@ export function RaporView({
               Improvement
             </div>
             <div className="mt-2 text-3xl font-bold text-atr-purple-600">
-              {delta !== null ? `${delta > 0 ? "+" : ""}${delta}%` : "—"}
+              {delta !== null ? `${delta > 0 ? "+" : ""}${delta}%` : "-"}
             </div>
           </div>
         </div>
         <div className="mt-4 text-xs text-atr-fg-muted">
-          Kehadiran: {rapor?.attendance != null ? `${rapor.attendance}%` : "—"}
+          Kehadiran: {rapor?.attendance != null ? `${rapor.attendance}%` : "-"}
         </div>
       </section>
 
-      {/* Nilai per materi — data-driven dari peserta_test_results */}
+      {/* Nilai per materi - data-driven dari peserta_test_results */}
       <section className="mb-8">
         <h2 className="mb-3 text-sm font-bold uppercase tracking-wide text-atr-fg-muted">
           Hasil Capacity Building per Materi
@@ -297,10 +297,10 @@ export function RaporView({
                   <tr key={m.name} className="border-b border-atr-outline/50">
                     <td className="py-2 font-bold text-atr-fg">{m.name}</td>
                     <td className="py-2 text-right text-atr-fg">
-                      {m.pre ?? "—"}
+                      {m.pre ?? "-"}
                     </td>
                     <td className="py-2 text-right text-atr-fg">
-                      {m.post ?? "—"}
+                      {m.post ?? "-"}
                     </td>
                     <td className="py-2 text-right">
                       {delta != null ? (
@@ -311,7 +311,7 @@ export function RaporView({
                           {delta}
                         </span>
                       ) : (
-                        "—"
+                        "-"
                       )}
                     </td>
                   </tr>
@@ -344,7 +344,7 @@ export function RaporView({
                     {n.sessions}
                   </td>
                   <td className="py-2 text-right font-bold text-atr-fg">
-                    {n.rating != null ? `★ ${n.rating}` : "—"}
+                    {n.rating != null ? `★ ${n.rating}` : "-"}
                   </td>
                 </tr>
               ))}
@@ -386,7 +386,7 @@ export function RaporView({
           Generated{" "}
           {rapor?.generated_at
             ? new Date(rapor.generated_at).toLocaleDateString("id-ID")
-            : "—"}
+            : "-"}
         </span>
         <div className="flex items-center gap-2">
           <Image src="/logo/vmt/vmt-mark.svg" alt="VMT" width={20} height={20} />
@@ -411,7 +411,7 @@ function ScoreCard({
       <div className="text-xs font-bold uppercase tracking-wide text-atr-fg-muted">
         {label}
       </div>
-      <div className="mt-2 text-3xl font-bold text-atr-fg">{value ?? "—"}</div>
+      <div className="mt-2 text-3xl font-bold text-atr-fg">{value ?? "-"}</div>
       <div className="text-xs text-atr-fg-muted">/ {max}</div>
     </div>
   );

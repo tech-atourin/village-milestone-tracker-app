@@ -29,7 +29,7 @@ export async function listProjectRapor(projectId: string): Promise<RaporRow[]> {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const memberRows = ((members ?? []) as any[]).map((r) => ({
     user_id: r.user_id as string,
-    full_name: r.user?.full_name ?? "—",
+    full_name: r.user?.full_name ?? "-",
     email: r.user?.email ?? null,
     desa_name: r.desa?.name ?? null,
   }));

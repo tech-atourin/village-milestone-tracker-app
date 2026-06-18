@@ -48,7 +48,7 @@ function ownsScope(role: GlobalRole | null, path: string) {
 }
 
 function isScopedPath(path: string) {
-  // /profile is shared across all roles — not gated to one scope.
+  // /profile is shared across all roles - not gated to one scope.
   if (path === "/profile" || path.startsWith("/profile/")) return false;
   return Object.values(SCOPE_PREFIXES).some(
     (p) => path === p || path.startsWith(`${p}/`),

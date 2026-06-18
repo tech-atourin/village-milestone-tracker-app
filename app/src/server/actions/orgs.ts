@@ -92,7 +92,7 @@ export async function uploadOrgLogo(input: z.input<typeof uploadLogoSchema>) {
 }
 
 // =====================================================
-// createOrgWithAdmin — create mitra org + optionally
+// createOrgWithAdmin - create mitra org + optionally
 // generate a mitra_admin user with login credentials
 // in one transaction. Returns generated_password so the
 // superadmin UI can show it once for hand-off.
@@ -158,13 +158,13 @@ export async function createOrgWithAdmin(
       .is("deleted_at", null)
       .maybeSingle();
     if (dup) {
-      // Org already created — return success but flag the issue. We don't
+      // Org already created - return success but flag the issue. We don't
       // tear down the org; superadmin can pick a different email and add
       // the admin via single-user form.
       return {
         ok: true,
         org_id: orgId,
-        // No admin returned — caller will show a warning.
+        // No admin returned - caller will show a warning.
       };
     }
     const password = cryptoRandomPassword();

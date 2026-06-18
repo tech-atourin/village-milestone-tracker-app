@@ -410,7 +410,7 @@ function QuestionItem({
               {q.max}
             </span>
             <div className="flex h-9 w-12 shrink-0 items-center justify-center rounded-md bg-atr-purple-50 text-sm font-bold text-atr-purple-600">
-              {value != null ? String(value) : "—"}
+              {value != null ? String(value) : "-"}
             </div>
           </div>
         </div>

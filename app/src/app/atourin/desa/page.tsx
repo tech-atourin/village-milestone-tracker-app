@@ -30,7 +30,7 @@ export default async function AtourinDesaListPage() {
         <EmptyState
           icon={MapPin}
           title="Belum ada desa di sistem"
-          description="Klik &quot;Tambah Desa&quot; — buat manual atau import dari Atourin Hub."
+          description="Klik &quot;Tambah Desa&quot; - buat manual atau import dari Atourin Hub."
         />
       ) : (
         <DesaTable rows={rows} scope="atourin" />

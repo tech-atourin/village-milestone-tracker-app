@@ -12,7 +12,7 @@ export default async function NewMitraProjectPage() {
     listTemplates(),
     listOrganizations(),
   ]);
-  // Mitra hanya bisa buat untuk org sendiri — pre-filter list
+  // Mitra hanya bisa buat untuk org sendiri - pre-filter list
   const organizations = allOrgs.filter((o) => o.id === user.organization_id);
 
   return (

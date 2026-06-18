@@ -107,7 +107,7 @@ export function HubVerifyQueue({
               <div className="mt-1 flex items-center gap-2 text-xs">
                 <span className="text-atr-fg-muted">Skor:</span>
                 <span className="text-lg font-bold text-atr-fg">
-                  {r.skor_total ?? "—"}%
+                  {r.skor_total ?? "-"}%
                 </span>
                 {r.level_hasil && (
                   <span

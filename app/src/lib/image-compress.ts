@@ -16,7 +16,7 @@ const SKIP_BELOW = 500 * 1024;
 export async function compressIfImage(file: File): Promise<File> {
   if (!file.type.startsWith("image/")) return file;
   if (file.size < SKIP_BELOW) return file;
-  // Skip GIF / SVG — they'd lose animation / vector quality
+  // Skip GIF / SVG - they'd lose animation / vector quality
   if (file.type === "image/gif" || file.type === "image/svg+xml") return file;
 
   try {

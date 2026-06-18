@@ -8,7 +8,7 @@ import { notify } from "@/lib/notify";
 
 // =====================================================
 // Peserta rate a narasumber for a project they were both in.
-// One rating per (narasumber, rater, project) — re-rating updates.
+// One rating per (narasumber, rater, project) - re-rating updates.
 // =====================================================
 
 const rateSchema = z.object({
@@ -134,7 +134,7 @@ export async function listNarasumberToRate(
   for (const s of sRows) {
     if (!s.narasumber_id) continue;
     const cur = byId.get(s.narasumber_id) ?? {
-      full_name: s.narasumber?.full_name ?? "—",
+      full_name: s.narasumber?.full_name ?? "-",
       kompetensi: s.narasumber?.kompetensi ?? null,
       count: 0,
     };

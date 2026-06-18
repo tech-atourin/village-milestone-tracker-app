@@ -21,7 +21,7 @@ const STATUS_LABEL: Record<ProjectListRow["status"], string> = {
 };
 
 function formatDate(iso: string | null) {
-  if (!iso) return "—";
+  if (!iso) return "-";
   return new Intl.DateTimeFormat("id-ID", {
     day: "numeric",
     month: "short",
@@ -45,7 +45,7 @@ export function ProjectsTable({
     () =>
       projects.map((p) => ({
         ...p,
-        organization_name: p.organization?.name ?? "—",
+        organization_name: p.organization?.name ?? "-",
         template_name: p.template?.name ?? "Blank",
       })),
     [projects],
@@ -143,7 +143,7 @@ export function ProjectsTable({
   const orgOptions = useMemo(() => {
     const set = new Set(data.map((r) => r.organization_name));
     return Array.from(set)
-      .filter((s) => s !== "—")
+      .filter((s) => s !== "-")
       .sort()
       .map((s) => ({ value: s, label: s }));
   }, [data]);

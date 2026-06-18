@@ -24,7 +24,7 @@ const TIER_COLOR: Record<string, string> = {
 };
 
 function fmt(iso: string | null) {
-  if (!iso) return "—";
+  if (!iso) return "-";
   return new Intl.DateTimeFormat("id-ID", {
     day: "numeric",
     month: "short",
@@ -98,11 +98,11 @@ export default async function HubAssessmentViewerPage({
               Assessment Klasifikasi Desa V2 (Atourin) · Read-only Viewer
             </div>
             <h1 className="mt-1 text-2xl font-bold tracking-tight text-atr-fg">
-              {desa?.name ?? "—"}
+              {desa?.name ?? "-"}
             </h1>
             <p className="text-sm text-atr-fg-muted">
               {[desa?.kabupaten, desa?.provinsi].filter(Boolean).join(", ") ||
-                "—"}
+                "-"}
             </p>
             <div className="mt-3 flex flex-wrap items-center gap-2 text-xs">
               <span className="inline-flex items-center gap-1 rounded-full bg-atr-bg-soft px-2 py-0.5 font-bold uppercase text-atr-fg-muted">
@@ -128,7 +128,7 @@ export default async function HubAssessmentViewerPage({
             </div>
             <div className="flex items-center gap-2">
               <span className="text-3xl font-bold text-atr-fg">
-                {a.skor_total ?? "—"}%
+                {a.skor_total ?? "-"}%
               </span>
               {a.level_hasil && (
                 <span
@@ -161,7 +161,7 @@ export default async function HubAssessmentViewerPage({
         )}
       </header>
 
-      {/* Verify / reject — superadmin only, when awaiting review */}
+      {/* Verify / reject - superadmin only, when awaiting review */}
       {user.global_role === "superadmin" && a.status === "submitted" && (
         <HubVerifyBar
           assessmentId={a.id}
@@ -184,7 +184,7 @@ export default async function HubAssessmentViewerPage({
       </article>
       <p className="-mt-2 px-1 text-[11px] text-atr-fg-muted">
         ℹ️ Assessment V2 berbasis kuesioner ber-skor (single/multi/slider),
-        jadi verifikasi dilakukan di tingkat submission — bukan upload bukti
+        jadi verifikasi dilakukan di tingkat submission - bukan upload bukti
         per item seperti V1 Permenpar. Diskusi per pertanyaan tetap bisa lewat
         thread di bawah.
       </p>

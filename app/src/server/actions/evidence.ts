@@ -63,7 +63,7 @@ export async function uploadEvidence(input: UploadEvidenceInput) {
     return { error: uploadErr.message };
   }
 
-  // Public URL is gated by storage RLS — we sign a long-lived URL on demand
+  // Public URL is gated by storage RLS - we sign a long-lived URL on demand
   const { data: signed } = await supabase.storage
     .from("vmt-evidence")
     .createSignedUrl(path, 60 * 60 * 24 * 7); // 7 days
@@ -197,7 +197,7 @@ export async function listEvidenceForChecklist(checklistProgressId: string) {
 }
 
 // Sign URLs for a list of storage paths (server-side, anon client OK if RLS
-// allows reading the underlying objects — peserta sees own scope, atourin sees all).
+// allows reading the underlying objects - peserta sees own scope, atourin sees all).
 export async function signEvidenceUrls(paths: string[]) {
   const supabase = createClient();
   const out = new Map<string, string>();

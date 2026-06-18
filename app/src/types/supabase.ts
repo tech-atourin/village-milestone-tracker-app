@@ -1,5 +1,5 @@
 // =====================================================
-// Supabase typed schema — PERMISSIVE STUB for Phase 0.
+// Supabase typed schema - PERMISSIVE STUB for Phase 0.
 // =====================================================
 // Real generation: `npm run supabase:types`
 //   (requires `supabase link` with DB password first).
@@ -7,7 +7,7 @@
 // We deliberately type Database as a permissive shape so
 // supabase-js doesn't fight Insert/Update payloads while
 // the real generated types are missing. When the real
-// types land, replace this file — call sites will keep
+// types land, replace this file - call sites will keep
 // working but gain proper column-level inference.
 // =====================================================
 

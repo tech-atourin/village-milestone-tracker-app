@@ -101,8 +101,8 @@ async function loadDashboard(userId: string) {
         ? arr.reduce((a, i) => a + Number(i.completion_percent), 0) / arr.length
         : 0;
     topDesa.push({
-      name: pd.desa?.name ?? "—",
-      project_name: pd.projects?.name ?? "—",
+      name: pd.desa?.name ?? "-",
+      project_name: pd.projects?.name ?? "-",
       avg,
     });
   }
@@ -201,7 +201,7 @@ export default async function MitraDashboardPage() {
                       </span>
                     </div>
                     <div className="mt-1 text-xs text-atr-fg-muted">
-                      {p.desa_count} desa · Berakhir {p.period_end ?? "—"}
+                      {p.desa_count} desa · Berakhir {p.period_end ?? "-"}
                     </div>
                   </div>
                   <div className="hidden flex-1 items-center gap-2 sm:flex">

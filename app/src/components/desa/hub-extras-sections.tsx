@@ -50,7 +50,7 @@ function fmtRp(n: number | null) {
 }
 
 function fmtDate(iso: string | null) {
-  if (!iso) return "—";
+  if (!iso) return "-";
   return new Intl.DateTimeFormat("id-ID", {
     day: "numeric",
     month: "short",
@@ -132,7 +132,7 @@ export function HubExtrasSections({
                 )}
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-1.5">
-                    <span className="font-bold text-atr-fg">{p.nama ?? "—"}</span>
+                    <span className="font-bold text-atr-fg">{p.nama ?? "-"}</span>
                     {p.jenis && (
                       <span className="inline-flex rounded-full bg-atr-purple-50 px-2 py-0.5 text-[10px] font-bold text-atr-purple-600">
                         {p.jenis}
@@ -214,7 +214,7 @@ export function HubExtrasSections({
                   />
                 )}
                 <div className="min-w-0 flex-1">
-                  <div className="font-bold text-atr-fg">{e.judul ?? "—"}</div>
+                  <div className="font-bold text-atr-fg">{e.judul ?? "-"}</div>
                   <div className="text-[11px] text-atr-fg-muted">
                     {fmtDate(e.mulai)}
                     {e.selesai && e.selesai !== e.mulai && (

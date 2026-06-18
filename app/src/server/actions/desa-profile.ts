@@ -82,7 +82,7 @@ const pengelolaSchema = z.object({
 });
 
 // =====================================================
-// Cover image upload — returns public URL after storing
+// Cover image upload - returns public URL after storing
 // =====================================================
 const coverSchema = z.object({
   desa_id: z.string().uuid(),

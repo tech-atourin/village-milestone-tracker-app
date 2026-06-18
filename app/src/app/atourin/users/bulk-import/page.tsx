@@ -35,7 +35,7 @@ export default function BulkImportPage({
         </h1>
         <p className="text-sm text-atr-fg-muted">
           {mode === "narasumber"
-            ? "Upload Excel berisi data narasumber. Template berbeda dengan peserta — sudah include kolom kategori, kompetensi, jabatan, instansi."
+            ? "Upload Excel berisi data narasumber. Template berbeda dengan peserta - sudah include kolom kategori, kompetensi, jabatan, instansi."
             : "Upload Excel berisi data peserta. Sistem akan validate per baris, detect duplikat, dan kirim email undangan otomatis."}
         </p>
       </header>

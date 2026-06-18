@@ -27,7 +27,7 @@ const KATEGORI_LABEL: Record<string, string> = {
 };
 
 function fmtDate(iso: string | null) {
-  if (!iso) return "—";
+  if (!iso) return "-";
   return new Intl.DateTimeFormat("id-ID", {
     day: "numeric",
     month: "short",

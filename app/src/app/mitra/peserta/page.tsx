@@ -35,11 +35,11 @@ async function loadPeserta(organizationId: string | null): Promise<Row[]> {
     : rows;
   return filtered.map((r) => ({
     user_id: r.user_id,
-    full_name: r.user?.full_name ?? "—",
+    full_name: r.user?.full_name ?? "-",
     email: r.user?.email ?? null,
     desa_name: r.desa?.name ?? null,
     project_id: r.project_id,
-    project_name: r.project?.name ?? "—",
+    project_name: r.project?.name ?? "-",
   }));
 }
 
@@ -99,7 +99,7 @@ export default async function MitraPesertaPage() {
                     {r.full_name}
                   </td>
                   <td className="px-4 py-3 text-atr-fg-muted">
-                    {r.email ?? "—"}
+                    {r.email ?? "-"}
                   </td>
                   <td className="px-4 py-3">
                     {r.desa_name ? (
@@ -108,7 +108,7 @@ export default async function MitraPesertaPage() {
                         {r.desa_name}
                       </span>
                     ) : (
-                      <span className="text-atr-fg-muted">—</span>
+                      <span className="text-atr-fg-muted">-</span>
                     )}
                   </td>
                   <td className="px-4 py-3">

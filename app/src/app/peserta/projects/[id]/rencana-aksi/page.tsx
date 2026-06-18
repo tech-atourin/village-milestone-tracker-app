@@ -23,8 +23,8 @@ async function loadPesertaDesaOptions(userId: string, projectDesaId: string) {
     {
       project_desa_id: r.id,
       project_id: r.project_id,
-      project_name: r.project?.name ?? "—",
-      desa_name: r.desa?.name ?? "—",
+      project_name: r.project?.name ?? "-",
+      desa_name: r.desa?.name ?? "-",
     },
   ];
 }

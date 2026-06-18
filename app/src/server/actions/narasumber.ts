@@ -7,7 +7,7 @@ import { getCurrentUser } from "@/lib/auth/rbac";
 import { audit } from "@/lib/audit";
 
 // =====================================================
-// Narasumber CRUD — for superadmin + mitra_admin
+// Narasumber CRUD - for superadmin + mitra_admin
 // Narasumber records are stored in the `users` table with
 // global_role='narasumber' plus extended profile columns.
 // =====================================================

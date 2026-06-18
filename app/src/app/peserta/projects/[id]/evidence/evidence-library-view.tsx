@@ -26,7 +26,7 @@ function fileIcon(t: string) {
 }
 
 function formatSize(bytes: number | null) {
-  if (!bytes) return "—";
+  if (!bytes) return "-";
   const mb = bytes / (1024 * 1024);
   if (mb >= 1) return `${mb.toFixed(1)} MB`;
   const kb = bytes / 1024;
@@ -104,7 +104,7 @@ export function EvidenceLibraryView({
               )}
               <div className="space-y-2 p-3">
                 <div className="text-xs font-bold text-atr-fg">
-                  {it.original_filename ?? "—"}
+                  {it.original_filename ?? "-"}
                 </div>
                 {it.caption && (
                   <p className="line-clamp-2 text-[11px] text-atr-fg-muted">
@@ -204,7 +204,7 @@ function TagDialog({
   const [search, setSearch] = useState("");
 
   // Lazy load options once on mount. (Doing this during render is a React
-  // anti-pattern — it can wedge the transition and leave this fixed overlay
+  // anti-pattern - it can wedge the transition and leave this fixed overlay
   // stuck on top of the page, swallowing clicks like the "Kembali" link.)
   useEffect(() => {
     let cancelled = false;

@@ -254,7 +254,7 @@ function SummaryCard({
   );
 }
 
-// SWOT card — analisis dari hasil pendampingan narasumber, rencana aksi
+// SWOT card - analisis dari hasil pendampingan narasumber, rencana aksi
 // peserta, dan baseline data desa. Disimpan di ai_insights dengan
 // insight_type='swot' (boleh AI-generated atau manual seed).
 export function SwotCardSection({ swot }: { swot: DesaSwot }) {

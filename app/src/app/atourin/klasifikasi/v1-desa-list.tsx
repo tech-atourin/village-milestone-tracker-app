@@ -20,7 +20,7 @@ const TIER_LABEL: Record<string, string> = {
 };
 
 function fmtDate(iso: string | null) {
-  if (!iso) return "—";
+  if (!iso) return "-";
   return new Intl.DateTimeFormat("id-ID", {
     day: "numeric",
     month: "short",
@@ -67,7 +67,7 @@ export function V1DesaList({ rows }: { rows: V1DesaQueueRow[] }) {
               </div>
               <p className="mt-1 inline-flex items-center gap-1 text-xs text-atr-fg-muted">
                 <MapPin className="h-3 w-3" />
-                {[r.kabupaten, r.provinsi].filter(Boolean).join(", ") || "—"}
+                {[r.kabupaten, r.provinsi].filter(Boolean).join(", ") || "-"}
                 {r.last_submitted_at && (
                   <> · submit terakhir {fmtDate(r.last_submitted_at)}</>
                 )}

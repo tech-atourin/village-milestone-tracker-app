@@ -115,7 +115,7 @@ export async function OverviewTab({
       value:
         data.kuisioner.avg_rating != null
           ? `★ ${data.kuisioner.avg_rating.toFixed(2)}`
-          : "—",
+          : "-",
       hint:
         data.kuisioner.rating_count > 0
           ? `${data.kuisioner.rating_count} penilaian peserta`

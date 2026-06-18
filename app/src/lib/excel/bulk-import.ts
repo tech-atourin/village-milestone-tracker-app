@@ -1,5 +1,5 @@
 // =====================================================
-// Bulk import — shared schema + helpers
+// Bulk import - shared schema + helpers
 // =====================================================
 import { z } from "zod";
 
@@ -11,7 +11,7 @@ export function normalizePhone(raw: string | null | undefined): string | null {
   if (digits.startsWith("62")) return digits;
   if (digits.startsWith("0")) return "62" + digits.slice(1);
   if (digits.startsWith("8")) return "62" + digits;
-  return digits; // fallback — keep as-is
+  return digits; // fallback - keep as-is
 }
 
 export function looksLikeIndoPhone(raw: string): boolean {

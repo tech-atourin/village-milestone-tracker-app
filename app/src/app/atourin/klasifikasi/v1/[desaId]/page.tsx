@@ -105,7 +105,7 @@ export default async function V1ReviewPage({
             </h1>
             <p className="mt-1 inline-flex items-center gap-1 text-sm text-atr-fg-muted">
               <MapPin className="h-3.5 w-3.5" />
-              {[d.kabupaten, d.provinsi].filter(Boolean).join(", ") || "—"}
+              {[d.kabupaten, d.provinsi].filter(Boolean).join(", ") || "-"}
             </p>
             <div className="mt-3 flex flex-wrap items-center gap-2 text-xs">
               <span

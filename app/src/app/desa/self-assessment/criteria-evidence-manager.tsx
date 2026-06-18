@@ -311,7 +311,7 @@ export function CriteriaEvidenceManager({
                           {ev.source === "linked" ? (
                             <span className="inline-flex items-center gap-0.5 rounded-full bg-atr-yellow/15 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-atr-fg">
                               <Link2 className="h-2.5 w-2.5" />
-                              dari project {ev.source_project_name ?? "—"}
+                              dari project {ev.source_project_name ?? "-"}
                             </span>
                           ) : (
                             <span className="inline-flex items-center gap-0.5 rounded-full bg-atr-purple-50 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-atr-purple-600">
@@ -411,7 +411,7 @@ export function CriteriaEvidenceManager({
                 <div className="rounded-lg border border-atr-purple/20 bg-atr-purple-50/40 p-3 text-[11px] text-atr-fg">
                   💡 Pilih bukti yang sudah diupload peserta saat kegiatan
                   pendampingan. Bukti yang sama bisa dipakai untuk beberapa
-                  kriteria. File asli tetap di project peserta — di sini
+                  kriteria. File asli tetap di project peserta - di sini
                   hanya di-link.
                 </div>
 

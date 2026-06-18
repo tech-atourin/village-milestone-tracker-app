@@ -42,7 +42,7 @@ async function fetchSummary(slug: string): Promise<SummaryResponse | null> {
 }
 
 function formatDate(iso: string | null) {
-  if (!iso) return "—";
+  if (!iso) return "-";
   return new Intl.DateTimeFormat("id-ID", {
     day: "numeric",
     month: "short",
@@ -60,7 +60,7 @@ export default async function PublicDashboardPage({
 
   return (
     <main className="min-h-screen bg-atr-bg-soft">
-      {/* Header strip — purple gradient like login */}
+      {/* Header strip - purple gradient like login */}
       <header className="bg-atr-purple-gradient px-6 py-10 text-white">
         <div className="mx-auto max-w-5xl">
           <div className="flex items-start justify-between gap-4">
@@ -147,7 +147,7 @@ export default async function PublicDashboardPage({
                     <td className="py-3 font-bold text-atr-fg">{d.name}</td>
                     <td className="py-3 text-atr-fg-muted">
                       {[d.kabupaten, d.provinsi].filter(Boolean).join(" · ") ||
-                        "—"}
+                        "-"}
                     </td>
                     <td className="py-3 text-right">
                       <div className="inline-flex items-center gap-2">
@@ -173,7 +173,7 @@ export default async function PublicDashboardPage({
 
         <footer className="flex items-center justify-between border-t border-atr-outline pt-6 text-xs text-atr-fg-muted">
           <div>
-            Dipersembahkan oleh {summary.organization?.name ?? "—"}, didukung
+            Dipersembahkan oleh {summary.organization?.name ?? "-"}, didukung
             tim Atourin.
           </div>
           <div className="flex items-center gap-2">

@@ -5,7 +5,7 @@ import type { Database } from "@/types/supabase";
 import { clientEnv } from "@/lib/env";
 
 // =====================================================
-// Browser client — for client components only.
+// Browser client - for client components only.
 // Scoped to the `vmt` schema via db.schema option.
 // =====================================================
 export function createClient() {

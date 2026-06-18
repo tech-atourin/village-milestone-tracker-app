@@ -20,7 +20,7 @@ export type SessionUser = {
 // Returns the authenticated user enriched with vmt.users
 // profile. Returns null if not signed in OR if the auth
 // session exists but no corresponding vmt.users row was
-// provisioned yet (rare — bulk import inserts the profile
+// provisioned yet (rare - bulk import inserts the profile
 // row atomically with the auth account).
 // =====================================================
 export async function getCurrentUser(): Promise<SessionUser | null> {
@@ -49,7 +49,7 @@ export async function getCurrentUser(): Promise<SessionUser | null> {
 // requireUser / requireRole
 // =====================================================
 // Throw-via-redirect helpers for server components & actions.
-// Use at the TOP of any protected page/action — they short-
+// Use at the TOP of any protected page/action - they short-
 // circuit unauthorized requests before the page renders.
 // =====================================================
 export async function requireUser(): Promise<SessionUser> {
@@ -67,7 +67,7 @@ export async function requireRole(
 }
 
 // =====================================================
-// scopeHomePath — where to send a user after sign-in
+// scopeHomePath - where to send a user after sign-in
 // =====================================================
 export function scopeHomePath(role: GlobalRole): string {
   switch (role) {
@@ -85,7 +85,7 @@ export function scopeHomePath(role: GlobalRole): string {
 }
 
 // =====================================================
-// canAccessProject — for project-scoped resources
+// canAccessProject - for project-scoped resources
 // =====================================================
 export async function canAccessProject(
   userId: string,

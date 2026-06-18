@@ -56,9 +56,9 @@ async function loadInsights(): Promise<{
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   for (const pd of (pdRows ?? []) as any[]) {
     lookup.set(pd.id, {
-      project_name: pd.project?.name ?? "—",
+      project_name: pd.project?.name ?? "-",
       project_id: pd.project?.id ?? "",
-      desa_name: pd.desa?.name ?? "—",
+      desa_name: pd.desa?.name ?? "-",
     });
   }
 

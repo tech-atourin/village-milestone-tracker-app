@@ -211,7 +211,7 @@ export function SesiDetailEditor({
               <DT label="Project">{data.project_name}</DT>
               <DT label="Desa">{data.desa_name}</DT>
               <DT label="Lokasi">
-                {[data.kabupaten, data.provinsi].filter(Boolean).join(", ") || "—"}
+                {[data.kabupaten, data.provinsi].filter(Boolean).join(", ") || "-"}
               </DT>
               <DT label="Hari ke-">
                 {data.day_number} dari {data.total_days}
@@ -225,7 +225,7 @@ export function SesiDetailEditor({
                 }).format(new Date(data.session_date))}
               </DT>
               <DT label="Jam">
-                {data.start_time ?? "—"} – {data.end_time ?? "—"}
+                {data.start_time ?? "-"} – {data.end_time ?? "-"}
               </DT>
               <DT label="Narasumber">{data.narasumber_name}</DT>
               <DT label="Status">{data.status}</DT>
@@ -280,10 +280,10 @@ export function SesiDetailEditor({
                             {c.full_name}
                           </td>
                           <td className="px-3 py-2 text-atr-fg-muted">
-                            {c.jabatan ?? "—"}
+                            {c.jabatan ?? "-"}
                           </td>
                           <td className="px-3 py-2 text-atr-fg-muted">
-                            {c.gender ?? "—"}
+                            {c.gender ?? "-"}
                           </td>
                           <td className="px-3 py-2">
                             <select
@@ -316,7 +316,7 @@ export function SesiDetailEditor({
                                   }),
                                 )
                               }
-                              placeholder="—"
+                              placeholder="-"
                               className="h-8 w-full rounded-md border border-atr-outline bg-white px-2 text-xs outline-none focus:border-atr-purple"
                             />
                           </td>

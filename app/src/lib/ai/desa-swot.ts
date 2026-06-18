@@ -33,13 +33,13 @@ rencana aksi, dan pre/post test).
 
 Petunjuk:
 - 4-6 bullet per kuadran (Strengths, Weaknesses, Opportunities, Threats)
-- Setiap bullet konkret, merujuk angka/fakta dari data — jangan generic
+- Setiap bullet konkret, merujuk angka/fakta dari data - jangan generic
 - Bahasa Indonesia yang ringkas dan actionable
 - Kalau data kurang untuk sebuah kuadran, tetap berikan minimal 2 bullet
   yang valid dari informasi yang tersedia
 - Strengths/Weaknesses: kondisi INTERNAL desa (SDM, kelembagaan, produk)
 - Opportunities/Threats: kondisi EKSTERNAL (pasar, regulasi, lingkungan)
-- Jangan halusinasi — kalau tidak yakin, jangan tulis`;
+- Jangan halusinasi - kalau tidak yakin, jangan tulis`;
 
 export async function generateDesaSwot(projectDesaId: string): Promise<{
   data?: DesaSwot;

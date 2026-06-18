@@ -95,7 +95,7 @@ export default async function SertifikatPage({
         )}
       </div>
 
-      {/* Certificate page — A4 landscape (297mm × 210mm) */}
+      {/* Certificate page - A4 landscape (297mm × 210mm) */}
       <div
         className="cert-page relative mx-auto bg-white shadow-atr-4 print:shadow-none"
         style={{
@@ -185,21 +185,21 @@ export default async function SertifikatPage({
             <br />
             <strong className="text-atr-purple-600">{project.name}</strong>
             <br />
-            yang diselenggarakan oleh {project.organization?.name ?? "—"} bersama Atourin
+            yang diselenggarakan oleh {project.organization?.name ?? "-"} bersama Atourin
             pada periode {project.period_start} – {project.period_end}.
           </p>
 
           {/* Achievement metrics */}
           {rapor && (
             <div className="mx-auto mt-8 grid max-w-2xl grid-cols-3 gap-4 rounded-2xl border border-atr-purple/20 bg-atr-purple-50/30 p-4">
-              <Metric label="Pre-test" value={rapor.pre_test_score ?? "—"} />
-              <Metric label="Post-test" value={rapor.post_test_score ?? "—"} />
+              <Metric label="Pre-test" value={rapor.pre_test_score ?? "-"} />
+              <Metric label="Post-test" value={rapor.post_test_score ?? "-"} />
               <Metric
                 label="Improvement"
                 value={
                   rapor.improvement_percent != null
                     ? `${rapor.improvement_percent > 0 ? "+" : ""}${rapor.improvement_percent}%`
-                    : "—"
+                    : "-"
                 }
                 highlight
               />

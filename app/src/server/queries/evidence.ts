@@ -60,7 +60,7 @@ export async function listEvidenceLibrary(
     caption: e.caption,
     file_size_bytes: e.file_size_bytes,
     uploaded_at: e.uploaded_at,
-    uploaded_by_name: e.uploader?.full_name ?? "—",
+    uploaded_by_name: e.uploader?.full_name ?? "-",
     tag_count: tagCount.get(e.id) ?? 0,
     signed_url: signed.get(e.file_url) ?? null,
   }));

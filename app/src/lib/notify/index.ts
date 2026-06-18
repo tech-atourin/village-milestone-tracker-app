@@ -35,7 +35,7 @@ const TEMPLATES: Record<
   checklist_rejected: (p) => ({
     subject: `Perlu revisi: ${p.checklist_title}`,
     inAppText: `${p.checklist_title} perlu direvisi. ${p.note ?? ""}`,
-    html: `<p>Halo,</p><p>Checklist <b>${p.checklist_title}</b> perlu direvisi.</p><p><b>Feedback Atourin:</b> ${p.note ?? "—"}</p>`,
+    html: `<p>Halo,</p><p>Checklist <b>${p.checklist_title}</b> perlu direvisi.</p><p><b>Feedback Atourin:</b> ${p.note ?? "-"}</p>`,
   }),
   evidence_submitted: (p) => ({
     subject: `Evidence baru di ${p.desa_name}`,
@@ -55,12 +55,12 @@ const TEMPLATES: Record<
   checklist_submitted: (p) => ({
     subject: `Bukti baru menunggu review: ${p.checklist_title}`,
     inAppText: `${p.peserta_name ?? "Peserta"} dari ${p.desa_name} submit bukti untuk "${p.checklist_title}".`,
-    html: `<p>Peserta <b>${p.peserta_name ?? "—"}</b> dari desa <b>${p.desa_name}</b> baru saja submit bukti untuk checklist <b>${p.checklist_title}</b>. Buka VMT untuk review.</p>`,
+    html: `<p>Peserta <b>${p.peserta_name ?? "-"}</b> dari desa <b>${p.desa_name}</b> baru saja submit bukti untuk checklist <b>${p.checklist_title}</b>. Buka VMT untuk review.</p>`,
   }),
   evidence_linked: (p) => ({
     subject: `Bukti Anda dipakai untuk assessment ${p.desa_name}`,
     inAppText: `Bukti "${p.evidence_filename}" dipakai pengelola desa untuk kriteria klasifikasi.`,
-    html: `<p>Pengelola desa <b>${p.desa_name}</b> mencantumkan bukti yang Anda upload (<b>${p.evidence_filename}</b>) sebagai pendukung kriteria klasifikasi: <b>${p.criteria_title}</b>. Tidak ada tindakan yang diperlukan — cuma info bahwa kontribusi Anda dipakai dua kali.</p>`,
+    html: `<p>Pengelola desa <b>${p.desa_name}</b> mencantumkan bukti yang Anda upload (<b>${p.evidence_filename}</b>) sebagai pendukung kriteria klasifikasi: <b>${p.criteria_title}</b>. Tidak ada tindakan yang diperlukan - cuma info bahwa kontribusi Anda dipakai dua kali.</p>`,
   }),
   criteria_submitted: (p) => ({
     subject: `Assessment baru menunggu verifikasi: ${p.desa_name}`,
@@ -75,7 +75,7 @@ const TEMPLATES: Record<
   criteria_rejected: (p) => ({
     subject: `Perlu revisi kriteria: ${p.criteria_title}`,
     inAppText: `Kriteria "${p.criteria_title}" perlu direvisi. ${p.note ?? ""}`,
-    html: `<p>Kriteria <b>${p.criteria_title}</b> perlu direvisi.</p><p><b>Feedback:</b> ${p.note ?? "—"}</p>`,
+    html: `<p>Kriteria <b>${p.criteria_title}</b> perlu direvisi.</p><p><b>Feedback:</b> ${p.note ?? "-"}</p>`,
   }),
   comment_added: (p) => ({
     subject: `Komentar baru di ${p.context_title}`,
@@ -85,7 +85,7 @@ const TEMPLATES: Record<
 };
 
 // =====================================================
-// notifyMany — fan-out helper that sends the same template to
+// notifyMany - fan-out helper that sends the same template to
 // multiple users (deduplicated). Channel defaults to in_app + email
 // when applicable. Failures are isolated per recipient.
 // =====================================================
@@ -114,7 +114,7 @@ export async function notifyMany(opts: {
 }
 
 // =====================================================
-// projectReviewers — return user IDs that should be notified when a
+// projectReviewers - return user IDs that should be notified when a
 // peserta submits a checklist or a desa submits an assessment item:
 //   - All superadmins
 //   - The mitra_admin(s) of the project's organization
@@ -164,7 +164,7 @@ export async function projectReviewers(
   return Array.from(new Set(ids));
 }
 
-// All superadmin user IDs — used as reviewers for V1/V2 assessment.
+// All superadmin user IDs - used as reviewers for V1/V2 assessment.
 export async function assessmentReviewers(): Promise<string[]> {
   const admin = createAdminClient();
   const { data } = await admin
@@ -176,9 +176,9 @@ export async function assessmentReviewers(): Promise<string[]> {
 }
 
 // =====================================================
-// notify() — fire-and-forget. Always writes the in_app row;
+// notify() - fire-and-forget. Always writes the in_app row;
 // best-effort sends email via Resend when configured.
-// Never throws — failures are logged + persisted on the row.
+// Never throws - failures are logged + persisted on the row.
 // =====================================================
 export async function notify(input: NotifyPayload): Promise<void> {
   const admin = createAdminClient();
@@ -209,7 +209,7 @@ export async function notify(input: NotifyPayload): Promise<void> {
   } | null;
   if (!u) return;
 
-  // EMAIL channel — via Google Workspace SMTP (nodemailer)
+  // EMAIL channel - via Google Workspace SMTP (nodemailer)
   if (input.channel === "email") {
     const smtpUser = process.env.SMTP_USER;
     const smtpPass = process.env.SMTP_PASSWORD;

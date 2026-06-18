@@ -58,7 +58,7 @@ function groupByDesa(rows: ActionPlanRow[]): Array<[string, ActionPlanRow[]]> {
 }
 
 function fmtDate(s: string | null) {
-  if (!s) return "—";
+  if (!s) return "-";
   return new Intl.DateTimeFormat("id-ID", {
     day: "numeric",
     month: "short",
@@ -308,9 +308,9 @@ function PlanCard({
             <Detail label="Selesai" value={fmtDate(p.end_date)} />
             <Detail
               label="Pihak terlibat"
-              value={p.pihak_terlibat ?? "—"}
+              value={p.pihak_terlibat ?? "-"}
             />
-            <Detail label="Output" value={p.output_target ?? "—"} />
+            <Detail label="Output" value={p.output_target ?? "-"} />
           </div>
           <div className="text-[10px] text-atr-fg-muted">
             Dibuat {p.creator_name} ·{" "}

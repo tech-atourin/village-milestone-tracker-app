@@ -28,7 +28,7 @@ const STATUS_LABEL: Record<string, string> = {
 };
 
 function formatDate(iso: string | null) {
-  if (!iso) return "—";
+  if (!iso) return "-";
   return new Intl.DateTimeFormat("id-ID", {
     day: "numeric",
     month: "short",
@@ -102,8 +102,8 @@ export default async function DesaRiwayatPage() {
                       </span>
                     </div>
                     <div className="mt-0.5 text-xs text-atr-fg-muted">
-                      Mitra: {r.organization_name ?? "—"} ·{" "}
-                      {formatDate(r.period_start)} —{" "}
+                      Mitra: {r.organization_name ?? "-"} ·{" "}
+                      {formatDate(r.period_start)} -{" "}
                       {formatDate(r.period_end)}
                     </div>
                     <div className="mt-3 grid grid-cols-3 gap-3 text-xs">
@@ -118,7 +118,7 @@ export default async function DesaRiwayatPage() {
                         value={
                           r.avg_improvement != null
                             ? `${r.avg_improvement > 0 ? "+" : ""}${r.avg_improvement}%`
-                            : "—"
+                            : "-"
                         }
                       />
                       <Stat

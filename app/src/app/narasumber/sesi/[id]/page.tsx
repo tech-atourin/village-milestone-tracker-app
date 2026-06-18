@@ -29,7 +29,7 @@ async function loadCandidatePeserta(projectDesaId: string) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return ((data ?? []) as any[]).map((r) => ({
     user_id: r.user_id as string,
-    full_name: (r.user?.full_name as string) ?? "—",
+    full_name: (r.user?.full_name as string) ?? "-",
     jabatan: (r.user?.jabatan as string) ?? null,
     gender: (r.user?.gender as "L" | "P" | null) ?? null,
   }));
@@ -66,7 +66,7 @@ export default async function SesiDetailPage({
         Kembali ke daftar sesi
       </Link>
 
-      {/* Header card — Informasi Pendampingan */}
+      {/* Header card - Informasi Pendampingan */}
       <header className="overflow-hidden rounded-2xl border border-atr-outline bg-white shadow-atr-1">
         <div className="bg-gradient-to-br from-atr-purple-50 to-white p-6">
           <div className="flex items-start justify-between gap-4">
@@ -94,7 +94,7 @@ export default async function SesiDetailPage({
                 {(data.start_time || data.end_time) && (
                   <span className="inline-flex items-center gap-1">
                     <Clock className="h-3 w-3" />
-                    {data.start_time ?? "—"} – {data.end_time ?? "—"}
+                    {data.start_time ?? "-"} – {data.end_time ?? "-"}
                   </span>
                 )}
                 <span className="inline-flex items-center gap-1">

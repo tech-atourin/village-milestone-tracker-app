@@ -37,8 +37,8 @@ export function PesertaTab({
   const [selDesa, setSelDesa] = useState<string>("");
   const [error, setError] = useState<string | null>(null);
 
-  // Guard against rows whose embedded user couldn't be read (RLS) — never crash.
-  // Also restrict the displayed list to actual peserta — narasumber lives in
+  // Guard against rows whose embedded user couldn't be read (RLS) - never crash.
+  // Also restrict the displayed list to actual peserta - narasumber lives in
   // its own tab now.
   const safeMembers = members.filter((m) => m.user && m.role === "peserta");
   const memberUserIds = new Set(
@@ -264,12 +264,12 @@ function MembersTable({
     ...m,
     full_name: m.user.full_name,
     email: m.user.email ?? "",
-    desa_name: m.desa?.name ?? "—",
+    desa_name: m.desa?.name ?? "-",
   }));
   type Row = (typeof rows)[number];
 
   const desaOptions = Array.from(
-    new Set(rows.map((r) => r.desa_name).filter((n) => n && n !== "—")),
+    new Set(rows.map((r) => r.desa_name).filter((n) => n && n !== "-")),
   ).map((n) => ({ value: n, label: n }));
 
   const columns: MembersColumnDef<Row, unknown>[] = [
@@ -299,7 +299,7 @@ function MembersTable({
                   month: "short",
                   year: "numeric",
                 }).format(d)
-              : "—"}
+              : "-"}
           </span>
         );
       },

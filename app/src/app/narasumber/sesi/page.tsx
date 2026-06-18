@@ -90,7 +90,7 @@ export default async function SesiListPage() {
                     {s.project_name}
                   </td>
                   <td className="px-4 py-3 line-clamp-1 max-w-xs text-xs text-atr-fg">
-                    {s.materi ?? "—"}
+                    {s.materi ?? "-"}
                   </td>
                   <td className="px-4 py-3">
                     <span

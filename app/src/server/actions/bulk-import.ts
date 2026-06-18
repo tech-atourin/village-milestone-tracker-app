@@ -49,12 +49,12 @@ export async function generateTemplateBase64(
   const pesertaGuidance = [
     "Wajib diisi: nama lengkap",
     "Email ATAU HP wajib (boleh keduanya)",
-    "Format 62xxx atau 08xxx — sistem auto-normalize",
+    "Format 62xxx atau 08xxx - sistem auto-normalize",
     "16 digit, opsional (untuk matching GForm)",
     "L atau P",
     "DD/MM/YYYY atau YYYY-MM-DD, opsional",
     "Nama desa yang sudah terdaftar, atau biarkan kosong untuk peserta non-desa",
-    "peserta | mitra_admin | narasumber — default peserta",
+    "peserta | mitra_admin | narasumber - default peserta",
   ];
 
   const narasumberHeaders = [
@@ -84,7 +84,7 @@ export async function generateTemplateBase64(
   const narasumberGuidance = [
     "Wajib diisi: nama lengkap",
     "Wajib (untuk login). Tanpa email = profil saja, tidak bisa login.",
-    "Format 62xxx atau 08xxx — sistem auto-normalize",
+    "Format 62xxx atau 08xxx - sistem auto-normalize",
     "L atau P (opsional)",
     "Jabatan kerja saat ini (opsional)",
     "Nama instansi / lembaga (opsional)",
@@ -251,7 +251,7 @@ export async function parseBulkFile(input: {
 }
 
 // =====================================================
-// Commit — create users + memberships + send invites
+// Commit - create users + memberships + send invites
 // =====================================================
 const commitSchema = z.object({
   rows: z.array(
@@ -342,7 +342,7 @@ export async function commitBulkImport(
       role === "peserta" && desaName
         ? desaByName.get(desaName.toLowerCase().trim()) ?? null
         : null;
-    // Upsert membership — a peserta can belong to multiple projects, and
+    // Upsert membership - a peserta can belong to multiple projects, and
     // re-import shouldn't duplicate. (project_id,user_id,role) is unique.
     const { error } = await admin.from("project_memberships").upsert(
       {
@@ -382,7 +382,7 @@ export async function commitBulkImport(
       if (!row.nik) {
         skipped++;
         errors.push(
-          `${row.full_name}: tidak ada email atau NIK — tidak bisa create auth user.`,
+          `${row.full_name}: tidak ada email atau NIK - tidak bisa create auth user.`,
         );
         continue;
       }
@@ -412,7 +412,7 @@ export async function commitBulkImport(
       await admin.auth.admin.createUser({
         email,
         email_confirm: true,
-        // Random password — user resets via "Lupa password"
+        // Random password - user resets via "Lupa password"
         password: cryptoRandomPassword(),
         user_metadata: {
           full_name: row.full_name,
@@ -501,7 +501,7 @@ function invitationHtml(
 <html lang="id">
   <body style="font-family: -apple-system, system-ui, sans-serif; color:#0f172a; max-width:560px; margin:0 auto; padding:24px;">
     <h2 style="color:#047857;">Halo ${escapeHtml(fullName)},</h2>
-    <p>Anda telah diundang bergabung dengan <strong>${escapeHtml(appName)}</strong> — platform pendampingan desa wisata Atourin.</p>
+    <p>Anda telah diundang bergabung dengan <strong>${escapeHtml(appName)}</strong> - platform pendampingan desa wisata Atourin.</p>
     <p>Untuk login pertama kali, silakan klik tombol di bawah untuk set password Anda:</p>
     <p style="margin: 24px 0;">
       <a href="${resetUrl}" style="background:#059669; color:#fff; padding:10px 18px; border-radius:8px; text-decoration:none; font-weight:600;">Set Password</a>

@@ -325,7 +325,7 @@ export function TemplateEditor({
                   type="text"
                   value={t.name}
                   onChange={(e) => updateTopik(ti, { name: e.target.value })}
-                  placeholder={`Topik ${ti + 1} — cth: Kelembagaan`}
+                  placeholder={`Topik ${ti + 1} - cth: Kelembagaan`}
                   className="h-10 w-full rounded-lg border border-atr-outline bg-white px-3 text-sm font-bold outline-none focus:border-atr-purple focus:ring-2 focus:ring-atr-purple/15"
                 />
                 <input
@@ -381,7 +381,7 @@ export function TemplateEditor({
                         onChange={(e) =>
                           updateItem(ti, ii, { title: e.target.value })
                         }
-                        placeholder={`Item ${ii + 1} — cth: Memiliki SK Pokdarwis aktif`}
+                        placeholder={`Item ${ii + 1} - cth: Memiliki SK Pokdarwis aktif`}
                         className="h-9 w-full rounded-lg border border-atr-outline bg-white px-2.5 text-sm font-bold outline-none focus:border-atr-purple"
                       />
                       <input

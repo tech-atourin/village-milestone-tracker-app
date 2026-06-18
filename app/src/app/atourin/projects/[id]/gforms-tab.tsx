@@ -66,7 +66,7 @@ const CHIP_ICON: Record<ChipKey, React.ComponentType<{ className?: string }>> = 
 const PAGE_SIZE = 25;
 
 function fmtDate(iso: string | null) {
-  if (!iso) return "—";
+  if (!iso) return "-";
   return new Intl.DateTimeFormat("id-ID", {
     day: "numeric",
     month: "short",
@@ -114,7 +114,7 @@ export function GformsTab({
       {/* Section 1: GForm config */}
       <GformsPanel projectId={projectId} gforms={gforms} />
 
-      {/* Section 2: Test Results — chip nav per jenis */}
+      {/* Section 2: Test Results - chip nav per jenis */}
       <section className="space-y-4 rounded-2xl border border-atr-outline bg-white p-6 shadow-atr-1">
         <header className="flex items-center gap-2">
           <FileSpreadsheet className="h-4 w-4 text-atr-purple" />
@@ -247,7 +247,7 @@ function FormResultsTable({
   const start = (effectivePage - 1) * PAGE_SIZE;
   const pageRows = filtered.slice(start, start + PAGE_SIZE);
 
-  // Survey kepuasan doesn't have numeric scores — drop the Skor column.
+  // Survey kepuasan doesn't have numeric scores - drop the Skor column.
   const showScore = jenis !== "survey_kepuasan";
 
   if (rows.length === 0) {
@@ -440,7 +440,7 @@ function FragmentRow({
             </>
           ) : (
             <span className="italic text-atr-fg-muted">
-              {(row.raw_response["Email Address"] as string) ?? "—"}
+              {(row.raw_response["Email Address"] as string) ?? "-"}
             </span>
           )}
         </td>
@@ -450,7 +450,7 @@ function FragmentRow({
               {row.project_topik_name}
             </span>
           ) : (
-            <span className="italic">—</span>
+            <span className="italic">-</span>
           )}
         </td>
         {showScore && (
@@ -466,7 +466,7 @@ function FragmentRow({
                 )}
               </>
             ) : (
-              <span className="text-xs italic text-atr-fg-muted">—</span>
+              <span className="text-xs italic text-atr-fg-muted">-</span>
             )}
           </td>
         )}
@@ -655,7 +655,7 @@ function NarasumberRatingTable({ rows }: { rows: NarasumberRatingRow[] }) {
                   </td>
                   <td className="px-3 py-2">
                     <div className="font-bold text-atr-fg">
-                      {r.rater_name ?? "—"}
+                      {r.rater_name ?? "-"}
                     </div>
                     {r.rater_email && (
                       <div className="text-[11px] text-atr-fg-muted">
@@ -673,7 +673,7 @@ function NarasumberRatingTable({ rows }: { rows: NarasumberRatingRow[] }) {
                     {r.comment ? (
                       <span className="line-clamp-2">{r.comment}</span>
                     ) : (
-                      <span className="italic text-atr-fg-muted">—</span>
+                      <span className="italic text-atr-fg-muted">-</span>
                     )}
                   </td>
                   <td className="px-3 py-2 text-xs text-atr-fg-muted">

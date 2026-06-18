@@ -100,12 +100,12 @@ async function assembleContext(projectDesaId: string): Promise<string> {
   const pdAny = pd as any;
   const lines: string[] = [];
   if (pdAny) {
-    lines.push(`Desa: ${pdAny.desa?.name ?? "—"}`);
+    lines.push(`Desa: ${pdAny.desa?.name ?? "-"}`);
     lines.push(
-      `Lokasi: ${[pdAny.desa?.kabupaten, pdAny.desa?.provinsi].filter(Boolean).join(", ") || "—"}`,
+      `Lokasi: ${[pdAny.desa?.kabupaten, pdAny.desa?.provinsi].filter(Boolean).join(", ") || "-"}`,
     );
     lines.push(`Klasifikasi: ${pdAny.desa?.current_classification ?? "unclassified"}`);
-    lines.push(`Project: ${pdAny.project?.name ?? "—"}`);
+    lines.push(`Project: ${pdAny.project?.name ?? "-"}`);
   }
 
   if (baseline) {
@@ -127,7 +127,7 @@ async function assembleContext(projectDesaId: string): Promise<string> {
     project_topik: { name: string };
   }>) {
     lines.push(
-      `  - ${inst.project_topik?.name ?? "—"}: ${Math.round(Number(inst.completion_percent))}% (${inst.status})`,
+      `  - ${inst.project_topik?.name ?? "-"}: ${Math.round(Number(inst.completion_percent))}% (${inst.status})`,
     );
   }
 

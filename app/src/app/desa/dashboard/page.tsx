@@ -82,7 +82,7 @@ export default async function DesaDashboardPage() {
             )}
           </div>
           <div className="text-right text-xs opacity-70">
-            <div>versi {classification?.criteria_version ?? "—"}</div>
+            <div>versi {classification?.criteria_version ?? "-"}</div>
             <div className="mt-1 font-mono">
               Skor: {Math.round(classification?.score ?? 0)}
             </div>

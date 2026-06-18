@@ -7,7 +7,7 @@ import { requireRole, getCurrentUser } from "@/lib/auth/rbac";
 import { audit } from "@/lib/audit";
 
 // =====================================================
-// Single-user CRUD — superadmin + mitra_admin can create
+// Single-user CRUD - superadmin + mitra_admin can create
 // peserta / narasumber / mitra_admin individually
 // without going through bulk import.
 // =====================================================
@@ -67,7 +67,7 @@ export async function upsertUser(input: z.input<typeof upsertSchema>): Promise<
   const parsed = upsertSchema.safeParse(input);
   if (!parsed.success) {
     const issue = parsed.error.issues[0];
-    return { error: `Input tidak valid: ${issue.path.join(".") || "field"} — ${issue.message}` };
+    return { error: `Input tidak valid: ${issue.path.join(".") || "field"} - ${issue.message}` };
   }
   const body = parsed.data;
   const access = await ensureAccess(body.global_role, body.organization_id ?? null);

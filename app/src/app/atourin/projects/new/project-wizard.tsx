@@ -350,17 +350,17 @@ export function ProjectWizard({
               <Row label="Nama" value={state.name} />
               <Row
                 label="Deskripsi"
-                value={state.description || "—"}
+                value={state.description || "-"}
               />
               <Row
                 label="Periode"
-                value={`${state.period_start || "—"} → ${state.period_end || "—"}`}
+                value={`${state.period_start || "-"} → ${state.period_end || "-"}`}
               />
               <Row
                 label="Template"
                 value={selectedTemplate?.name ?? "Blank"}
               />
-              <Row label="Mitra" value={selectedOrg?.name ?? "—"} />
+              <Row label="Mitra" value={selectedOrg?.name ?? "-"} />
               <Row
                 label="Modul aktif"
                 value={
@@ -371,7 +371,7 @@ export function ProjectWizard({
                   )
                     .filter((k) => state.enabled_modules[k])
                     .map((k) => MODULE_LABELS[k].split(" (")[0])
-                    .join(", ") || "—"
+                    .join(", ") || "-"
                 }
               />
             </dl>

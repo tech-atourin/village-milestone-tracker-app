@@ -12,7 +12,7 @@
 //   4. On success, removes the entry
 //
 // For PWA installs where peserta uploads evidence from a
-// village with patchy signal — they centang + upload,
+// village with patchy signal - they centang + upload,
 // app says "Tersimpan, menunggu sinkronisasi", then when
 // connection returns, the queue drains automatically.
 // =====================================================

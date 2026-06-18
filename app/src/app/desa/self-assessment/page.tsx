@@ -160,7 +160,7 @@ async function V1Tab({
     <section className="space-y-4">
       <div className="rounded-lg border border-atr-outline bg-atr-bg-soft p-3 text-xs text-atr-fg-muted">
         Master: <strong className="text-atr-fg">{master.version}</strong> ·
-        efektif {master.effective_from ?? "—"}
+        efektif {master.effective_from ?? "-"}
       </div>
       <SelfAssessmentList
         desaId={desaId}

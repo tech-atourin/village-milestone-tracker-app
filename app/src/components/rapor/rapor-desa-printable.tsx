@@ -16,7 +16,7 @@ import {
 import type { RaporDesaDetail } from "@/server/queries/rapor-desa";
 
 function formatDate(iso: string | null) {
-  if (!iso) return "—";
+  if (!iso) return "-";
   return new Intl.DateTimeFormat("id-ID", {
     day: "numeric",
     month: "short",
@@ -92,7 +92,7 @@ export function RaporDesaPrintable({
             {desa.name}
           </h1>
           <p className="mt-1 text-sm text-atr-fg-muted">
-            {[desa.kabupaten, desa.provinsi].filter(Boolean).join(", ") || "—"}
+            {[desa.kabupaten, desa.provinsi].filter(Boolean).join(", ") || "-"}
           </p>
           <div className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-atr-purple-50 px-2.5 py-0.5 text-xs font-bold text-atr-purple-600">
             <Award className="h-3 w-3" />
@@ -110,7 +110,7 @@ export function RaporDesaPrintable({
           ) : (
             <div className="text-right text-xs text-atr-fg-muted">
               <div className="font-bold text-atr-fg">
-                {project.organization?.name ?? "—"}
+                {project.organization?.name ?? "-"}
               </div>
               <div>powered by Atourin</div>
             </div>
@@ -131,7 +131,7 @@ export function RaporDesaPrintable({
             Periode
           </div>
           <div className="mt-1 font-bold text-atr-fg">
-            {formatDate(project.period_start)} —{" "}
+            {formatDate(project.period_start)} -{" "}
             {formatDate(project.period_end)}
           </div>
         </div>
@@ -150,18 +150,18 @@ export function RaporDesaPrintable({
           />
           <ScoreCard
             label="Avg Pre"
-            value={aggregate.avg_pre != null ? String(aggregate.avg_pre) : "—"}
+            value={aggregate.avg_pre != null ? String(aggregate.avg_pre) : "-"}
           />
           <ScoreCard
             label="Avg Post"
-            value={aggregate.avg_post != null ? String(aggregate.avg_post) : "—"}
+            value={aggregate.avg_post != null ? String(aggregate.avg_post) : "-"}
           />
           <ScoreCard
             label="Avg Improvement"
             value={
               aggregate.avg_improvement != null
                 ? `${aggregate.avg_improvement > 0 ? "+" : ""}${aggregate.avg_improvement}%`
-                : "—"
+                : "-"
             }
             accent
           />
@@ -172,7 +172,7 @@ export function RaporDesaPrintable({
             <strong className="text-atr-fg">
               {aggregate.avg_attendance != null
                 ? `${aggregate.avg_attendance}%`
-                : "—"}
+                : "-"}
             </strong>
           </div>
           <div>
@@ -234,7 +234,7 @@ export function RaporDesaPrintable({
             <span className="text-atr-fg">
               Rata-rata penilaian peserta desa ini ke narasumber:{" "}
               <strong>
-                ★ {narasumber.avg_rating?.toFixed(2) ?? "—"}
+                ★ {narasumber.avg_rating?.toFixed(2) ?? "-"}
               </strong>{" "}
               dari {narasumber.rating_count} penilaian.
             </span>
@@ -259,7 +259,7 @@ export function RaporDesaPrintable({
                     {n.sessions_count}
                   </td>
                   <td className="py-2 text-right font-bold text-atr-fg">
-                    {n.rating_count > 0 ? `★ ${n.avg_rating.toFixed(2)}` : "—"}
+                    {n.rating_count > 0 ? `★ ${n.avg_rating.toFixed(2)}` : "-"}
                   </td>
                   <td className="py-2 text-right text-atr-fg-muted">
                     {n.rating_count}
@@ -360,10 +360,10 @@ export function RaporDesaPrintable({
                     )}
                   </td>
                   <td className="px-3 py-2 text-right text-atr-fg">
-                    {p.pre_test_score ?? "—"}
+                    {p.pre_test_score ?? "-"}
                   </td>
                   <td className="px-3 py-2 text-right text-atr-fg">
-                    {p.post_test_score ?? "—"}
+                    {p.post_test_score ?? "-"}
                   </td>
                   <td className="px-3 py-2 text-right">
                     {p.improvement_percent != null ? (
@@ -379,11 +379,11 @@ export function RaporDesaPrintable({
                         {p.improvement_percent}%
                       </span>
                     ) : (
-                      "—"
+                      "-"
                     )}
                   </td>
                   <td className="px-3 py-2 text-right text-atr-fg">
-                    {p.attendance != null ? `${p.attendance}%` : "—"}
+                    {p.attendance != null ? `${p.attendance}%` : "-"}
                   </td>
                 </tr>
               ))}
@@ -451,7 +451,7 @@ function SwotQuad({
         {title}
       </header>
       {items.length === 0 ? (
-        <p className="text-[11px] italic text-atr-fg-muted">—</p>
+        <p className="text-[11px] italic text-atr-fg-muted">-</p>
       ) : (
         <ul className="space-y-1 text-[11px] text-atr-fg">
           {items.map((it, i) => (

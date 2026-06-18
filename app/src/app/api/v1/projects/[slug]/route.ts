@@ -7,7 +7,7 @@ import { rateLimit, ipFromHeaders } from "@/lib/rate-limit";
 // GET /api/v1/projects/[slug]
 // =====================================================
 // Public, read-only summary of a project. Same data as
-// /public/[slug] but JSON instead of HTML — for mitra
+// /public/[slug] but JSON instead of HTML - for mitra
 // integrations (BI dashboards, internal websites).
 //
 // Requires public_dashboard_enabled=true on the project.

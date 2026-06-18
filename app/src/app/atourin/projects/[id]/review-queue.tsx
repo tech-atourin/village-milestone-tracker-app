@@ -187,7 +187,7 @@ export function ReviewQueue({
                   </div>
                   <div className="mt-1 text-xs text-atr-fg-muted">
                     Desa {item.desa.name} ·{" "}
-                    {item.submitted_by?.full_name ?? "—"} ·{" "}
+                    {item.submitted_by?.full_name ?? "-"} ·{" "}
                     {item.submitted_at
                       ? new Intl.DateTimeFormat("id-ID", {
                           day: "numeric",
@@ -195,7 +195,7 @@ export function ReviewQueue({
                           hour: "2-digit",
                           minute: "2-digit",
                         }).format(new Date(item.submitted_at))
-                      : "—"}
+                      : "-"}
                     {item.evidence_count > 0 && (
                       <>
                         {" · "}

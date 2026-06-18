@@ -360,7 +360,7 @@ function AttachedDesaTable({
   const rows = attached.map((p) => ({
     ...p,
     desa_name: p.desa.name,
-    location: [p.desa.kabupaten, p.desa.provinsi].filter(Boolean).join(" · ") || "—",
+    location: [p.desa.kabupaten, p.desa.provinsi].filter(Boolean).join(" · ") || "-",
     tier: p.classification_at_start ?? "unclassified",
     progress: p.topik_summary.avg_pct,
   }));

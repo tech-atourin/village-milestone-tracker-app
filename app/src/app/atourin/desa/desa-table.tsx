@@ -252,7 +252,7 @@ export function DesaTable({
                       )}
                     </td>
                     <td className="px-4 py-3 text-xs text-atr-fg-muted">
-                      {[r.kabupaten, r.provinsi].filter(Boolean).join(", ") || "—"}
+                      {[r.kabupaten, r.provinsi].filter(Boolean).join(", ") || "-"}
                     </td>
                     <td className="px-4 py-3">
                       <span
@@ -266,7 +266,7 @@ export function DesaTable({
                         <ClipboardCheck className="mx-auto h-4 w-4 text-atr-arti" />
                       ) : (
                         <span className="text-[10px] italic text-atr-fg-muted">
-                          —
+                          -
                         </span>
                       )}
                     </td>
@@ -275,7 +275,7 @@ export function DesaTable({
                         <FileText className="mx-auto h-4 w-4 text-atr-arti" />
                       ) : (
                         <span className="text-[10px] italic text-atr-fg-muted">
-                          —
+                          -
                         </span>
                       )}
                     </td>

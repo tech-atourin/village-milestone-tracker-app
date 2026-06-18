@@ -64,7 +64,7 @@ export default async function RaporDesaIndexPage({
                   {r.desa_name}
                 </div>
                 <div className="text-xs text-atr-fg-muted">
-                  {[r.kabupaten, r.provinsi].filter(Boolean).join(", ") || "—"}
+                  {[r.kabupaten, r.provinsi].filter(Boolean).join(", ") || "-"}
                 </div>
                 <div className="mt-3 grid grid-cols-2 gap-3 text-xs sm:grid-cols-4">
                   <Stat
@@ -78,7 +78,7 @@ export default async function RaporDesaIndexPage({
                     value={
                       r.avg_improvement != null
                         ? `${r.avg_improvement > 0 ? "+" : ""}${r.avg_improvement}%`
-                        : "—"
+                        : "-"
                     }
                     icon={TrendingUp}
                   />
@@ -87,7 +87,7 @@ export default async function RaporDesaIndexPage({
                     value={
                       r.avg_pre != null && r.avg_post != null
                         ? `${r.avg_pre} → ${r.avg_post}`
-                        : "—"
+                        : "-"
                     }
                   />
                   <Stat

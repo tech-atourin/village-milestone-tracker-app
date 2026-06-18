@@ -12,7 +12,7 @@ import { serverEnv } from "@/lib/env";
 type CookieMutation = { name: string; value: string; options: CookieOptions };
 
 // =====================================================
-// Server client — for Server Components, Route Handlers,
+// Server client - for Server Components, Route Handlers,
 // and Server Actions. Reads/writes auth cookies via Next.
 // Scoped to `vmt` schema.
 // =====================================================
@@ -45,7 +45,7 @@ export function createClient() {
 }
 
 // =====================================================
-// Service-role client — bypasses RLS. Use ONLY in trusted
+// Service-role client - bypasses RLS. Use ONLY in trusted
 // server contexts (admin actions: bulk import, user create,
 // cron). Never expose to the browser.
 // =====================================================

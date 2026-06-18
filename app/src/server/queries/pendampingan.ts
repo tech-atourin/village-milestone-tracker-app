@@ -31,10 +31,10 @@ export async function listNarasumberSessions(
   return ((data ?? []) as any[]).map((r) => ({
     id: r.id,
     project_id: r.project_id,
-    project_name: r.project?.name ?? "—",
+    project_name: r.project?.name ?? "-",
     project_desa_id: r.project_desa_id,
     desa_id: r.project_desa?.desa_id ?? "",
-    desa_name: r.project_desa?.desa?.name ?? "—",
+    desa_name: r.project_desa?.desa?.name ?? "-",
     day_number: r.day_number,
     session_date: r.session_date,
     materi: r.materi,
@@ -83,7 +83,7 @@ export async function listNarasumberProjects(
     arr.push({
       project_desa_id: r.id,
       desa_id: r.desa_id,
-      desa_name: r.desa?.name ?? "—",
+      desa_name: r.desa?.name ?? "-",
     });
     desaByProject.set(r.project_id, arr);
   }
@@ -161,7 +161,7 @@ export async function getSessionDetail(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const attendance = ((attRaw ?? []) as any[]).map((a) => ({
     user_id: a.user_id,
-    full_name: a.user?.full_name ?? "—",
+    full_name: a.user?.full_name ?? "-",
     jabatan: a.user?.jabatan ?? null,
     gender: a.user?.gender ?? null,
     status: a.status,
@@ -182,13 +182,13 @@ export async function getSessionDetail(
   return {
     id: r.id,
     project_id: r.project_id,
-    project_name: r.project?.name ?? "—",
+    project_name: r.project?.name ?? "-",
     project_desa_id: r.project_desa_id,
-    desa_name: r.project_desa?.desa?.name ?? "—",
+    desa_name: r.project_desa?.desa?.name ?? "-",
     kabupaten: r.project_desa?.desa?.kabupaten ?? null,
     provinsi: r.project_desa?.desa?.provinsi ?? null,
     narasumber_id: r.narasumber_id,
-    narasumber_name: r.narasumber?.full_name ?? "—",
+    narasumber_name: r.narasumber?.full_name ?? "-",
     day_number: r.day_number,
     total_days: r.project?.total_pendampingan_days ?? 5,
     session_date: r.session_date,

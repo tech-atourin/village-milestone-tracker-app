@@ -26,7 +26,7 @@ export default async function MitraDesaDetailPage({
   ]);
   if (!data || !user) notFound();
 
-  // Hub assessment id for this desa (if any) — to fetch thread counts
+  // Hub assessment id for this desa (if any) - to fetch thread counts
   const supabase = createClient();
   const { data: hubA } = await supabase
     .from("hub_assessment")

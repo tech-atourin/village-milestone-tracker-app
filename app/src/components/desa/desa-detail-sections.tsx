@@ -37,7 +37,7 @@ const TIER_LABEL: Record<string, string> = {
 };
 
 function fmtDate(iso: string | null) {
-  if (!iso) return "—";
+  if (!iso) return "-";
   return new Intl.DateTimeFormat("id-ID", {
     day: "numeric",
     month: "short",
@@ -102,7 +102,7 @@ export function DesaDetailSections({
               <div className="min-w-0 flex-1">
                 <h2 className="text-xl font-bold text-atr-fg">{base.name}</h2>
                 <p className="text-sm text-atr-fg-muted">
-                  {[base.kabupaten, base.provinsi].filter(Boolean).join(", ") || "—"}
+                  {[base.kabupaten, base.provinsi].filter(Boolean).join(", ") || "-"}
                 </p>
                 <div className="mt-2 flex flex-wrap items-center gap-2">
                   <span
@@ -361,7 +361,7 @@ export function DesaDetailSections({
         )}
       </Section>
 
-      {/* Profil Pengelola (Jadesta-style data — filled by desa wisata at /desa/pengelola) */}
+      {/* Profil Pengelola (Jadesta-style data - filled by desa wisata at /desa/pengelola) */}
       <Section title="Profil Lembaga Pengelola" icon={Handshake}>
         {pengelola ? (
           <div className="space-y-4">
@@ -434,7 +434,7 @@ export function DesaDetailSections({
         events={profile?.events ?? null}
       />
 
-      {/* Self-Improvement Journey — only when we have a tier journey to show */}
+      {/* Self-Improvement Journey - only when we have a tier journey to show */}
       {journey && (
         <TierJourneyCard
           journey={journey}
@@ -496,7 +496,7 @@ export function DesaDetailSections({
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div>
               <div className="text-3xl font-bold text-atr-fg">
-                {hub_assessment.skor_total ?? "—"}%
+                {hub_assessment.skor_total ?? "-"}%
               </div>
               <div className="text-xs text-atr-fg-muted">
                 Status: {hub_assessment.status}
@@ -555,7 +555,7 @@ export function DesaDetailSections({
         )}
       </Section>
 
-      {/* Baseline meta — baseline is editable, not a one-shot submit */}
+      {/* Baseline meta - baseline is editable, not a one-shot submit */}
       {baseline_submitted_at && (
         <p className="text-center text-[11px] text-atr-fg-muted">
           Baseline terakhir diupdate {fmtDate(baseline_submitted_at)}
@@ -601,7 +601,7 @@ function Detail({
       </div>
       <div className="mt-0.5 inline-flex items-center gap-1.5 text-sm text-atr-fg">
         {Icon && value && <Icon className="h-3 w-3 text-atr-fg-muted" />}
-        {value ?? <span className="italic text-atr-fg-muted">—</span>}
+        {value ?? <span className="italic text-atr-fg-muted">-</span>}
       </div>
     </div>
   );
@@ -628,7 +628,7 @@ function RatingDisplay({
         {label}
       </div>
       <div className="mt-1 text-2xl font-bold text-atr-purple-600">
-        {value != null ? value : "—"}
+        {value != null ? value : "-"}
         <span className="text-xs font-normal text-atr-fg-muted">/5</span>
       </div>
     </div>

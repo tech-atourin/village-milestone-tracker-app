@@ -66,7 +66,7 @@ export async function listProjectDesa(
     return [];
   }
 
-  // Topik summary per desa (light query — could be a view later).
+  // Topik summary per desa (light query - could be a view later).
   const rows = (data ?? []) as unknown as Array<{
     id: string;
     classification_at_start: string | null;

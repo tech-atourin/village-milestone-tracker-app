@@ -9,7 +9,7 @@ import {
 // =====================================================
 // Generic AI provider interface.
 // Adapters: Gemini today, Claude / OpenAI tomorrow.
-// All AI calls in the app go through this — swapping
+// All AI calls in the app go through this - swapping
 // providers later means only this file changes.
 // =====================================================
 
@@ -65,7 +65,7 @@ class GeminiProvider implements AiProvider {
   }) {
     if (!this.client) {
       throw new Error(
-        "GEMINI_API_KEY is not configured — AI features disabled.",
+        "GEMINI_API_KEY is not configured - AI features disabled.",
       );
     }
     const modelId = model === "summary" ? this.modelSummary : this.modelReview;
