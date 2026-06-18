@@ -200,7 +200,9 @@ export async function getProjectAnalytics(
   // run a session in our session list (covers seeded data).
   const { data: ratingRows } = await supabase
     .from("narasumber_ratings")
-    .select("narasumber_id, rating, narasumber:users(full_name)")
+    .select(
+      "narasumber_id, rating, narasumber:users!narasumber_ratings_narasumber_id_fkey(full_name)",
+    )
     .eq("project_id", projectId);
   const ratingAgg = new Map<
     string,
