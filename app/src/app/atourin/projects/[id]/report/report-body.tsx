@@ -9,6 +9,15 @@ import { generateDesaSummary, type DesaSummary } from "@/lib/ai/desa-summary";
 import { aiProvider } from "@/lib/ai/provider";
 import { createAdminClient } from "@/lib/supabase/server";
 
+function fmtDateIdn(iso: string | null): string {
+  if (!iso) return "-";
+  return new Intl.DateTimeFormat("id-ID", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  }).format(new Date(iso));
+}
+
 async function tryGetSummary(
   projectDesaId: string,
 ): Promise<DesaSummary | null> {
@@ -181,7 +190,7 @@ export async function ReportBody({
           Laporan akhir program pendampingan
         </p>
         <p className="mt-2 text-xs text-atr-fg-muted">
-          {project.period_start} – {project.period_end}
+          {fmtDateIdn(project.period_start)} – {fmtDateIdn(project.period_end)}
         </p>
       </section>
 

@@ -71,6 +71,14 @@ export default async function SertifikatPage({
 
   const today = new Date();
   const certNo = `VMT/${params.id.slice(0, 6).toUpperCase()}/${params.userId.slice(0, 6).toUpperCase()}/${today.getFullYear()}`;
+  const fmtIdn = (iso: string | null) =>
+    iso
+      ? new Intl.DateTimeFormat("id-ID", {
+          day: "numeric",
+          month: "long",
+          year: "numeric",
+        }).format(new Date(iso))
+      : "-";
 
   return (
     <main className="min-h-screen bg-atr-bg-soft p-6 print:bg-white print:p-0">
@@ -190,7 +198,7 @@ export default async function SertifikatPage({
             <strong className="text-atr-purple-600">{project.name}</strong>
             <br />
             yang diselenggarakan oleh {project.organization?.name ?? "-"} bersama Atourin
-            pada periode {project.period_start} – {project.period_end}.
+            pada periode {fmtIdn(project.period_start)} – {fmtIdn(project.period_end)}.
           </p>
 
           {/* Achievement metrics */}
