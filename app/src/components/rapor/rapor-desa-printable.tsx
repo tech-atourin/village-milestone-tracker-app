@@ -70,7 +70,7 @@ export function RaporDesaPrintable({
         }}
       />
 
-      <div className="no-print mb-6 flex flex-wrap items-center justify-between gap-2">
+      <div className="no-print mb-6 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-atr-outline bg-atr-bg-soft p-3 text-xs text-atr-fg-muted">
         <Link
           href={backHref}
           className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-atr-outline bg-white px-3 text-xs font-bold text-atr-fg transition hover:bg-atr-bg-soft"
@@ -179,7 +179,14 @@ export function RaporDesaPrintable({
                 ? `${aggregate.avg_improvement > 0 ? "+" : ""}${aggregate.avg_improvement}%`
                 : "-"
             }
-            palette="purple-strong"
+            palette={
+              aggregate.avg_improvement != null && aggregate.avg_improvement > 0
+                ? "green"
+                : aggregate.avg_improvement != null &&
+                    aggregate.avg_improvement < 0
+                  ? "red"
+                  : "purple-strong"
+            }
             accent
           />
         </div>

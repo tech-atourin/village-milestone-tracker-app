@@ -17,5 +17,10 @@ export default async function MitraSertifikatPage({
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const orgId = (data.project as any).organization_id as string | null;
   if (orgId && orgId !== user.organization_id) notFound();
-  return <SertifikatView data={data} />;
+  return (
+    <SertifikatView
+      data={data}
+      backHref={`/mitra/projects/${params.id}/rapor/${params.userId}`}
+    />
+  );
 }

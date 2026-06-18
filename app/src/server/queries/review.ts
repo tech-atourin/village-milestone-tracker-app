@@ -24,23 +24,99 @@ export async function listReviewQueue(
   // staff (superadmin/mitra/narasumber) need admin client. Callers gate role.
   const supabase = createAdminClient();
 
-  // Two-hop: project_desa → desa_topik_instance → checklist_progress
-  // Pull everything joined in one go.
+  // Step 1: which desa_topik_instance IDs belong to this project? Cheap
+  // upfront filter that avoids PostgREST's deep-embed filter (which silently
+  // returns 0 rows when the join isn't proven inner).
+  const { data: instRows } = await supabase
+    .from("desa_topik_instance")
+    .select(
+      "id, project_topik:project_topik!inner(project_id), project_desa:project_desa(id, desa_id, desa:desa(id, name))",
+    )
+    .eq("project_topik.project_id", projectId);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const instances = (instRows ?? []) as any[];
+  if (instances.length === 0) return [];
+  const instanceIds = instances.map((i) => i.id as string);
+  const instMeta = new Map<
+    string,
+    {
+      topik_id: string;
+      project_desa_id: string;
+      desa_id: string;
+      desa_name: string;
+    }
+  >();
+  // We need topik too; re-pull topik names by ID set.
+  const topikIds = Array.from(
+    new Set(
+      instances
+        .map((i) => i.project_topik?.id as string | undefined)
+        .filter(Boolean) as string[],
+    ),
+  );
+  // Pull topik names (project_topik!inner above doesn't expose name in select).
+  const topikNameById = new Map<string, string>();
+  if (topikIds.length > 0) {
+    const { data: ptRows } = await supabase
+      .from("project_topik")
+      .select("id, name")
+      .in("id", topikIds);
+    for (const t of (ptRows ?? []) as Array<{ id: string; name: string }>) {
+      topikNameById.set(t.id, t.name);
+    }
+  }
+  // Stash meta per instance (need topik_id from the embed actually — re-query simpler):
+  const { data: instFullRows } = await supabase
+    .from("desa_topik_instance")
+    .select("id, project_topik_id, project_desa_id")
+    .in("id", instanceIds);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const pdIds = Array.from(
+    new Set(
+      ((instFullRows ?? []) as Array<{ project_desa_id: string }>).map(
+        (r) => r.project_desa_id,
+      ),
+    ),
+  );
+  const desaNameByPd = new Map<string, { desa_id: string; desa_name: string }>();
+  if (pdIds.length > 0) {
+    const { data: pdRows } = await supabase
+      .from("project_desa")
+      .select("id, desa_id, desa:desa(id, name)")
+      .in("id", pdIds);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    for (const pd of (pdRows ?? []) as any[]) {
+      desaNameByPd.set(pd.id, {
+        desa_id: pd.desa?.id ?? "",
+        desa_name: pd.desa?.name ?? "-",
+      });
+    }
+  }
+  for (const inst of (instFullRows ?? []) as Array<{
+    id: string;
+    project_topik_id: string;
+    project_desa_id: string;
+  }>) {
+    const meta = desaNameByPd.get(inst.project_desa_id);
+    instMeta.set(inst.id, {
+      topik_id: inst.project_topik_id,
+      project_desa_id: inst.project_desa_id,
+      desa_id: meta?.desa_id ?? "",
+      desa_name: meta?.desa_name ?? "-",
+    });
+  }
+
+  // Step 2: fetch checklist_progress rows for those instances.
   let query = supabase
     .from("checklist_progress")
     .select(
       `
-      id, status, submitted_at, reviewed_at, review_note,
+      id, desa_topik_instance_id, status, submitted_at, reviewed_at, review_note,
       project_checklist_item:project_checklist_item(id, title, description),
-      desa_topik_instance:desa_topik_instance(
-        id,
-        project_topik:project_topik(id, name),
-        project_desa:project_desa!inner(id, project_id, desa:desa(id, name))
-      ),
-      submitted_by:users(id, full_name)
+      submitted_by:users!checklist_progress_submitted_by_fkey(id, full_name)
     `,
     )
-    .eq("desa_topik_instance.project_desa.project_id", projectId)
+    .in("desa_topik_instance_id", instanceIds)
     .order("submitted_at", { ascending: false, nullsFirst: false })
     .limit(200);
 
@@ -69,31 +145,39 @@ export async function listReviewQueue(
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  return (data ?? []).map((r: any) => ({
-    checklist_progress_id: r.id,
-    status: r.status,
-    submitted_at: r.submitted_at,
-    reviewed_at: r.reviewed_at,
-    review_note: r.review_note,
-    checklist_item: {
-      id: r.project_checklist_item?.id,
-      title: r.project_checklist_item?.title,
-      description: r.project_checklist_item?.description,
-    },
-    topik: {
-      id: r.desa_topik_instance?.project_topik?.id,
-      name: r.desa_topik_instance?.project_topik?.name,
-    },
-    desa: {
-      id: r.desa_topik_instance?.project_desa?.desa?.id,
-      name: r.desa_topik_instance?.project_desa?.desa?.name,
-    },
-    project_desa_id: r.desa_topik_instance?.project_desa?.id,
-    submitted_by: r.submitted_by
-      ? { id: r.submitted_by.id, full_name: r.submitted_by.full_name }
-      : null,
-    evidence_count: counts.get(r.id) ?? 0,
-  }));
+  return (data ?? []).map((r: any) => {
+    const meta = instMeta.get(r.desa_topik_instance_id) ?? {
+      topik_id: "",
+      project_desa_id: "",
+      desa_id: "",
+      desa_name: "-",
+    };
+    return {
+      checklist_progress_id: r.id as string,
+      status: r.status as ReviewQueueItem["status"],
+      submitted_at: r.submitted_at as string | null,
+      reviewed_at: r.reviewed_at as string | null,
+      review_note: r.review_note as string | null,
+      checklist_item: {
+        id: r.project_checklist_item?.id as string,
+        title: r.project_checklist_item?.title as string,
+        description: (r.project_checklist_item?.description as string) ?? null,
+      },
+      topik: {
+        id: meta.topik_id,
+        name: topikNameById.get(meta.topik_id) ?? "-",
+      },
+      desa: { id: meta.desa_id, name: meta.desa_name },
+      project_desa_id: meta.project_desa_id,
+      submitted_by: r.submitted_by
+        ? {
+            id: r.submitted_by.id as string,
+            full_name: r.submitted_by.full_name as string,
+          }
+        : null,
+      evidence_count: counts.get(r.id) ?? 0,
+    };
+  });
 }
 
 // =====================================================

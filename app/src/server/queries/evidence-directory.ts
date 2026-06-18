@@ -50,13 +50,16 @@ export async function listProjectEvidenceDirectory(
   }
 
   // Step 2: every evidence_file under those project_desa, with uploader.
+  // NOTE: column is `uploaded_at` (not created_at) and we filter out
+  // soft-deleted rows.
   const { data: fileRows } = await supabase
     .from("evidence_files")
     .select(
-      "id, project_desa_id, file_url, file_type, original_filename, caption, file_size_bytes, created_at, uploaded_by, uploader:users!evidence_files_uploaded_by_fkey(id, full_name)",
+      "id, project_desa_id, file_url, file_type, original_filename, caption, file_size_bytes, uploaded_at, uploaded_by, uploader:users!evidence_files_uploaded_by_fkey(id, full_name)",
     )
     .in("project_desa_id", projectDesaIds)
-    .order("created_at", { ascending: false })
+    .is("deleted_at", null)
+    .order("uploaded_at", { ascending: false })
     .limit(1000);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const files = (fileRows ?? []) as any[];
@@ -133,7 +136,7 @@ export async function listProjectEvidenceDirectory(
       original_filename: (f.original_filename as string) ?? null,
       caption: (f.caption as string) ?? null,
       file_size_bytes: (f.file_size_bytes as number) ?? null,
-      uploaded_at: (f.created_at as string) ?? null,
+      uploaded_at: (f.uploaded_at as string) ?? null,
       uploader: f.uploader
         ? {
             id: f.uploader.id as string,

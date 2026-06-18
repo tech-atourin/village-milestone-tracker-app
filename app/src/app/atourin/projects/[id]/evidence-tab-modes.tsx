@@ -19,29 +19,23 @@ export function EvidenceTabModes({
   const [mode, setMode] = useState<Mode>("directory");
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <nav
-          className="inline-flex rounded-lg border border-atr-outline bg-white p-0.5 text-xs"
-          role="tablist"
-        >
-          <ModeChip
-            label={directoryLabel}
-            icon={FolderTree}
-            active={mode === "directory"}
-            onClick={() => setMode("directory")}
-          />
-          <ModeChip
-            label={queueLabel}
-            icon={ClipboardCheck}
-            active={mode === "queue"}
-            onClick={() => setMode("queue")}
-          />
-        </nav>
-        <p className="text-[11px] text-atr-fg-muted">
-          Review per-item kini ada di{" "}
-          <strong className="text-atr-fg">Detail Desa per Topik</strong>.
-        </p>
-      </div>
+      <nav
+        className="inline-flex rounded-lg border border-atr-outline bg-white p-0.5 text-xs"
+        role="tablist"
+      >
+        <ModeChip
+          label={directoryLabel}
+          icon={FolderTree}
+          active={mode === "directory"}
+          onClick={() => setMode("directory")}
+        />
+        <ModeChip
+          label={queueLabel}
+          icon={ClipboardCheck}
+          active={mode === "queue"}
+          onClick={() => setMode("queue")}
+        />
+      </nav>
       {mode === "directory" ? directory : queue}
     </div>
   );

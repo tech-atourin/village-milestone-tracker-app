@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { requireRole } from "@/lib/auth/rbac";
 
 // =====================================================
@@ -170,4 +170,152 @@ export async function deleteChecklistItem(
   if (error) return { error: error.message };
   revalidatePath(`/atourin/projects/${parsed.data.project_id}`);
   return { ok: true };
+}
+
+// =====================================================
+// Apply template - clone template_topik + items into a project that has
+// no topiks yet. Mirrors the cloning inside the create_project_from_template
+// RPC so it can be invoked after project creation.
+// =====================================================
+const applyTemplateSchema = z.object({
+  project_id: z.string().uuid(),
+  template_id: z.string().uuid(),
+});
+
+export async function applyTemplateToProject(
+  input: z.input<typeof applyTemplateSchema>,
+) {
+  await requireRole("superadmin", "mitra_admin");
+  const parsed = applyTemplateSchema.safeParse(input);
+  if (!parsed.success) return { error: "Input tidak valid" };
+
+  const supabase = createAdminClient();
+
+  // Refuse if project already has topiks - prevents accidental duplication.
+  const { count: existingTopik } = await supabase
+    .from("project_topik")
+    .select("id", { count: "exact", head: true })
+    .eq("project_id", parsed.data.project_id);
+  if ((existingTopik ?? 0) > 0) {
+    return {
+      error:
+        "Project sudah punya topik. Hapus topik dulu kalau mau apply template baru.",
+    };
+  }
+
+  // Pull template topiks + their items.
+  const { data: tmplTopik } = await supabase
+    .from("template_topik")
+    .select("id, name, description, sort_order")
+    .eq("template_id", parsed.data.template_id)
+    .order("sort_order");
+  const topiks = ((tmplTopik ?? []) as Array<{
+    id: string;
+    name: string;
+    description: string | null;
+    sort_order: number;
+  }>);
+  if (topiks.length === 0) return { error: "Template kosong (tidak ada topik)." };
+
+  const { data: tmplItems } = await supabase
+    .from("template_checklist_item")
+    .select(
+      "template_topik_id, title, description, reference_url, required, sort_order",
+    )
+    .in(
+      "template_topik_id",
+      topiks.map((t) => t.id),
+    )
+    .order("sort_order");
+  const itemsByTopik = new Map<
+    string,
+    Array<{
+      title: string;
+      description: string | null;
+      reference_url: string | null;
+      required: boolean;
+      sort_order: number;
+    }>
+  >();
+  for (const it of (tmplItems ?? []) as Array<{
+    template_topik_id: string;
+    title: string;
+    description: string | null;
+    reference_url: string | null;
+    required: boolean;
+    sort_order: number;
+  }>) {
+    const arr = itemsByTopik.get(it.template_topik_id) ?? [];
+    arr.push({
+      title: it.title,
+      description: it.description,
+      reference_url: it.reference_url,
+      required: it.required,
+      sort_order: it.sort_order,
+    });
+    itemsByTopik.set(it.template_topik_id, arr);
+  }
+
+  // Insert project_topik rows + their items.
+  for (const t of topiks) {
+    const { data: created, error: ptErr } = await supabase
+      .from("project_topik")
+      .insert({
+        project_id: parsed.data.project_id,
+        name: t.name,
+        description: t.description,
+        source_template_topik_id: t.id,
+        sort_order: t.sort_order,
+      })
+      .select("id")
+      .single();
+    if (ptErr || !created) return { error: ptErr?.message ?? "Gagal apply topik" };
+    const newTopikId = (created as { id: string }).id;
+
+    const items = itemsByTopik.get(t.id) ?? [];
+    if (items.length > 0) {
+      const { error: ciErr } = await supabase
+        .from("project_checklist_item")
+        .insert(
+          items.map((it) => ({
+            project_topik_id: newTopikId,
+            title: it.title,
+            description: it.description,
+            reference_url: it.reference_url,
+            required: it.required,
+            sort_order: it.sort_order,
+          })),
+        );
+      if (ciErr) return { error: ciErr.message };
+    }
+  }
+
+  // Materialize desa_topik_instance for each project_desa already attached.
+  const { data: pdRows } = await supabase
+    .from("project_desa")
+    .select("id")
+    .eq("project_id", parsed.data.project_id);
+  const { data: newTopikRows } = await supabase
+    .from("project_topik")
+    .select("id")
+    .eq("project_id", parsed.data.project_id);
+  const pdIds = ((pdRows ?? []) as Array<{ id: string }>).map((r) => r.id);
+  const newTopikIds = ((newTopikRows ?? []) as Array<{ id: string }>).map(
+    (r) => r.id,
+  );
+  if (pdIds.length > 0 && newTopikIds.length > 0) {
+    const rows = pdIds.flatMap((pdId) =>
+      newTopikIds.map((tid) => ({
+        project_desa_id: pdId,
+        project_topik_id: tid,
+      })),
+    );
+    await supabase
+      .from("desa_topik_instance")
+      .upsert(rows, { onConflict: "project_desa_id,project_topik_id" });
+  }
+
+  revalidatePath(`/atourin/projects/${parsed.data.project_id}`);
+  revalidatePath(`/mitra/projects/${parsed.data.project_id}`);
+  return { ok: true, topikCount: topiks.length };
 }

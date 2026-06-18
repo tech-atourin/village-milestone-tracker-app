@@ -9,6 +9,7 @@ import { listProjectDesa, listDesa } from "@/server/queries/desa";
 import type { ProjectMemberRow } from "@/server/queries/memberships";
 import type { UserListRow } from "@/server/queries/users";
 import { listProjectTopikWithItems } from "@/server/queries/topik";
+import { listTemplates } from "@/server/queries/projects";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { DesaTab } from "@/app/atourin/projects/[id]/desa-tab";
 import { PesertaTab } from "@/app/atourin/projects/[id]/peserta-tab";
@@ -304,8 +305,23 @@ async function NarasumberTabLoader({ projectId }: { projectId: string }) {
 }
 
 async function TopikTabLoader({ projectId }: { projectId: string }) {
-  const topik = await listProjectTopikWithItems(projectId);
-  return <TopikTab projectId={projectId} topik={topik} editable />;
+  const [topik, templates] = await Promise.all([
+    listProjectTopikWithItems(projectId),
+    listTemplates(),
+  ]);
+  return (
+    <TopikTab
+      projectId={projectId}
+      topik={topik}
+      editable
+      templates={templates.map((t) => ({
+        id: t.id,
+        name: t.name,
+        topik_count: t.topik_count,
+        checklist_count: t.checklist_count,
+      }))}
+    />
+  );
 }
 
 async function EvidenceTabLoader({

@@ -367,7 +367,7 @@ function AttachedDesaTable({
     ...p,
     desa_name: p.desa.name,
     location: [p.desa.kabupaten, p.desa.provinsi].filter(Boolean).join(" · ") || "-",
-    tier: p.classification_at_start ?? "unclassified",
+    tier: p.desa.current_classification ?? "unclassified",
     progress: p.topik_summary.avg_pct,
   }));
   type Row = (typeof rows)[number];
@@ -383,7 +383,7 @@ function AttachedDesaTable({
     { accessorKey: "location", header: "Lokasi" },
     {
       accessorKey: "tier",
-      header: "Tier saat masuk",
+      header: "Klasifikasi Desa",
       cell: ({ getValue }) => {
         const t = (getValue() as string) as keyof typeof TIER_LABEL;
         return (
@@ -463,7 +463,7 @@ function AttachedDesaTable({
       searchKeys={["desa_name", "location"]}
       searchPlaceholder="Cari nama desa atau lokasi…"
       filters={[
-        { key: "tier", label: "Tier saat masuk", options: tierOptions },
+        { key: "tier", label: "Klasifikasi Desa", options: tierOptions },
       ]}
     />
   );

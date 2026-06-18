@@ -1,13 +1,17 @@
 import Image from "next/image";
+import Link from "next/link";
+import { ArrowLeft } from "lucide-react";
 
 const ELIGIBILITY_THRESHOLD = 20;
 
 export function SertifikatView({
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   data,
+  backHref,
 }: {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   data: any;
+  backHref?: string;
 }) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const project = data.project as any;
@@ -49,16 +53,27 @@ export function SertifikatView({
         }}
       />
 
-      <div className="no-print mb-6 rounded-lg border border-atr-outline bg-atr-bg-soft p-3 text-xs text-atr-fg-muted">
-        <strong className="text-atr-fg">Tips:</strong> Cetak (Ctrl/⌘+P) → pilih
-        layout <strong>landscape</strong> + ukuran A4 → Save as PDF.
-        {!eligible && (
-          <span className="ml-2 rounded-md bg-atr-yellow/20 px-1.5 py-0.5 font-bold text-atr-fg">
-            Catatan: peningkatan {delta ?? "-"}% belum mencapai ambang batas
-            ({ELIGIBILITY_THRESHOLD}%). Sertifikat tetap bisa dicetak sebagai
-            tanda partisipasi.
-          </span>
-        )}
+      <div className="no-print mb-6 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-atr-outline bg-atr-bg-soft p-3 text-xs text-atr-fg-muted">
+        {backHref ? (
+          <Link
+            href={backHref}
+            className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-atr-outline bg-white px-3 text-xs font-bold text-atr-fg transition hover:bg-atr-bg-soft"
+          >
+            <ArrowLeft className="h-3.5 w-3.5" />
+            Kembali
+          </Link>
+        ) : <span />}
+        <div className="flex-1 text-right">
+          <strong className="text-atr-fg">Tips:</strong> Cetak (Ctrl/⌘+P) →
+          pilih layout <strong>landscape</strong> + ukuran A4 → Save as PDF.
+          {!eligible && (
+            <span className="ml-2 rounded-md bg-atr-yellow/20 px-1.5 py-0.5 font-bold text-atr-fg">
+              Peningkatan {delta ?? "-"}% belum mencapai ambang batas
+              ({ELIGIBILITY_THRESHOLD}%). Sertifikat tetap bisa dicetak sebagai
+              tanda partisipasi.
+            </span>
+          )}
+        </div>
       </div>
 
       <article className="print-frame relative mx-auto aspect-[1.414/1] w-full max-w-[1100px] overflow-hidden border-[12px] border-double border-atr-purple/40 bg-gradient-to-br from-atr-purple-50/60 to-white p-10 shadow-atr-3">
@@ -127,7 +142,9 @@ export function SertifikatView({
               <ScoreCell
                 label="Peningkatan"
                 value={`${delta! > 0 ? "+" : ""}${delta}%`}
-                emphasis={eligible ? "green" : "muted"}
+                emphasis={
+                  delta! > 0 ? "green" : delta! < 0 ? "red" : "muted"
+                }
               />
             </div>
           )}
@@ -166,7 +183,7 @@ function ScoreCell({
   label: string;
   value: number | string;
   highlight?: boolean;
-  emphasis?: "green" | "muted";
+  emphasis?: "green" | "red" | "muted";
 }) {
   return (
     <div
@@ -183,9 +200,11 @@ function ScoreCell({
         className={`mt-1 text-lg font-bold ${
           emphasis === "green"
             ? "text-atr-arti"
-            : highlight
-              ? "text-atr-purple-600"
-              : "text-atr-fg"
+            : emphasis === "red"
+              ? "text-atr-red"
+              : highlight
+                ? "text-atr-purple-600"
+                : "text-atr-fg"
         }`}
       >
         {value}

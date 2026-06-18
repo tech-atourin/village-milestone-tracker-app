@@ -116,13 +116,18 @@ function Stat({
   hint?: string;
   icon?: React.ComponentType<{ className?: string }>;
 }) {
+  const tone = value.startsWith("+")
+    ? "text-atr-arti"
+    : value.startsWith("-")
+      ? "text-atr-red"
+      : "text-atr-fg";
   return (
     <div>
       <div className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wide text-atr-fg-muted">
         {Icon && <Icon className="h-3 w-3" />}
         {label}
       </div>
-      <div className="mt-0.5 text-sm font-bold text-atr-fg">{value}</div>
+      <div className={`mt-0.5 text-sm font-bold ${tone}`}>{value}</div>
       {hint && <div className="text-[10px] text-atr-fg-muted">{hint}</div>}
     </div>
   );

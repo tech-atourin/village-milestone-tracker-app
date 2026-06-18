@@ -85,14 +85,50 @@ export async function ProjectDesaDetailView({
   const detail = await getProjectDesa(projectId, projectDesaId);
   if (!detail) return null;
 
-  const [topik, topikGroups, cachedSummary, cachedRec, cachedSwot] =
-    await Promise.all([
-      listPesertaTopik(projectDesaId),
-      listTopikReviewForDesa(projectDesaId),
-      fetchCachedInsight<DesaSummary>(projectDesaId, "summary"),
-      fetchCachedInsight<DesaRecommendation>(projectDesaId, "recommendation"),
-      fetchCachedInsight<DesaSwot>(projectDesaId, "swot"),
-    ]);
+  const supabase = createClient();
+  const [
+    topik,
+    topikGroups,
+    cachedSummary,
+    cachedRec,
+    cachedSwot,
+    sessionCounts,
+    actionPlanCounts,
+  ] = await Promise.all([
+    listPesertaTopik(projectDesaId),
+    listTopikReviewForDesa(projectDesaId),
+    fetchCachedInsight<DesaSummary>(projectDesaId, "summary"),
+    fetchCachedInsight<DesaRecommendation>(projectDesaId, "recommendation"),
+    fetchCachedInsight<DesaSwot>(projectDesaId, "swot"),
+    // Narasumber sessions with content (materi or aktivitas filled)
+    supabase
+      .from("pendampingan_sessions")
+      .select("id, materi, aktivitas, status")
+      .eq("project_desa_id", projectDesaId)
+      .then(({ data }) => {
+        const rows = (data ?? []) as Array<{
+          materi: string | null;
+          aktivitas: string | null;
+          status: string;
+        }>;
+        return rows.filter(
+          (r) =>
+            r.status === "verified" ||
+            (r.materi && r.materi.trim().length > 5) ||
+            (r.aktivitas && r.aktivitas.trim().length > 5),
+        ).length;
+      }),
+    // Action plans that have moved past "rencana" (started)
+    supabase
+      .from("desa_action_plans")
+      .select("status")
+      .eq("project_desa_id", projectDesaId)
+      .then(({ data }) => {
+        const rows = (data ?? []) as Array<{ status: string }>;
+        const started = rows.filter((r) => r.status !== "rencana").length;
+        return { total: rows.length, started };
+      }),
+  ]);
   const aiReady = aiProvider().isReady();
   const overall =
     topik.length > 0
@@ -101,6 +137,36 @@ export async function ProjectDesaDetailView({
   const approvedTotal = topik.reduce((acc, t) => acc + t.approved_items, 0);
   const pendingTotal = topik.reduce((acc, t) => acc + t.pending_items, 0);
   const itemTotal = topik.reduce((acc, t) => acc + t.total_items, 0);
+
+  // Gate AI section: only show when pendampingan is "complete enough" so the
+  // AI input data is meaningful. Checks:
+  // 1. Every topik fully approved (no pending, approved === total, total > 0)
+  // 2. At least one narasumber session has content / is verified
+  // 3. At least one rencana aksi has started (status !== 'rencana')
+  const allTopikDone =
+    topikGroups.length > 0 &&
+    topikGroups.every(
+      (g) =>
+        g.total_count > 0 &&
+        g.pending_count === 0 &&
+        g.approved_count === g.total_count,
+    );
+  const aiUnlocked =
+    allTopikDone && sessionCounts > 0 && actionPlanCounts.started > 0;
+  const aiPrerequisites = [
+    {
+      met: allTopikDone,
+      label: "Semua topik checklist sudah disetujui (tidak ada pending)",
+    },
+    {
+      met: sessionCounts > 0,
+      label: "Narasumber sudah mengisi catatan pendampingan",
+    },
+    {
+      met: actionPlanCounts.started > 0,
+      label: "Rencana aksi sudah mulai dikerjakan",
+    },
+  ];
 
   return (
     <div className="space-y-6">
@@ -155,33 +221,74 @@ export async function ProjectDesaDetailView({
         <SummaryCard label="Menunggu review" value={pendingTotal.toString()} />
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-2">
-        <AiSummaryCard
-          projectDesaId={projectDesaId}
-          initialSummary={cachedSummary.content}
-          initialError={
-            aiReady ? null : "GEMINI_API_KEY belum di-set di .env.local."
-          }
-          cached={cachedSummary.cached}
-        />
-        <AiRecommendationCard
-          projectDesaId={projectDesaId}
-          initialData={cachedRec.content}
-          initialError={
-            aiReady ? null : "GEMINI_API_KEY belum di-set di .env.local."
-          }
-          cached={cachedRec.cached}
-        />
-      </div>
+      {aiUnlocked ? (
+        <>
+          <div className="grid gap-4 lg:grid-cols-2">
+            <AiSummaryCard
+              projectDesaId={projectDesaId}
+              initialSummary={cachedSummary.content}
+              initialError={
+                aiReady ? null : "GEMINI_API_KEY belum di-set di .env.local."
+              }
+              cached={cachedSummary.cached}
+            />
+            <AiRecommendationCard
+              projectDesaId={projectDesaId}
+              initialData={cachedRec.content}
+              initialError={
+                aiReady ? null : "GEMINI_API_KEY belum di-set di .env.local."
+              }
+              cached={cachedRec.cached}
+            />
+          </div>
 
-      <SwotCard
-        projectDesaId={projectDesaId}
-        initialSwot={cachedSwot.content}
-        initialError={
-          aiReady ? null : "GEMINI_API_KEY belum di-set di .env.local."
-        }
-        cached={cachedSwot.cached}
-      />
+          <SwotCard
+            projectDesaId={projectDesaId}
+            initialSwot={cachedSwot.content}
+            initialError={
+              aiReady ? null : "GEMINI_API_KEY belum di-set di .env.local."
+            }
+            cached={cachedSwot.cached}
+          />
+        </>
+      ) : (
+        <section className="rounded-2xl border border-dashed border-atr-outline bg-atr-bg-soft/40 p-5">
+          <header className="mb-3 flex items-center gap-2">
+            <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-atr-purple-50 text-atr-purple">
+              ✨
+            </span>
+            <div>
+              <h3 className="text-sm font-bold text-atr-fg">
+                Analisis AI (Summary, Rekomendasi, SWOT)
+              </h3>
+              <p className="text-xs text-atr-fg-muted">
+                Akan muncul otomatis setelah pendampingan cukup matang untuk
+                dianalisis.
+              </p>
+            </div>
+          </header>
+          <ul className="space-y-1.5 text-xs">
+            {aiPrerequisites.map((p, i) => (
+              <li key={i} className="flex items-start gap-2">
+                <span
+                  className={`mt-0.5 inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-[10px] font-bold ${
+                    p.met
+                      ? "bg-atr-arti/20 text-atr-arti"
+                      : "bg-atr-outline/40 text-atr-fg-muted"
+                  }`}
+                >
+                  {p.met ? "✓" : "•"}
+                </span>
+                <span
+                  className={p.met ? "text-atr-fg" : "text-atr-fg-muted"}
+                >
+                  {p.label}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       <TopikReviewer
         projectId={projectId}

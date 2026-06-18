@@ -13,5 +13,10 @@ export default async function SertifikatPage({
   await requireRole("superadmin");
   const data = await loadRapor(params.id, params.userId);
   if (!data.project || !data.user) notFound();
-  return <SertifikatView data={data} />;
+  return (
+    <SertifikatView
+      data={data}
+      backHref={`/atourin/projects/${params.id}/rapor/${params.userId}`}
+    />
+  );
 }

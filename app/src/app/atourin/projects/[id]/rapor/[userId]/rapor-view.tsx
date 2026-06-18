@@ -285,7 +285,17 @@ export function RaporView({
             <div className="text-xs font-bold uppercase tracking-wide text-atr-fg-muted">
               Improvement
             </div>
-            <div className="mt-2 text-3xl font-bold text-atr-purple-600">
+            <div
+              className={`mt-2 text-3xl font-bold ${
+                delta == null
+                  ? "text-atr-fg"
+                  : delta > 0
+                    ? "text-atr-arti"
+                    : delta < 0
+                      ? "text-atr-red"
+                      : "text-atr-fg"
+              }`}
+            >
               {delta !== null ? `${delta > 0 ? "+" : ""}${delta}%` : "-"}
             </div>
           </div>
@@ -408,10 +418,11 @@ export function RaporView({
 
       <div className="mt-8 flex items-center justify-between text-[10px] text-atr-fg-muted">
         <span>
-          Generated{" "}
-          {rapor?.generated_at
-            ? new Date(rapor.generated_at).toLocaleDateString("id-ID")
-            : "-"}
+          Rapor Peserta -{" "}
+          {new Date(rapor?.generated_at ?? Date.now()).toLocaleDateString(
+            "id-ID",
+            { day: "numeric", month: "long", year: "numeric" },
+          )}
         </span>
         <div className="flex items-center gap-2">
           <Image src="/logo/vmt/vmt-mark.svg" alt="VMT" width={20} height={20} />

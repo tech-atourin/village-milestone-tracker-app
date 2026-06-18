@@ -191,9 +191,9 @@ export function NarasumberDetailView({
                         {r.desa_names.map((d) => (
                           <span
                             key={d}
-                            className="inline-flex rounded-full bg-atr-purple-50 px-2 py-0.5 text-[10px] font-bold text-atr-purple-600"
+                            className="inline-flex items-center gap-1 rounded-full bg-atr-purple-50 px-2 py-0.5 text-[10px] font-bold leading-none text-atr-purple-600"
                           >
-                            <MapPin className="mr-0.5 h-2.5 w-2.5" />
+                            <MapPin className="h-2.5 w-2.5" />
                             {d}
                           </span>
                         ))}

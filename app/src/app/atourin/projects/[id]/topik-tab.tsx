@@ -18,17 +18,28 @@ import {
   addChecklistItem,
   updateChecklistItem,
   deleteChecklistItem,
+  applyTemplateToProject,
 } from "@/server/actions/topik";
 import type { ProjectTopikWithItems } from "@/server/queries/topik";
+import { LayoutTemplate, Sparkles } from "lucide-react";
+
+export type TopikTemplateLite = {
+  id: string;
+  name: string;
+  topik_count: number;
+  checklist_count: number;
+};
 
 export function TopikTab({
   projectId,
   topik,
   editable = false,
+  templates = [],
 }: {
   projectId?: string;
   topik: ProjectTopikWithItems[];
   editable?: boolean;
+  templates?: TopikTemplateLite[];
 }) {
   const router = useRouter();
   const [, startTransition] = useTransition();
@@ -40,6 +51,23 @@ export function TopikTab({
   const [editingItem, setEditingItem] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [selectedTemplate, setSelectedTemplate] = useState<string>("");
+
+  function applyTemplate() {
+    if (!projectId || !selectedTemplate) return;
+    if (
+      !confirm(
+        "Apply template ini ke project? Topik + checklist akan di-clone otomatis.",
+      )
+    )
+      return;
+    run(async () =>
+      applyTemplateToProject({
+        project_id: projectId,
+        template_id: selectedTemplate,
+      }),
+    );
+  }
 
   function run(fn: () => Promise<{ error?: string } | undefined>) {
     setError(null);
@@ -89,6 +117,57 @@ export function TopikTab({
           {error}
         </div>
       )}
+
+      {editable &&
+        projectId &&
+        topik.length === 0 &&
+        templates.length > 0 && (
+          <div className="rounded-2xl border border-atr-purple/30 bg-gradient-to-br from-atr-purple-50/60 to-white p-5 shadow-atr-1">
+            <div className="flex items-start gap-3">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-atr-purple-50 text-atr-purple">
+                <LayoutTemplate className="h-5 w-5" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <h4 className="inline-flex items-center gap-1.5 text-sm font-bold text-atr-fg">
+                  <Sparkles className="h-3.5 w-3.5 text-atr-purple" />
+                  Mulai cepat dengan template
+                </h4>
+                <p className="mt-0.5 text-xs text-atr-fg-muted">
+                  Pakai template yang sudah dibuat di menu Templates untuk
+                  bootstrap topik + checklist project ini sekaligus.
+                </p>
+                <div className="mt-3 flex flex-wrap items-center gap-2">
+                  <select
+                    value={selectedTemplate}
+                    onChange={(e) => setSelectedTemplate(e.target.value)}
+                    className="h-9 min-w-[220px] rounded-md border border-atr-outline bg-white px-2 text-sm outline-none focus:border-atr-purple"
+                  >
+                    <option value="">Pilih template…</option>
+                    {templates.map((t) => (
+                      <option key={t.id} value={t.id}>
+                        {t.name} ({t.topik_count} topik · {t.checklist_count}{" "}
+                        item)
+                      </option>
+                    ))}
+                  </select>
+                  <button
+                    type="button"
+                    onClick={applyTemplate}
+                    disabled={!selectedTemplate || pending}
+                    className="inline-flex h-9 items-center gap-1.5 rounded-md bg-atr-purple px-3 text-sm font-bold text-white transition hover:bg-atr-purple-600 disabled:opacity-50"
+                  >
+                    {pending ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    ) : (
+                      <Sparkles className="h-3.5 w-3.5" />
+                    )}
+                    Apply Template
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
       {editable && showAddTopik && projectId && (
         <div className="rounded-2xl border border-atr-outline bg-white p-5 shadow-atr-1">

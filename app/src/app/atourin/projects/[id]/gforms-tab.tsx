@@ -111,16 +111,11 @@ export function GformsTab({
 
   return (
     <div className="space-y-6">
-      {/* Section 1: GForm config */}
-      <GformsPanel projectId={projectId} gforms={gforms} />
-
-      {/* Section 2: Test Results - chip nav per jenis */}
+      {/* Section 1: Test Results - chip nav per jenis */}
       <section className="space-y-4 rounded-2xl border border-atr-outline bg-white p-6 shadow-atr-1">
         <header className="flex items-center gap-2">
           <FileSpreadsheet className="h-4 w-4 text-atr-purple" />
-          <h3 className="text-sm font-bold text-atr-fg">
-            Hasil Sync per Jenis
-          </h3>
+          <h3 className="text-sm font-bold text-atr-fg">Hasil Tes</h3>
         </header>
 
         <nav className="flex flex-wrap gap-2">
@@ -154,6 +149,9 @@ export function GformsTab({
           />
         )}
       </section>
+
+      {/* Section 2: GForm config */}
+      <GformsPanel projectId={projectId} gforms={gforms} />
     </div>
   );
 }

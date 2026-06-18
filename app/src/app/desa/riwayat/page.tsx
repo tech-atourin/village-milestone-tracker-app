@@ -153,7 +153,17 @@ function Stat({
         {Icon && <Icon className="h-3 w-3" />}
         {label}
       </div>
-      <div className="mt-0.5 text-sm font-bold text-atr-fg">{value}</div>
+      <div
+        className={`mt-0.5 text-sm font-bold ${
+          value.startsWith("+")
+            ? "text-atr-arti"
+            : value.startsWith("-")
+              ? "text-atr-red"
+              : "text-atr-fg"
+        }`}
+      >
+        {value}
+      </div>
     </div>
   );
 }

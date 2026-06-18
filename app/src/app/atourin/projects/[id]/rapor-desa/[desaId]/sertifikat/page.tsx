@@ -13,5 +13,10 @@ export default async function SertifikatDesaPage({
   await requireRole("superadmin");
   const data = await getRaporDesaDetail(params.id, params.desaId);
   if (!data) notFound();
-  return <SertifikatDesaView data={data} />;
+  return (
+    <SertifikatDesaView
+      data={data}
+      backHref={`/atourin/projects/${params.id}/rapor-desa/${params.desaId}`}
+    />
+  );
 }

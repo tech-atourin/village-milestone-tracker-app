@@ -2,6 +2,8 @@ export const metadata = { title: "Sertifikat" };
 
 import { notFound } from "next/navigation";
 import Image from "next/image";
+import Link from "next/link";
+import { ArrowLeft } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { requireRole } from "@/lib/auth/rbac";
 
@@ -84,15 +86,24 @@ export default async function SertifikatPage({
         }}
       />
 
-      <div className="no-print mx-auto mb-4 max-w-4xl rounded-lg border border-atr-outline bg-white p-3 text-xs text-atr-fg-muted">
-        <strong className="text-atr-fg">Tips:</strong> Cetak landscape A4
-        (Ctrl/⌘+P, &quot;Save as PDF&quot;).
-        {!eligible && (
-          <span className="ml-2 text-atr-red">
-            ⚠️ Peserta belum memenuhi syarat sertifikat (Post-test ≥70 +
-            improvement ≥20%). Sertifikat tetap bisa di-print untuk preview.
-          </span>
-        )}
+      <div className="no-print mx-auto mb-6 flex max-w-4xl flex-wrap items-center justify-between gap-3 rounded-lg border border-atr-outline bg-atr-bg-soft p-3 text-xs text-atr-fg-muted">
+        <Link
+          href={`/atourin/projects/${params.id}/rapor/${params.userId}`}
+          className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-atr-outline bg-white px-3 text-xs font-bold text-atr-fg transition hover:bg-atr-bg-soft"
+        >
+          <ArrowLeft className="h-3.5 w-3.5" />
+          Kembali
+        </Link>
+        <div className="flex-1 text-right">
+          <strong className="text-atr-fg">Tips:</strong> Cetak landscape A4
+          (Ctrl/⌘+P, &quot;Save as PDF&quot;).
+          {!eligible && (
+            <span className="ml-2 text-atr-red">
+              Peserta belum memenuhi syarat sertifikat (Post-test ≥70 +
+              improvement ≥20%). Sertifikat tetap bisa di-print untuk preview.
+            </span>
+          )}
+        </div>
       </div>
 
       {/* Certificate page - A4 landscape (297mm × 210mm) */}
