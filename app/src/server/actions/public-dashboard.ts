@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/server";
 import { requireRole } from "@/lib/auth/rbac";
 
 const schema = z.object({
@@ -10,16 +10,42 @@ const schema = z.object({
   enabled: z.boolean(),
 });
 
+function randomSlug(): string {
+  // 10-char base36 — enough entropy for non-guessable per-project token
+  return (
+    Math.random().toString(36).slice(2, 8) +
+    Math.random().toString(36).slice(2, 8)
+  ).slice(0, 12);
+}
+
 export async function togglePublicDashboard(input: z.input<typeof schema>) {
-  await requireRole("superadmin");
+  await requireRole("superadmin", "mitra_admin");
   const parsed = schema.safeParse(input);
   if (!parsed.success) return { error: "Input tidak valid" };
-  const supabase = createClient();
-  const { data, error } = await supabase.rpc("set_project_public_slug", {
-    p_project_id: parsed.data.project_id,
-    p_enabled: parsed.data.enabled,
-  });
-  if (error) return { error: error.message };
+  const supabase = createAdminClient();
+
+  // Re-use existing slug when re-enabling so the URL stays stable.
+  const { data: existing, error: readErr } = await supabase
+    .from("projects")
+    .select("public_dashboard_slug")
+    .eq("id", parsed.data.project_id)
+    .maybeSingle();
+  if (readErr) return { error: readErr.message };
+
+  const slug =
+    (existing as { public_dashboard_slug: string | null } | null)
+      ?.public_dashboard_slug ?? randomSlug();
+
+  const { error: updErr } = await supabase
+    .from("projects")
+    .update({
+      public_dashboard_enabled: parsed.data.enabled,
+      public_dashboard_slug: slug,
+    })
+    .eq("id", parsed.data.project_id);
+  if (updErr) return { error: updErr.message };
+
   revalidatePath(`/atourin/projects/${parsed.data.project_id}`);
-  return { slug: data as string };
+  revalidatePath(`/mitra/projects/${parsed.data.project_id}`);
+  return { slug };
 }

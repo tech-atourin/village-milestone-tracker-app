@@ -23,24 +23,28 @@ export function ProjectActions({
   projectId: string;
   initialEnabled: boolean;
   initialSlug: string | null;
-  scope?: "atourin" | "mitra";
+  scope?: "atourin" | "mitra" | "narasumber";
 }) {
-  void scope;
+  const canTogglePublic = scope !== "narasumber";
   const [enabled, setEnabled] = useState(initialEnabled);
   const [slug, setSlug] = useState(initialSlug);
   const [pending, startTransition] = useTransition();
   const [copied, setCopied] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   function toggle(next: boolean) {
+    setError(null);
     startTransition(async () => {
       const r = await togglePublicDashboard({
         project_id: projectId,
         enabled: next,
       });
-      if (!r.error) {
-        setEnabled(next);
-        if (r.slug) setSlug(r.slug);
+      if (r.error) {
+        setError(r.error);
+        return;
       }
+      setEnabled(next);
+      if (r.slug) setSlug(r.slug);
     });
   }
 
@@ -53,25 +57,33 @@ export function ProjectActions({
   }
 
   return (
-    <div className="flex flex-wrap gap-2">
-      <button
-        type="button"
-        onClick={() => toggle(!enabled)}
-        disabled={pending}
-        className={`inline-flex h-9 items-center gap-1.5 rounded-lg border px-3 text-sm font-bold transition disabled:opacity-50 ${
-          enabled
-            ? "border-atr-arti/30 bg-atr-arti/10 text-atr-arti hover:bg-atr-arti/15"
-            : "border-atr-outline bg-white text-atr-fg hover:bg-atr-bg-soft"
-        }`}
-      >
-        {pending ? (
-          <Loader2 className="h-3.5 w-3.5 animate-spin" />
-        ) : (
-          <Globe className="h-3.5 w-3.5" />
-        )}
-        {enabled ? "Shareable link aktif" : "Aktifkan shareable link"}
-      </button>
-      {enabled && slug && (
+    <div className="space-y-2">
+      {error && (
+        <div className="rounded-lg border border-atr-red/30 bg-atr-red/10 px-3 py-2 text-xs font-bold text-atr-red">
+          {error}
+        </div>
+      )}
+      <div className="flex flex-wrap gap-2">
+      {canTogglePublic && (
+        <button
+          type="button"
+          onClick={() => toggle(!enabled)}
+          disabled={pending}
+          className={`inline-flex h-9 items-center gap-1.5 rounded-lg border px-3 text-sm font-bold transition disabled:opacity-50 ${
+            enabled
+              ? "border-atr-arti/30 bg-atr-arti/10 text-atr-arti hover:bg-atr-arti/15"
+              : "border-atr-outline bg-white text-atr-fg hover:bg-atr-bg-soft"
+          }`}
+        >
+          {pending ? (
+            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+          ) : (
+            <Globe className="h-3.5 w-3.5" />
+          )}
+          {enabled ? "Shareable link aktif" : "Aktifkan shareable link"}
+        </button>
+      )}
+      {canTogglePublic && enabled && slug && (
         <>
           <button
             type="button"
@@ -97,14 +109,14 @@ export function ProjectActions({
         </>
       )}
       <Link
-        href={`/atourin/projects/${projectId}/rapor`}
+        href={`/${scope}/projects/${projectId}/rapor`}
         className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-atr-outline bg-white px-3 text-sm font-bold text-atr-fg transition hover:bg-atr-bg-soft"
       >
         <GraduationCap className="h-3.5 w-3.5" />
         Rapor Peserta
       </Link>
       <Link
-        href={`/atourin/projects/${projectId}/rapor-desa`}
+        href={`/${scope}/projects/${projectId}/rapor-desa`}
         className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-atr-outline bg-white px-3 text-sm font-bold text-atr-fg transition hover:bg-atr-bg-soft"
       >
         <MapPin className="h-3.5 w-3.5" />
@@ -118,6 +130,7 @@ export function ProjectActions({
         <FileText className="h-3.5 w-3.5" />
         Final Report
       </Link>
+      </div>
     </div>
   );
 }

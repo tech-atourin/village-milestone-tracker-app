@@ -37,11 +37,13 @@ export function DesaTab({
   attached,
   allDesa,
   scope = "atourin",
+  readOnly = false,
 }: {
   projectId: string;
   attached: ProjectDesaRow[];
   allDesa: DesaRow[];
-  scope?: "atourin" | "mitra";
+  scope?: "atourin" | "mitra" | "narasumber";
+  readOnly?: boolean;
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -123,24 +125,26 @@ export function DesaTab({
             {attached.length} desa terdaftar
           </p>
         </div>
-        <div className="flex gap-2">
-          <button
-            type="button"
-            onClick={() => setShowHub((s) => !s)}
-            className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-atr-purple/40 bg-atr-purple-50 px-3 text-sm font-bold text-atr-purple-600 transition hover:bg-atr-purple-light/40"
-          >
-            <Database className="h-4 w-4" />
-            Import dari Hub (5.964 desa)
-          </button>
-          <button
-            type="button"
-            onClick={() => setShowSearch((s) => !s)}
-            className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-atr-purple px-3 text-sm font-bold text-white transition hover:bg-atr-purple-600"
-          >
-            <Plus className="h-4 w-4" />
-            Tambah Desa
-          </button>
-        </div>
+        {!readOnly && (
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={() => setShowHub((s) => !s)}
+              className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-atr-purple/40 bg-atr-purple-50 px-3 text-sm font-bold text-atr-purple-600 transition hover:bg-atr-purple-light/40"
+            >
+              <Database className="h-4 w-4" />
+              Import dari Hub (5.964 desa)
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowSearch((s) => !s)}
+              className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-atr-purple px-3 text-sm font-bold text-white transition hover:bg-atr-purple-600"
+            >
+              <Plus className="h-4 w-4" />
+              Tambah Desa
+            </button>
+          </div>
+        )}
       </div>
 
       {showHub && (
@@ -361,7 +365,7 @@ function AttachedDesaTable({
 }: {
   projectId: string;
   attached: ProjectDesaRow[];
-  scope: "atourin" | "mitra";
+  scope: "atourin" | "mitra" | "narasumber";
 }) {
   const rows = attached.map((p) => ({
     ...p,

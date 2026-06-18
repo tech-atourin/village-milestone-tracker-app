@@ -59,12 +59,19 @@ export default async function NarasumberProjectsPage() {
                     ))}
                   </div>
                 </div>
-                <div className="flex shrink-0 flex-col items-end gap-2 sm:flex-row">
+                <div className="flex shrink-0 flex-wrap items-end gap-2 sm:flex-row">
+                  <Link
+                    href={`/narasumber/projects/${p.id}`}
+                    className="inline-flex h-9 items-center gap-1.5 rounded-md border border-atr-outline bg-white px-3 text-xs font-bold text-atr-fg hover:bg-atr-bg-soft"
+                  >
+                    <Folder className="h-3.5 w-3.5" />
+                    Buka Detail
+                  </Link>
                   <Link
                     href={`/narasumber/projects/${p.id}/review`}
                     className="inline-flex h-9 items-center gap-1.5 rounded-md border border-atr-outline bg-white px-3 text-xs font-bold text-atr-fg hover:bg-atr-bg-soft"
                   >
-                    Review bukti peserta
+                    Review bukti
                   </Link>
                   <Link
                     href={`/narasumber/sesi/baru?project=${p.id}`}

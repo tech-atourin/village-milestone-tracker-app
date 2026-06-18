@@ -19,9 +19,11 @@ type EditState = Record<
 export function RaporEntryTable({
   projectId,
   rows,
+  scope = "atourin",
 }: {
   projectId: string;
   rows: RaporRow[];
+  scope?: "atourin" | "mitra" | "narasumber";
 }) {
   const router = useRouter();
   const [editState, setEditState] = useState<EditState>(() => {
@@ -158,7 +160,7 @@ export function RaporEntryTable({
                     {r.has_rapor ? (
                       <div className="flex gap-1">
                         <Link
-                          href={`/atourin/projects/${projectId}/rapor/${r.user_id}`}
+                          href={`/${scope}/projects/${projectId}/rapor/${r.user_id}`}
                           target="_blank"
                           className="inline-flex h-8 items-center gap-1 rounded-md border border-atr-outline bg-white px-2 text-xs font-bold text-atr-fg transition hover:bg-atr-bg-soft"
                           title="RAPOR"
@@ -166,7 +168,7 @@ export function RaporEntryTable({
                           <FileText className="h-3 w-3" />
                         </Link>
                         <Link
-                          href={`/atourin/projects/${projectId}/rapor/${r.user_id}/sertifikat`}
+                          href={`/${scope}/projects/${projectId}/rapor/${r.user_id}/sertifikat`}
                           target="_blank"
                           className="inline-flex h-8 items-center gap-1 rounded-md border border-atr-yellow/40 bg-atr-yellow/10 px-2 text-xs font-bold text-atr-fg transition hover:bg-atr-yellow/20"
                           title="Sertifikat"

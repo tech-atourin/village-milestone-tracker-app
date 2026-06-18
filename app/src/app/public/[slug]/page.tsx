@@ -2,8 +2,7 @@ export const metadata = { title: "Dashboard Publik" };
 
 import { notFound } from "next/navigation";
 import Image from "next/image";
-import { createClient } from "@supabase/supabase-js";
-import { clientEnv } from "@/lib/env";
+import { createAdminClient } from "@/lib/supabase/server";
 
 export const revalidate = 300; // 5 min ISR
 
@@ -28,24 +27,115 @@ type SummaryResponse = {
 };
 
 async function fetchSummary(slug: string): Promise<SummaryResponse | null> {
-  const env = clientEnv();
-  // Use anon client directly (no auth cookies); RPC is granted to anon.
-  const supabase = createClient(
-    env.NEXT_PUBLIC_SUPABASE_URL,
-    env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-    { db: { schema: "vmt" }, auth: { persistSession: false } },
-  );
-  const { data } = await supabase.rpc("public_project_summary", {
-    p_slug: slug,
-  });
-  return (data ?? null) as SummaryResponse | null;
+  const supabase = createAdminClient();
+
+  // 1) project + org by slug (only if public_dashboard_enabled)
+  const { data: projectRow } = await supabase
+    .from("projects")
+    .select(
+      "id, name, description, period_start, period_end, status, organization:organizations(name, logo_url)",
+    )
+    .eq("public_dashboard_slug", slug)
+    .eq("public_dashboard_enabled", true)
+    .maybeSingle();
+  if (!projectRow) return null;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const project = projectRow as any;
+  const projectId = project.id as string;
+
+  // 2) project_desa with desa info
+  const { data: pdRows } = await supabase
+    .from("project_desa")
+    .select(
+      "id, desa:desa(id, name, kabupaten, provinsi, current_classification)",
+    )
+    .eq("project_id", projectId);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const pdList = (pdRows ?? []) as any[];
+  const projectDesaIds = pdList.map((r) => r.id as string);
+
+  // 3) avg completion per project_desa from desa_topik_instance
+  const completionByPd = new Map<string, number>();
+  if (projectDesaIds.length) {
+    const { data: instRows } = await supabase
+      .from("desa_topik_instance")
+      .select("project_desa_id, completion_percent")
+      .in("project_desa_id", projectDesaIds);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const inst = (instRows ?? []) as any[];
+    const acc = new Map<string, { sum: number; count: number }>();
+    for (const r of inst) {
+      const pid = r.project_desa_id as string;
+      const cur = acc.get(pid) ?? { sum: 0, count: 0 };
+      cur.sum += Number(r.completion_percent) || 0;
+      cur.count += 1;
+      acc.set(pid, cur);
+    }
+    acc.forEach((v, pid) =>
+      completionByPd.set(pid, v.count ? v.sum / v.count : 0),
+    );
+  }
+
+  // 4) topik names + per-topik avg
+  const { data: ptRows } = await supabase
+    .from("project_topik")
+    .select("id, name")
+    .eq("project_id", projectId)
+    .order("display_order", { ascending: true });
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const pt = (ptRows ?? []) as any[];
+  const topikAcc = new Map<string, { name: string; sum: number; count: number }>();
+  for (const t of pt)
+    topikAcc.set(t.id as string, { name: t.name as string, sum: 0, count: 0 });
+
+  if (projectDesaIds.length && pt.length) {
+    const { data: byTopik } = await supabase
+      .from("desa_topik_instance")
+      .select("project_topik_id, completion_percent")
+      .in("project_desa_id", projectDesaIds);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    for (const r of (byTopik ?? []) as any[]) {
+      const cur = topikAcc.get(r.project_topik_id as string);
+      if (!cur) continue;
+      cur.sum += Number(r.completion_percent) || 0;
+      cur.count += 1;
+    }
+  }
+
+  return {
+    project: {
+      name: project.name,
+      description: project.description ?? null,
+      period_start: project.period_start ?? null,
+      period_end: project.period_end ?? null,
+      status: project.status,
+    },
+    organization: project.organization
+      ? {
+          name: project.organization.name as string,
+          logo_url: (project.organization.logo_url as string) ?? null,
+        }
+      : null,
+    desa: pdList.map((r) => ({
+      id: r.desa?.id as string,
+      name: (r.desa?.name as string) ?? "-",
+      kabupaten: (r.desa?.kabupaten as string) ?? null,
+      provinsi: (r.desa?.provinsi as string) ?? null,
+      classification: (r.desa?.current_classification as string) ?? "unclassified",
+      avg_completion: completionByPd.get(r.id as string) ?? 0,
+    })),
+    topik: Array.from(topikAcc.values()).map((v) => ({
+      name: v.name,
+      avg_completion: v.count ? v.sum / v.count : 0,
+    })),
+  };
 }
 
 function formatDate(iso: string | null) {
   if (!iso) return "-";
   return new Intl.DateTimeFormat("id-ID", {
     day: "numeric",
-    month: "short",
+    month: "long",
     year: "numeric",
   }).format(new Date(iso));
 }

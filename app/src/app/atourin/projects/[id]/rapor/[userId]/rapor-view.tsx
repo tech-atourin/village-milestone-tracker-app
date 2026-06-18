@@ -151,7 +151,7 @@ export function RaporView({
   data,
   scope = "atourin",
 }: {
-  scope?: "atourin" | "mitra";
+  scope?: "atourin" | "mitra" | "narasumber";
   data: {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     project: any;

@@ -341,7 +341,7 @@ export async function SummaryTab({
   scope = "atourin",
 }: {
   projectId: string;
-  scope?: "atourin" | "mitra";
+  scope?: "atourin" | "mitra" | "narasumber";
 }) {
   const summary = await loadProjectSummary(projectId);
   return (
