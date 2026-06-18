@@ -431,7 +431,10 @@ export function DesaDetailSections({
       />
 
       {/* Assessment V1 Permenpar */}
-      <Section title="Assessment Klasifikasi V1 (Permenpar)" icon={ClipboardCheck}>
+      <Section
+        title="Assessment Klasifikasi Desa V1 (ADWI)"
+        icon={ClipboardCheck}
+      >
         {v1_assessment ? (
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div className="flex flex-wrap gap-2 text-xs">
@@ -467,7 +470,10 @@ export function DesaDetailSections({
       </Section>
 
       {/* Assessment Desa V2 */}
-      <Section title="Assessment Desa V2" icon={FileText}>
+      <Section
+        title="Assessment Klasifikasi Desa V2 (Atourin)"
+        icon={FileText}
+      >
         {hub_assessment ? (
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div>
@@ -531,10 +537,10 @@ export function DesaDetailSections({
         )}
       </Section>
 
-      {/* Baseline meta */}
+      {/* Baseline meta — baseline is editable, not a one-shot submit */}
       {baseline_submitted_at && (
         <p className="text-center text-[11px] text-atr-fg-muted">
-          Baseline disubmit {fmtDate(baseline_submitted_at)}
+          Baseline terakhir diupdate {fmtDate(baseline_submitted_at)}
         </p>
       )}
     </div>

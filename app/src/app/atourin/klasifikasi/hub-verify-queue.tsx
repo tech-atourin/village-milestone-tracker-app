@@ -88,7 +88,7 @@ export function HubVerifyQueue({
     return (
       <div className="rounded-2xl border border-dashed border-atr-outline bg-atr-bg-soft p-8 text-center">
         <p className="text-sm font-bold text-atr-fg">
-          Tidak ada submission Assessment Desa V2 menunggu verifikasi
+          Tidak ada submission Assessment Klasifikasi Desa V2 (Atourin) menunggu verifikasi
         </p>
       </div>
     );

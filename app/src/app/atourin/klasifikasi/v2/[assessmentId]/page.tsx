@@ -1,4 +1,6 @@
-export const metadata = { title: "Detail Assessment Desa V2" };
+export const metadata = {
+  title: "Detail Assessment Klasifikasi Desa V2 (Atourin)",
+};
 
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -93,7 +95,7 @@ export default async function HubAssessmentViewerPage({
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0 flex-1">
             <div className="text-xs font-bold uppercase tracking-wide text-atr-purple-600">
-              Assessment Desa V2 · Read-only Viewer
+              Assessment Klasifikasi Desa V2 (Atourin) · Read-only Viewer
             </div>
             <h1 className="mt-1 text-2xl font-bold tracking-tight text-atr-fg">
               {desa?.name ?? "—"}

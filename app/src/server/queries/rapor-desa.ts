@@ -207,6 +207,22 @@ export type RaporDesaDetail = {
     title: string;
     completion_percent: number;
   }>;
+  // Kuisioner narasumber that peserta of this desa filled in this project.
+  narasumber: {
+    avg_rating: number | null;
+    rating_count: number;
+    by_narasumber: Array<{
+      narasumber_id: string;
+      name: string;
+      avg_rating: number;
+      rating_count: number;
+      sessions_count: number;
+    }>;
+  };
+  action_plans: {
+    total: number;
+    by_status: { rencana: number; on_track: number; selesai: number; ditunda: number };
+  };
 };
 
 export async function getRaporDesaDetail(
@@ -309,6 +325,107 @@ export async function getRaporDesaDetail(
     completion_percent: Number(i.completion_percent ?? 0),
   }));
 
+  // Kuisioner narasumber — only ratings from this desa's peserta in this
+  // project. Group by narasumber to surface per-narasumber averages.
+  const projectDesaId = aggregate.project_desa_id;
+  const { data: desaSessions } = await supabase
+    .from("pendampingan_sessions")
+    .select(
+      "narasumber_id, narasumber:users!pendampingan_sessions_narasumber_id_fkey(full_name)",
+    )
+    .eq("project_id", projectId)
+    .eq("project_desa_id", projectDesaId);
+  const sessionsByNs = new Map<
+    string,
+    { name: string; sessions_count: number }
+  >();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  for (const s of ((desaSessions ?? []) as any[])) {
+    if (!s.narasumber_id) continue;
+    const cur = sessionsByNs.get(s.narasumber_id) ?? {
+      name: s.narasumber?.full_name ?? "Narasumber",
+      sessions_count: 0,
+    };
+    cur.sessions_count += 1;
+    sessionsByNs.set(s.narasumber_id, cur);
+  }
+
+  const { data: ratingRows } =
+    userIds.length > 0
+      ? await supabase
+          .from("narasumber_ratings")
+          .select(
+            "narasumber_id, rating, narasumber:users!narasumber_ratings_narasumber_id_fkey(full_name)",
+          )
+          .eq("project_id", projectId)
+          .in("rater_id", userIds)
+      : { data: [] as Array<Record<string, unknown>> };
+  const ratingsByNs = new Map<
+    string,
+    { name: string; sum: number; count: number }
+  >();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  for (const r of ((ratingRows ?? []) as any[])) {
+    const cur = ratingsByNs.get(r.narasumber_id) ?? {
+      name:
+        r.narasumber?.full_name ??
+        sessionsByNs.get(r.narasumber_id)?.name ??
+        "Narasumber",
+      sum: 0,
+      count: 0,
+    };
+    cur.sum += r.rating;
+    cur.count += 1;
+    ratingsByNs.set(r.narasumber_id, cur);
+  }
+  // Union narasumber known via sessions OR ratings so the table is complete
+  // even when one side is empty.
+  const narasumberIds = new Set<string>([
+    ...Array.from(sessionsByNs.keys()),
+    ...Array.from(ratingsByNs.keys()),
+  ]);
+  let ratingSum = 0;
+  let ratingCount = 0;
+  const byNarasumber = Array.from(narasumberIds).map((id) => {
+    const rating = ratingsByNs.get(id);
+    const sess = sessionsByNs.get(id);
+    if (rating) {
+      ratingSum += rating.sum;
+      ratingCount += rating.count;
+    }
+    return {
+      narasumber_id: id,
+      name: rating?.name ?? sess?.name ?? "Narasumber",
+      avg_rating: rating && rating.count > 0 ? rating.sum / rating.count : 0,
+      rating_count: rating?.count ?? 0,
+      sessions_count: sess?.sessions_count ?? 0,
+    };
+  });
+  byNarasumber.sort(
+    (a, b) => b.avg_rating - a.avg_rating || b.rating_count - a.rating_count,
+  );
+  const narasumberSummary = {
+    avg_rating: ratingCount > 0 ? ratingSum / ratingCount : null,
+    rating_count: ratingCount,
+    by_narasumber: byNarasumber,
+  };
+
+  // Action plans for this desa
+  const { data: apRows } = await supabase
+    .from("desa_action_plans")
+    .select("status")
+    .eq("project_desa_id", projectDesaId);
+  const apStatus = { rencana: 0, on_track: 0, selesai: 0, ditunda: 0 };
+  for (const r of (apRows ?? []) as Array<{
+    status: keyof typeof apStatus;
+  }>) {
+    if (apStatus[r.status] !== undefined) apStatus[r.status] += 1;
+  }
+  const actionPlansSummary = {
+    total: (apRows ?? []).length,
+    by_status: apStatus,
+  };
+
   return {
     project: {
       id: project.id as string,
@@ -342,6 +459,8 @@ export async function getRaporDesaDetail(
     },
     peserta,
     topik,
+    narasumber: narasumberSummary,
+    action_plans: actionPlansSummary,
   };
 }
 

@@ -25,12 +25,14 @@ type Tab = (typeof TABS)[number];
 
 const TAB_META: Record<Tab, { label: string; sublabel: string }> = {
   v1: {
-    label: "Versi 1: Checklist Permenpar",
-    sublabel: "Checklist 98 item per tier (Rintisan → Mandiri). Wajib upload bukti per kriteria.",
+    label: "V1 (ADWI) · Checklist Permenpar",
+    sublabel:
+      "Checklist 98 item per tier (Rintisan → Mandiri). Wajib upload bukti per kriteria.",
   },
   v2: {
-    label: "Versi 2: Hub-style",
-    sublabel: "6 pilar penilaian dengan single/multi-choice, slider, dan text. Auto-scoring → tier.",
+    label: "V2 (Atourin) · Hub-style",
+    sublabel:
+      "6 pilar penilaian dengan single/multi-choice, slider, dan text. Auto-scoring → tier.",
   },
 };
 
@@ -186,7 +188,7 @@ async function V2Tab({
       <EmptyState
         icon={ClipboardCheck}
         title="Template Hub belum tersedia"
-        description="Hubungi admin Atourin untuk mengaktifkan template Assessment Desa V2."
+        description="Hubungi admin Atourin untuk mengaktifkan template Assessment Klasifikasi Desa V2 (Atourin)."
       />
     );
   }

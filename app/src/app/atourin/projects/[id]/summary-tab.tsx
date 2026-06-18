@@ -16,7 +16,10 @@ type DesaCardData = {
   desa_id: string;
   desa_name: string;
   tier: string;
-  baseline_pct: number;
+  // Project-checklist completion % for this desa (not the desa baseline form).
+  checklist_pct: number;
+  peserta_count: number;
+  checklist_total: number;
   rapor_avg_delta: number | null;
   sessions_count: number;
   action_plans_done: number;
@@ -122,6 +125,37 @@ async function loadProjectSummary(projectId: string): Promise<{
     actionByPd.set(r.project_desa_id, cur);
   }
 
+  // Per-desa peserta count (only `peserta` role memberships)
+  const { data: pesertaRows } = await admin
+    .from("project_memberships")
+    .select("desa_id")
+    .eq("project_id", projectId)
+    .eq("role", "peserta")
+    .eq("status", "active");
+  const pesertaByDesa = new Map<string, number>();
+  for (const r of (pesertaRows ?? []) as Array<{ desa_id: string | null }>) {
+    if (!r.desa_id) continue;
+    pesertaByDesa.set(r.desa_id, (pesertaByDesa.get(r.desa_id) ?? 0) + 1);
+  }
+
+  // Project-wide checklist item count (same number applies to every desa
+  // since checklist items live on project_topik, not per-desa).
+  const { data: topikRows } = await admin
+    .from("project_topik")
+    .select("id")
+    .eq("project_id", projectId);
+  const projectTopikIds = ((topikRows ?? []) as Array<{ id: string }>).map(
+    (r) => r.id,
+  );
+  let checklistTotal = 0;
+  if (projectTopikIds.length > 0) {
+    const { count } = await admin
+      .from("project_checklist_items")
+      .select("id", { count: "exact", head: true })
+      .in("project_topik_id", projectTopikIds);
+    checklistTotal = count ?? 0;
+  }
+
   const desaCards: DesaCardData[] = pdList.map((pd) => {
     const s = summaryByPd.get(pd.id);
     const ap = actionByPd.get(pd.id) ?? { done: 0, total: 0 };
@@ -131,7 +165,9 @@ async function loadProjectSummary(projectId: string): Promise<{
       desa_id: pd.desa_id,
       desa_name: pd.desa?.name ?? "—",
       tier: pd.desa?.current_classification ?? "unclassified",
-      baseline_pct: td?.completion_pct ?? 0,
+      checklist_pct: td?.completion_pct ?? 0,
+      peserta_count: pesertaByDesa.get(pd.desa_id) ?? 0,
+      checklist_total: checklistTotal,
       rapor_avg_delta: avgDelta,
       sessions_count: td?.sessions_done ?? 0,
       action_plans_done: ap.done,
@@ -147,56 +183,126 @@ async function loadProjectSummary(projectId: string): Promise<{
   const opportunities: string[] = [];
   const threats: string[] = [];
 
+  // Narasumber roster: anyone with a session in this project OR a narasumber
+  // role membership. We surface this so SWOT reflects the new peserta/narasumber
+  // split in the project detail tabs.
+  const narasumberIds = new Set<string>();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: nsSessions } = await admin
+    .from("pendampingan_sessions")
+    .select("narasumber_id")
+    .eq("project_id", projectId);
+  for (const r of (nsSessions ?? []) as Array<{ narasumber_id: string | null }>) {
+    if (r.narasumber_id) narasumberIds.add(r.narasumber_id);
+  }
+
+  // Kuisioner narasumber aggregate (Top Narasumber chart source of truth).
+  const { data: ratingRows } = await admin
+    .from("narasumber_ratings")
+    .select("rating")
+    .eq("project_id", projectId);
+  const ratingArr = (ratingRows ?? []) as Array<{ rating: number }>;
+  const ratingAvg =
+    ratingArr.length > 0
+      ? ratingArr.reduce((a, r) => a + r.rating, 0) / ratingArr.length
+      : null;
+
   const highTier = desaCards.filter(
     (d) => d.tier === "maju" || d.tier === "mandiri",
   ).length;
   if (highTier > 0)
-    strengths.push(`${highTier} desa sudah pada tier Maju/Mandiri.siap jadi best-practice case study.`);
+    strengths.push(
+      `${highTier} desa sudah di tier Maju/Mandiri — siap jadi best-practice case study.`,
+    );
   if (avgDelta != null && avgDelta > 10)
-    strengths.push(`Rata-rata peningkatan post-test +${avgDelta} poin.pelatihan efektif.`);
+    strengths.push(
+      `Rata-rata peningkatan post-test +${avgDelta} poin — pelatihan efektif.`,
+    );
   if (analytics.sessions_verified > 0)
-    strengths.push(`${analytics.sessions_verified} sesi pendampingan sudah terverifikasi.`);
+    strengths.push(
+      `${analytics.sessions_verified} sesi pendampingan sudah terverifikasi.`,
+    );
+  if (ratingAvg != null && ratingAvg >= 4)
+    strengths.push(
+      `Rata-rata kuisioner narasumber ★ ${ratingAvg.toFixed(1)} dari ${ratingArr.length} penilaian — kualitas narasumber dipersepsi tinggi.`,
+    );
 
-  const lowBaseline = desaCards.filter((d) => d.baseline_pct < 50).length;
-  if (lowBaseline > 0)
-    weaknesses.push(`${lowBaseline} desa baseline-nya < 50%.perlu dorongan kelengkapan data.`);
+  const lowChecklist = desaCards.filter((d) => d.checklist_pct < 50).length;
+  if (lowChecklist > 0)
+    weaknesses.push(
+      `${lowChecklist} desa progress checklist-nya < 50% — perlu dorongan kelengkapan evidence.`,
+    );
   const noSessions = desaCards.filter((d) => d.sessions_count === 0).length;
   if (noSessions > 0)
-    weaknesses.push(`${noSessions} desa belum punya sesi pendampingan tercatat.`);
+    weaknesses.push(
+      `${noSessions} desa belum punya sesi pendampingan tercatat.`,
+    );
   if (avgDelta != null && avgDelta < 5)
-    weaknesses.push(`Peningkatan test masih rendah (${avgDelta} poin).review materi.`);
+    weaknesses.push(
+      `Peningkatan test masih rendah (${avgDelta} poin) — review materi & pendekatan.`,
+    );
+  if (ratingAvg != null && ratingAvg < 3.5)
+    weaknesses.push(
+      `Kuisioner narasumber baru ★ ${ratingAvg.toFixed(1)} — peserta belum sepenuhnya puas dengan pendampingan.`,
+    );
 
   const submitted = analytics.hub_assessment_results.length;
   if (submitted > 0)
-    opportunities.push(`${submitted} desa sudah mengisi self-assessment.bisa langsung diverifikasi.`);
+    opportunities.push(
+      `${submitted} desa sudah mengisi Assessment Klasifikasi Desa V2 (Atourin) — bisa langsung diverifikasi.`,
+    );
   opportunities.push(
     "Linked Hub Atourin (5.964 desa) memungkinkan benchmarking lintas project.",
   );
   if (analytics.action_plans_total > 0)
     opportunities.push(
-      `${analytics.action_plans_total} rencana aksi tercatat.kerangka follow-up jelas.`,
+      `${analytics.action_plans_total} rencana aksi tercatat — kerangka follow-up sudah jelas.`,
+    );
+  if (narasumberIds.size > 0)
+    opportunities.push(
+      `${narasumberIds.size} narasumber aktif — kapasitas pendampingan tersedia.`,
     );
 
   const stagnantDesa = desaCards.filter(
     (d) => d.action_plans_total === 0 && d.sessions_count === 0,
   ).length;
   if (stagnantDesa > 0)
-    threats.push(`${stagnantDesa} desa tanpa rencana aksi & tanpa sesi.risiko stagnasi.`);
-  if (analytics.action_plans_total > 0 && analytics.action_plans_by_status.selesai === 0)
-    threats.push("Tidak ada rencana aksi yang sudah selesai.tindak lanjut belum ada bukti.");
-  if (desaCards.filter((d) => d.tier === "unclassified" || d.tier === "rintisan").length / Math.max(desaCards.length, 1) > 0.6)
-    threats.push("> 60% desa masih Rintisan/Unclassified.gap antar-desa cukup lebar.");
+    threats.push(
+      `${stagnantDesa} desa tanpa rencana aksi & tanpa sesi — risiko stagnasi.`,
+    );
+  if (
+    analytics.action_plans_total > 0 &&
+    analytics.action_plans_by_status.selesai === 0
+  )
+    threats.push(
+      "Belum ada rencana aksi yang sudah selesai — tindak lanjut belum membuahkan bukti.",
+    );
+  if (
+    desaCards.filter((d) => d.tier === "unclassified" || d.tier === "rintisan")
+      .length /
+      Math.max(desaCards.length, 1) >
+    0.6
+  )
+    threats.push(
+      "> 60% desa masih Rintisan/Unclassified — gap antar-desa cukup lebar.",
+    );
 
   // Overall overview (deterministic narrative from data)
   const desaCount = desaCards.length;
   const overallOverview = [
-    `Project "${analytics.project.name}" mendampingi ${desaCount} desa wisata dengan total ${analytics.peserta_total} peserta.`,
+    `Project "${analytics.project.name}" mendampingi ${desaCount} desa wisata dengan total ${analytics.peserta_total} peserta` +
+      (narasumberIds.size > 0
+        ? ` dan ${narasumberIds.size} narasumber.`
+        : "."),
     analytics.sessions_total > 0
       ? `Sudah ada ${analytics.sessions_total} sesi pendampingan tercatat (${analytics.sessions_verified} verified).`
       : "Belum ada sesi pendampingan tercatat.",
     avgDelta != null
       ? `Rata-rata pre-test ${Math.round(preAvg!)} → post-test ${Math.round(postAvg!)} (Δ ${avgDelta > 0 ? "+" : ""}${avgDelta}).`
       : "Data pre/post-test belum lengkap untuk semua peserta.",
+    ratingAvg != null
+      ? `Kuisioner narasumber ★ ${ratingAvg.toFixed(1)} dari ${ratingArr.length} penilaian.`
+      : "Kuisioner narasumber belum diisi peserta.",
     analytics.action_plans_total > 0
       ? `${analytics.action_plans_total} rencana aksi terdaftar, ${analytics.action_plans_by_status.selesai} selesai.`
       : "Belum ada rencana aksi tercatat.",
@@ -368,13 +474,15 @@ export async function SummaryTab({
                   Belum ada AI summary di-generate untuk desa ini.
                 </p>
               )}
-              <div className="mt-3 grid grid-cols-3 gap-2 rounded-lg border border-atr-outline bg-atr-bg-soft p-2 text-center">
-                <Mini label="Baseline" value={`${d.baseline_pct}%`} />
+              <div className="mt-3 grid grid-cols-5 gap-2 rounded-lg border border-atr-outline bg-atr-bg-soft p-2 text-center">
+                <Mini label="Checklist" value={`${d.checklist_pct}%`} />
                 <Mini label="Sesi" value={String(d.sessions_count)} />
                 <Mini
                   label="Aksi"
                   value={`${d.action_plans_done}/${d.action_plans_total}`}
                 />
+                <Mini label="Peserta" value={String(d.peserta_count)} />
+                <Mini label="Item" value={String(d.checklist_total)} />
               </div>
             </article>
           ))}

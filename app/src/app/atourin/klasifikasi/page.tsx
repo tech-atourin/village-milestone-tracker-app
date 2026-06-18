@@ -6,6 +6,7 @@ import { HubVerifyQueue, type HubSubmissionRow } from "./hub-verify-queue";
 import { listCommentsForHubAssessment } from "@/server/queries/assessment-comments";
 import { listV1QueueByDesa } from "@/server/queries/self-assessment";
 import { V1DesaList } from "./v1-desa-list";
+import { KlasifikasiChipNav } from "./klasifikasi-chip-nav";
 
 async function loadV2Queue(): Promise<HubSubmissionRow[]> {
   const supabase = createClient();
@@ -28,7 +29,11 @@ async function loadV2Queue(): Promise<HubSubmissionRow[]> {
   }));
 }
 
-export default async function KlasifikasiQueuePage() {
+export default async function KlasifikasiQueuePage({
+  searchParams,
+}: {
+  searchParams: { v?: string };
+}) {
   const user = await requireRole("superadmin");
   const [v1Desa, v2] = await Promise.all([listV1QueueByDesa(), loadV2Queue()]);
   const v1PendingTotal = v1Desa.reduce((sum, r) => sum + r.pending_count, 0);
@@ -54,49 +59,47 @@ export default async function KlasifikasiQueuePage() {
   });
   void user;
 
+  // Default to whichever side has data; otherwise V1.
+  const initial: "v1" | "v2" =
+    searchParams.v === "v2" || searchParams.v === "v1"
+      ? (searchParams.v as "v1" | "v2")
+      : v2.length > 0
+        ? "v2"
+        : "v1";
+
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       <header>
         <h1 className="text-2xl font-bold tracking-tight text-atr-fg">
           Verifikasi Klasifikasi
         </h1>
         <p className="text-sm text-atr-fg-muted">
           Self-assessment dari desa wisata yang menunggu verifikasi Atourin.
-          Tersedia 2 jenis: V1 Permenpar (per kriteria) dan V2 Hub
-          (full submission).
+          Tersedia 2 jenis: V1 (ADWI) per kriteria Permenpar dan V2 (Atourin)
+          full submission format Hub.
         </p>
       </header>
 
-      <section className="space-y-3">
-        <div className="flex items-center justify-between">
-          <h2 className="text-sm font-bold uppercase tracking-wide text-atr-fg-muted">
-            Assessment Desa V2 ({v2.length})
-          </h2>
-          {v2.length > 0 && (
-            <p className="text-[11px] text-atr-arti">
-              ⚡ Approve akan otomatis promote klasifikasi desa
-            </p>
-          )}
-        </div>
-        <HubVerifyQueue
-          rows={v2}
-          commentCountByAssessment={Object.fromEntries(commentCountByAssessment)}
-        />
-      </section>
-
-      <section className="space-y-3">
-        <div className="flex items-center justify-between">
-          <h2 className="text-sm font-bold uppercase tracking-wide text-atr-fg-muted">
-            V1 Permenpar · per Desa ({v1Desa.length})
-          </h2>
-          {v1PendingTotal > 0 && (
-            <p className="text-[11px] text-atr-yellow">
-              ⏳ {v1PendingTotal} kriteria menunggu review di seluruh desa
-            </p>
-          )}
-        </div>
-        <V1DesaList rows={v1Desa} />
-      </section>
+      <KlasifikasiChipNav
+        initial={initial}
+        v1Count={v1Desa.length}
+        v1Pending={v1PendingTotal}
+        v2Count={v2.length}
+      >
+        {{
+          v1: (
+            <V1DesaList rows={v1Desa} />
+          ),
+          v2: (
+            <HubVerifyQueue
+              rows={v2}
+              commentCountByAssessment={Object.fromEntries(
+                commentCountByAssessment,
+              )}
+            />
+          ),
+        }}
+      </KlasifikasiChipNav>
     </div>
   );
 }

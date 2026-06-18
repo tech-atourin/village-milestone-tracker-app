@@ -1,6 +1,15 @@
 import Link from "next/link";
 import Image from "next/image";
-import { ArrowLeft, MapPin, TrendingUp, Users, Award } from "lucide-react";
+import {
+  ArrowLeft,
+  MapPin,
+  TrendingUp,
+  Users,
+  Award,
+  Star,
+  GraduationCap,
+  ClipboardList,
+} from "lucide-react";
 import type { RaporDesaDetail } from "@/server/queries/rapor-desa";
 
 function formatDate(iso: string | null) {
@@ -27,7 +36,7 @@ export function RaporDesaPrintable({
   data: RaporDesaDetail;
   backHref: string;
 }) {
-  const { project, desa, aggregate, peserta, topik } = data;
+  const { project, desa, aggregate, peserta, topik, narasumber, action_plans } = data;
   const tierLabel =
     TIER_LABEL[desa.current_classification ?? "unclassified"] ??
     "Belum Diklasifikasi";
@@ -201,6 +210,75 @@ export function RaporDesaPrintable({
         )}
       </section>
 
+      {/* Kuisioner Narasumber */}
+      {narasumber.rating_count > 0 && (
+        <section className="mb-8 rounded-2xl border border-atr-outline p-6">
+          <h2 className="mb-4 flex items-center gap-2 text-sm font-bold uppercase tracking-wide text-atr-fg-muted">
+            <GraduationCap className="h-3.5 w-3.5" />
+            Kuisioner Narasumber
+          </h2>
+          <div className="mb-3 flex items-center gap-3 rounded-lg bg-atr-yellow/10 px-3 py-2 text-xs">
+            <Star className="h-4 w-4 fill-atr-yellow text-atr-yellow" />
+            <span className="text-atr-fg">
+              Rata-rata penilaian peserta desa ini ke narasumber:{" "}
+              <strong>
+                ★ {narasumber.avg_rating?.toFixed(2) ?? "—"}
+              </strong>{" "}
+              dari {narasumber.rating_count} penilaian.
+            </span>
+          </div>
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-atr-outline text-xs text-atr-fg-muted">
+                <th className="py-2 text-left">Narasumber</th>
+                <th className="py-2 text-right">Sesi</th>
+                <th className="py-2 text-right">Rating ★</th>
+                <th className="py-2 text-right">Penilaian</th>
+              </tr>
+            </thead>
+            <tbody>
+              {narasumber.by_narasumber.map((n) => (
+                <tr
+                  key={n.narasumber_id}
+                  className="border-b border-atr-outline/50"
+                >
+                  <td className="py-2 font-bold text-atr-fg">{n.name}</td>
+                  <td className="py-2 text-right text-atr-fg-muted">
+                    {n.sessions_count}
+                  </td>
+                  <td className="py-2 text-right font-bold text-atr-fg">
+                    {n.rating_count > 0 ? `★ ${n.avg_rating.toFixed(2)}` : "—"}
+                  </td>
+                  <td className="py-2 text-right text-atr-fg-muted">
+                    {n.rating_count}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </section>
+      )}
+
+      {/* Rencana Aksi summary */}
+      {action_plans.total > 0 && (
+        <section className="mb-8 rounded-2xl border border-atr-outline p-6">
+          <h2 className="mb-4 flex items-center gap-2 text-sm font-bold uppercase tracking-wide text-atr-fg-muted">
+            <ClipboardList className="h-3.5 w-3.5" />
+            Rencana Aksi Desa ({action_plans.total})
+          </h2>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <Mini label="Rencana" value={String(action_plans.by_status.rencana)} />
+            <Mini label="On Track" value={String(action_plans.by_status.on_track)} />
+            <Mini
+              label="Selesai"
+              value={String(action_plans.by_status.selesai)}
+              accent
+            />
+            <Mini label="Ditunda" value={String(action_plans.by_status.ditunda)} />
+          </div>
+        </section>
+      )}
+
       {/* Peserta breakdown */}
       <section className="mb-8">
         <h2 className="mb-3 flex items-center gap-2 text-sm font-bold uppercase tracking-wide text-atr-fg-muted">
@@ -286,6 +364,37 @@ export function RaporDesaPrintable({
         </div>
       </div>
     </main>
+  );
+}
+
+function Mini({
+  label,
+  value,
+  accent,
+}: {
+  label: string;
+  value: string;
+  accent?: boolean;
+}) {
+  return (
+    <div
+      className={`rounded-lg border p-2.5 text-center ${
+        accent
+          ? "border-atr-arti/30 bg-atr-arti/10"
+          : "border-atr-outline bg-atr-bg-soft/60"
+      }`}
+    >
+      <div className="text-[10px] font-bold uppercase tracking-wide text-atr-fg-muted">
+        {label}
+      </div>
+      <div
+        className={`mt-1 text-lg font-bold ${
+          accent ? "text-atr-arti" : "text-atr-fg"
+        }`}
+      >
+        {value}
+      </div>
+    </div>
   );
 }
 

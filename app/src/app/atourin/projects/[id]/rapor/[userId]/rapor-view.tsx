@@ -39,16 +39,84 @@ export async function loadRapor(projectId: string, userId: string) {
     .eq("role", "peserta")
     .maybeSingle();
 
-  return { project, user, rapor, membership };
+  // Per-peserta narasumber engagement: sessions where the peserta's desa was
+  // mentored + ratings the peserta gave. Used in the "Sesi & Narasumber"
+  // section below the score grid.
+  const { data: pesertaDesa } = await supabase
+    .from("project_memberships")
+    .select("desa_id")
+    .eq("project_id", projectId)
+    .eq("user_id", userId)
+    .eq("role", "peserta")
+    .maybeSingle();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const desaId = ((pesertaDesa ?? null) as any)?.desa_id ?? null;
+
+  let attendedNarasumber: Array<{ id: string; name: string; sessions: number }> =
+    [];
+  if (desaId) {
+    const { data: sessRows } = await supabase
+      .from("pendampingan_sessions")
+      .select(
+        "narasumber_id, narasumber:users!pendampingan_sessions_narasumber_id_fkey(full_name), project_desa:project_desa(desa_id)",
+      )
+      .eq("project_id", projectId);
+    const map = new Map<string, { name: string; sessions: number }>();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    for (const s of ((sessRows ?? []) as any[])) {
+      if (s.project_desa?.desa_id !== desaId || !s.narasumber_id) continue;
+      const cur = map.get(s.narasumber_id) ?? {
+        name: s.narasumber?.full_name ?? "Narasumber",
+        sessions: 0,
+      };
+      cur.sessions += 1;
+      map.set(s.narasumber_id, cur);
+    }
+    attendedNarasumber = Array.from(map.entries()).map(([id, v]) => ({
+      id,
+      ...v,
+    }));
+  }
+
+  const { data: ratingsGiven } = await supabase
+    .from("narasumber_ratings")
+    .select("narasumber_id, rating")
+    .eq("project_id", projectId)
+    .eq("rater_id", userId);
+  const ratingByNs = new Map<string, number>();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  for (const r of ((ratingsGiven ?? []) as any[])) {
+    ratingByNs.set(r.narasumber_id, r.rating);
+  }
+  const narasumber = attendedNarasumber.map((n) => ({
+    ...n,
+    rating: ratingByNs.get(n.id) ?? null,
+  }));
+
+  return { project, user, rapor, membership, narasumber };
 }
 
 export function RaporView({
   data,
 }: {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  data: { project: any; user: any; rapor: any; membership: any };
+  data: {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    project: any;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    user: any;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    rapor: any;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    membership: any;
+    narasumber: Array<{
+      id: string;
+      name: string;
+      sessions: number;
+      rating: number | null;
+    }>;
+  };
 }) {
-  const { project, user, rapor, membership } = data;
+  const { project, user, rapor, membership, narasumber } = data;
 
   const pre = rapor?.pre_test_score ?? null;
   const post = rapor?.post_test_score ?? null;
@@ -167,6 +235,37 @@ export function RaporView({
           <li>• Pengelolaan Keuangan Desa Wisata</li>
         </ul>
       </section>
+
+      {/* Sesi & Narasumber yang mendampingi peserta ini */}
+      {narasumber.length > 0 && (
+        <section className="mb-8">
+          <h2 className="mb-3 text-sm font-bold uppercase tracking-wide text-atr-fg-muted">
+            Sesi Pendampingan &amp; Narasumber
+          </h2>
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-atr-outline text-xs text-atr-fg-muted">
+                <th className="py-2 text-left">Narasumber</th>
+                <th className="py-2 text-right">Sesi</th>
+                <th className="py-2 text-right">Penilaian Anda</th>
+              </tr>
+            </thead>
+            <tbody>
+              {narasumber.map((n) => (
+                <tr key={n.id} className="border-b border-atr-outline/50">
+                  <td className="py-2 font-bold text-atr-fg">{n.name}</td>
+                  <td className="py-2 text-right text-atr-fg-muted">
+                    {n.sessions}
+                  </td>
+                  <td className="py-2 text-right font-bold text-atr-fg">
+                    {n.rating != null ? `★ ${n.rating}` : "—"}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </section>
+      )}
 
       {/* Sertifikat note */}
       {delta !== null && delta >= 20 && (

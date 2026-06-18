@@ -21,6 +21,7 @@ import {
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
+import { DateRangePicker } from "@/components/ui/date-range-picker";
 
 export type DataTableFilter<T> = {
   key: keyof T & string;
@@ -107,7 +108,7 @@ export function DataTable<T>({
 
   return (
     <div className="space-y-3">
-      {/* Toolbar — search + select filters all on one row */}
+      {/* Toolbar — search + select filters + single range picker on one row */}
       <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
         <div className="relative min-w-[220px] flex-1">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-atr-fg-muted" />
@@ -149,6 +150,27 @@ export function DataTable<T>({
           );
         })}
 
+        {/* Date-range filters — single popover trigger, no separate label */}
+        {dateRangeFilters.map((f) => {
+          const column = table.getColumn(f.key);
+          if (!column || f.type !== "dateRange") return null;
+          const raw = (column.getFilterValue() as
+            | [string | null, string | null]
+            | undefined) ?? [null, null];
+          return (
+            <DateRangePicker
+              key={f.key}
+              value={{ from: raw[0], to: raw[1] }}
+              min={f.min}
+              max={f.max}
+              placeholder={f.label}
+              onChange={(v) =>
+                column.setFilterValue(v.from || v.to ? [v.from, v.to] : undefined)
+              }
+            />
+          );
+        })}
+
         {(activeFilterCount > 0 || sorting.length > 0) && (
           <button
             type="button"
@@ -164,58 +186,12 @@ export function DataTable<T>({
             Reset
           </button>
         )}
-
-        <div className="text-xs text-atr-fg-muted sm:ml-auto">
-          {table.getFilteredRowModel().rows.length} dari {data.length} baris
-        </div>
       </div>
 
-      {/* Date-range filters — separate compact row (two inputs each) */}
-      {dateRangeFilters.length > 0 && (
-        <div className="flex flex-wrap items-center gap-3">
-          {dateRangeFilters.map((f) => {
-            const column = table.getColumn(f.key);
-            if (!column || f.type !== "dateRange") return null;
-            const value = (column.getFilterValue() as
-              | [string | null, string | null]
-              | undefined) ?? [null, null];
-            return (
-              <div key={f.key} className="flex items-center gap-2">
-                <span className="text-xs font-bold text-atr-fg-muted">
-                  {f.label}
-                </span>
-                <input
-                  type="date"
-                  value={value[0] ?? ""}
-                  min={f.min}
-                  max={f.max}
-                  onChange={(e) => {
-                    const v = e.target.value || null;
-                    const next: [string | null, string | null] = [v, value[1]];
-                    column.setFilterValue(next[0] || next[1] ? next : undefined);
-                  }}
-                  className="h-9 rounded-lg border border-atr-outline bg-white px-2 text-xs outline-none focus:border-atr-purple"
-                  aria-label={`${f.label} dari`}
-                />
-                <span className="text-xs text-atr-fg-muted">s.d.</span>
-                <input
-                  type="date"
-                  value={value[1] ?? ""}
-                  min={f.min}
-                  max={f.max}
-                  onChange={(e) => {
-                    const v = e.target.value || null;
-                    const next: [string | null, string | null] = [value[0], v];
-                    column.setFilterValue(next[0] || next[1] ? next : undefined);
-                  }}
-                  className="h-9 rounded-lg border border-atr-outline bg-white px-2 text-xs outline-none focus:border-atr-purple"
-                  aria-label={`${f.label} sampai`}
-                />
-              </div>
-            );
-          })}
-        </div>
-      )}
+      {/* Row count — separate line for breathing room, consistent across pages */}
+      <div className="text-xs text-atr-fg-muted">
+        {table.getFilteredRowModel().rows.length} dari {data.length} baris
+      </div>
 
       {/* Table */}
       <div className="overflow-hidden rounded-2xl border border-atr-outline bg-white shadow-atr-1">

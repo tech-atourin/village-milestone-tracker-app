@@ -4,6 +4,7 @@ import { listProjectDesa } from "@/server/queries/desa";
 import { listProjectTopikWithItems } from "@/server/queries/topik";
 import { generateDesaSummary, type DesaSummary } from "@/lib/ai/desa-summary";
 import { aiProvider } from "@/lib/ai/provider";
+import { createAdminClient } from "@/lib/supabase/server";
 
 async function tryGetSummary(
   projectDesaId: string,
@@ -30,6 +31,82 @@ export async function ReportBody({
   const desa = await listProjectDesa(projectId);
   const topik = await listProjectTopikWithItems(projectId);
   const aiActuallyOn = aiOn && aiProvider().isReady();
+
+  // Per-topik completion across desa — fix the bug where every topik used to
+  // show the same project-wide average. We join desa_topik_instance back to
+  // project_topik so each topik's pct is the mean of its instances.
+  const admin = createAdminClient();
+  const { data: instancesRaw } = await admin
+    .from("desa_topik_instance")
+    .select(
+      "completion_percent, project_topik:project_topik!inner(id, project_id)",
+    )
+    .eq("project_topik.project_id", projectId);
+  const topikAggByPt = new Map<string, { sum: number; count: number }>();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  for (const r of (instancesRaw ?? []) as any[]) {
+    const ptId = r.project_topik?.id as string | undefined;
+    if (!ptId) continue;
+    const cur = topikAggByPt.get(ptId) ?? { sum: 0, count: 0 };
+    cur.sum += Number(r.completion_percent ?? 0);
+    cur.count += 1;
+    topikAggByPt.set(ptId, cur);
+  }
+
+  // Kuisioner narasumber — project-wide avg + per-narasumber breakdown
+  const { data: ratingRows } = await admin
+    .from("narasumber_ratings")
+    .select(
+      "narasumber_id, rating, narasumber:users!narasumber_ratings_narasumber_id_fkey(full_name)",
+    )
+    .eq("project_id", projectId);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const ratingArr = ((ratingRows ?? []) as any[]) as Array<{
+    narasumber_id: string;
+    rating: number;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    narasumber: any;
+  }>;
+  const ratingAvg =
+    ratingArr.length > 0
+      ? ratingArr.reduce((a, r) => a + r.rating, 0) / ratingArr.length
+      : null;
+  const ratingsByNs = new Map<
+    string,
+    { name: string; sum: number; count: number }
+  >();
+  for (const r of ratingArr) {
+    const cur = ratingsByNs.get(r.narasumber_id) ?? {
+      name: r.narasumber?.full_name ?? "Narasumber",
+      sum: 0,
+      count: 0,
+    };
+    cur.sum += r.rating;
+    cur.count += 1;
+    ratingsByNs.set(r.narasumber_id, cur);
+  }
+  const topNarasumber = Array.from(ratingsByNs.values())
+    .map((v) => ({
+      name: v.name,
+      avg: v.sum / v.count,
+      count: v.count,
+    }))
+    .sort((a, b) => b.avg - a.avg || b.count - a.count);
+
+  // Rencana aksi summary
+  const projectDesaIds = desa.map((d) => d.id);
+  const apStatus = { rencana: 0, on_track: 0, selesai: 0, ditunda: 0 };
+  if (projectDesaIds.length > 0) {
+    const { data: apRows } = await admin
+      .from("desa_action_plans")
+      .select("status")
+      .in("project_desa_id", projectDesaIds);
+    for (const r of (apRows ?? []) as Array<{ status: keyof typeof apStatus }>) {
+      if (apStatus[r.status] !== undefined) apStatus[r.status] += 1;
+    }
+  }
+  const actionPlansTotal =
+    apStatus.rencana + apStatus.on_track + apStatus.selesai + apStatus.ditunda;
 
   const summaries: Record<string, DesaSummary | null> = {};
   if (aiActuallyOn) {
@@ -122,11 +199,8 @@ export async function ReportBody({
         </h2>
         <div className="space-y-2">
           {topik.map((t) => {
-            const avg =
-              desa.length > 0
-                ? desa.reduce((a, d) => a + d.topik_summary.avg_pct, 0) /
-                  desa.length
-                : 0;
+            const agg = topikAggByPt.get(t.id);
+            const avg = agg && agg.count > 0 ? agg.sum / agg.count : 0;
             return (
               <div key={t.id} className="text-sm">
                 <div className="flex justify-between">
@@ -176,6 +250,65 @@ export async function ReportBody({
           </tbody>
         </table>
       </section>
+
+      {/* Kuisioner Narasumber */}
+      {ratingArr.length > 0 && (
+        <section className="mb-10">
+          <h2 className="mb-3 text-xs font-bold uppercase tracking-wide text-atr-fg-muted">
+            Kuisioner Narasumber
+          </h2>
+          <p className="mb-3 text-sm text-atr-fg">
+            Rata-rata penilaian peserta ke narasumber:{" "}
+            <strong>
+              ★ {ratingAvg != null ? ratingAvg.toFixed(2) : "—"}
+            </strong>{" "}
+            dari {ratingArr.length} penilaian.
+          </p>
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-atr-outline text-xs text-atr-fg-muted">
+                <th className="py-2 text-left">Narasumber</th>
+                <th className="py-2 text-right">Penilaian</th>
+                <th className="py-2 text-right">Rating</th>
+              </tr>
+            </thead>
+            <tbody>
+              {topNarasumber.map((n) => (
+                <tr key={n.name} className="border-b border-atr-outline/50">
+                  <td className="py-2 font-bold text-atr-fg">{n.name}</td>
+                  <td className="py-2 text-right text-atr-fg-muted">
+                    {n.count}
+                  </td>
+                  <td className="py-2 text-right font-bold text-atr-fg">
+                    ★ {n.avg.toFixed(2)}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </section>
+      )}
+
+      {/* Rencana Aksi */}
+      {actionPlansTotal > 0 && (
+        <section className="mb-10">
+          <h2 className="mb-3 text-xs font-bold uppercase tracking-wide text-atr-fg-muted">
+            Rencana Aksi Tindak Lanjut
+          </h2>
+          <p className="mb-3 text-sm text-atr-fg">
+            Total {actionPlansTotal} rencana aksi dari peserta &amp;
+            narasumber. {apStatus.selesai} sudah selesai, {apStatus.on_track}{" "}
+            on-track, {apStatus.rencana} masih rencana, {apStatus.ditunda}{" "}
+            ditunda.
+          </p>
+          <div className="grid grid-cols-4 gap-3 text-center text-xs">
+            <ReportStat label="Rencana" value={String(apStatus.rencana)} />
+            <ReportStat label="On Track" value={String(apStatus.on_track)} />
+            <ReportStat label="Selesai" value={String(apStatus.selesai)} />
+            <ReportStat label="Ditunda" value={String(apStatus.ditunda)} />
+          </div>
+        </section>
+      )}
 
       {aiActuallyOn &&
         desa.map((d) => {
@@ -236,6 +369,17 @@ export async function ReportBody({
         </div>
       </div>
     </main>
+  );
+}
+
+function ReportStat({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-lg border border-atr-outline p-3">
+      <div className="text-[10px] font-bold uppercase tracking-wide text-atr-fg-muted">
+        {label}
+      </div>
+      <div className="mt-1 text-xl font-bold text-atr-fg">{value}</div>
+    </div>
   );
 }
 

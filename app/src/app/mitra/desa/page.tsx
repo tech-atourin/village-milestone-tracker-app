@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 import { listAllDesa } from "@/server/queries/desa-master";
 import { EmptyState } from "@/components/ui/empty-state";
 import { DesaTable } from "@/app/atourin/desa/desa-table";
+import { AddDesaButton } from "@/app/atourin/desa/add-desa-button";
 
 async function getMitraProjectIds(): Promise<string[]> {
   const supabase = createClient();
@@ -23,14 +24,17 @@ export default async function MitraDesaListPage() {
 
   return (
     <div className="space-y-6">
-      <header>
-        <h1 className="text-2xl font-bold tracking-tight text-atr-fg">
-          Daftar Desa
-        </h1>
-        <p className="text-sm text-atr-fg-muted">
-          Desa wisata yang ada di project Anda. Filter, search, dan klik
-          untuk detail.
-        </p>
+      <header className="flex flex-wrap items-center justify-between gap-2">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight text-atr-fg">
+            Daftar Desa
+          </h1>
+          <p className="text-sm text-atr-fg-muted">
+            Master desa wisata. Tambah baru atau import dari Atourin Hub di
+            sini, lalu lampirkan ke project di tab Desa.
+          </p>
+        </div>
+        <AddDesaButton />
       </header>
 
       {rows.length === 0 ? (

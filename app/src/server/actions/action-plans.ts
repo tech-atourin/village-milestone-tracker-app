@@ -5,6 +5,11 @@ import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentUser } from "@/lib/auth/rbac";
 
+// Rencana Aksi is owned by the pelaksana (peserta) + pendamping (narasumber).
+// Admin roles (superadmin/mitra_admin) can only view; blocking at the server
+// action level closes the gap if the UI's canEdit flag is bypassed.
+const EDITOR_ROLES = new Set(["peserta", "narasumber"]);
+
 const TIMEFRAME = z.enum([
   "jangka_pendek",
   "jangka_menengah",
@@ -28,6 +33,10 @@ const createSchema = z.object({
 export async function createActionPlan(input: z.input<typeof createSchema>) {
   const user = await getCurrentUser();
   if (!user) return { error: "Tidak terautentikasi" };
+  if (!EDITOR_ROLES.has(user.global_role))
+    return {
+      error: "Hanya peserta atau narasumber yang bisa menambah rencana aksi.",
+    };
   const parsed = createSchema.safeParse(input);
   if (!parsed.success) return { error: "Input tidak valid" };
   const supabase = createClient();
@@ -55,6 +64,11 @@ const updateSchema = z.object({
 export async function updateActionPlan(input: z.input<typeof updateSchema>) {
   const user = await getCurrentUser();
   if (!user) return { error: "Tidak terautentikasi" };
+  if (!EDITOR_ROLES.has(user.global_role))
+    return {
+      error:
+        "Hanya peserta atau narasumber yang bisa mengubah rencana aksi.",
+    };
   const parsed = updateSchema.safeParse(input);
   if (!parsed.success) return { error: "Input tidak valid" };
   const { id, ...rest } = parsed.data;
@@ -71,6 +85,10 @@ export async function updateActionPlan(input: z.input<typeof updateSchema>) {
 export async function deleteActionPlan(id: string) {
   const user = await getCurrentUser();
   if (!user) return { error: "Tidak terautentikasi" };
+  if (!EDITOR_ROLES.has(user.global_role))
+    return {
+      error: "Hanya peserta atau narasumber yang bisa menghapus rencana aksi.",
+    };
   const supabase = createClient();
   const { error } = await supabase
     .from("desa_action_plans")
@@ -96,6 +114,10 @@ export async function uploadActionPlanEvidence(
 ) {
   const user = await getCurrentUser();
   if (!user) return { error: "Tidak terautentikasi" };
+  if (!EDITOR_ROLES.has(user.global_role))
+    return {
+      error: "Hanya peserta atau narasumber yang bisa upload evidence rencana aksi.",
+    };
   const parsed = evidenceSchema.safeParse(input);
   if (!parsed.success) return { error: "Input tidak valid" };
   const supabase = createClient();

@@ -37,7 +37,7 @@ export default async function PesertaBaselinePage({
         </p>
         {existing?.submitted_at && (
           <p className="mt-1 text-xs text-atr-arti">
-            ✓ Sudah disubmit pada{" "}
+            ✓ Data baseline aktif — terakhir diupdate{" "}
             {new Intl.DateTimeFormat("id-ID", {
               day: "numeric",
               month: "short",

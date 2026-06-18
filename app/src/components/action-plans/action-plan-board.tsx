@@ -46,6 +46,17 @@ const STATUSES = [
   { key: "ditunda", label: "Ditunda", color: "bg-atr-yellow/20 text-atr-fg", icon: Pause },
 ] as const;
 
+function groupByDesa(rows: ActionPlanRow[]): Array<[string, ActionPlanRow[]]> {
+  const buckets = new Map<string, ActionPlanRow[]>();
+  for (const r of rows) {
+    const key = r.desa_name || "Tanpa desa";
+    const arr = buckets.get(key) ?? [];
+    arr.push(r);
+    buckets.set(key, arr);
+  }
+  return Array.from(buckets.entries()).sort((a, b) => a[0].localeCompare(b[0]));
+}
+
 function fmtDate(s: string | null) {
   if (!s) return "—";
   return new Intl.DateTimeFormat("id-ID", {
@@ -149,6 +160,51 @@ export function ActionPlanBoard({
               : "Narasumber & peserta akan menambahkan rencana aksi di sini."}
           </p>
         </div>
+      ) : showDesa ? (
+        // Cross-desa view (atourin/mitra/narasumber): group by desa so it
+        // doesn't read as one big mixed list.
+        <div className="space-y-6">
+          {groupByDesa(filtered).map(([desaName, items]) => (
+            <section key={desaName} className="space-y-3">
+              <header className="flex items-center justify-between gap-2 border-b border-atr-outline pb-2">
+                <h4 className="inline-flex items-center gap-2 text-sm font-bold text-atr-fg">
+                  <span className="inline-flex h-5 items-center rounded-full bg-atr-purple-50 px-2 text-[10px] font-bold text-atr-purple-600">
+                    {desaName}
+                  </span>
+                  <span className="text-xs font-normal text-atr-fg-muted">
+                    {items.length} rencana
+                  </span>
+                </h4>
+              </header>
+              <div className="space-y-3">
+                {items.map((p) =>
+                  editing === p.id ? (
+                    <PlanForm
+                      key={p.id}
+                      desaOptions={desaOptions}
+                      initial={p}
+                      onCancel={() => setEditing(null)}
+                      onDone={() => {
+                        setEditing(null);
+                        router.refresh();
+                      }}
+                    />
+                  ) : (
+                    <PlanCard
+                      key={p.id}
+                      p={p}
+                      canEdit={canEdit}
+                      pending={pending}
+                      onEdit={() => setEditing(p.id)}
+                      onDelete={() => remove(p.id)}
+                      showDesa={false}
+                    />
+                  ),
+                )}
+              </div>
+            </section>
+          ))}
+        </div>
       ) : (
         <div className="space-y-3">
           {filtered.map((p) =>
@@ -171,7 +227,7 @@ export function ActionPlanBoard({
                 pending={pending}
                 onEdit={() => setEditing(p.id)}
                 onDelete={() => remove(p.id)}
-                showDesa={showDesa}
+                showDesa={false}
               />
             ),
           )}

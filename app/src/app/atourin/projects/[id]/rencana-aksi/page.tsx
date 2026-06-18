@@ -49,11 +49,12 @@ export default async function AtourinProjectRencanaAksiPage({
           Rencana Aksi
         </h1>
         <p className="text-sm text-atr-fg-muted">
-          Daftar rencana aksi dari peserta & narasumber di project ini.
-          Admin Atourin bisa edit/tambah jika diperlukan.
+          Daftar rencana aksi dari peserta &amp; narasumber per desa.
+          Pelaksana (peserta) dan pendamping (narasumber) yang membuat
+          &amp; meng-update; admin Atourin hanya memantau.
         </p>
       </header>
-      <ActionPlanBoard rows={rows} desaOptions={desaOptions} canEdit={true} />
+      <ActionPlanBoard rows={rows} desaOptions={desaOptions} canEdit={false} />
     </div>
   );
 }

@@ -464,7 +464,7 @@ export default async function DesaProfilPage() {
           </div>
           {baseline.submitted_at && (
             <p className="mt-4 text-[11px] text-atr-fg-muted">
-              Disubmit{" "}
+              Terakhir diupdate{" "}
               {new Intl.DateTimeFormat("id-ID", {
                 day: "numeric",
                 month: "short",

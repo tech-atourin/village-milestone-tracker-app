@@ -1,0 +1,298 @@
+"use client";
+
+import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import {
+  Plus,
+  Loader2,
+  X,
+  Star,
+  GraduationCap,
+  MapPin,
+  ChevronRight,
+  Search,
+} from "lucide-react";
+import {
+  addProjectMember,
+  removeProjectMember,
+} from "@/server/actions/memberships";
+import type { UserListRow } from "@/server/queries/users";
+
+export type NarasumberAssignment = {
+  membership_id: string | null;
+  user: { id: string; full_name: string; email: string | null };
+  desa: Array<{ id: string; name: string }>;
+  sessions_count: number;
+  avg_rating: number | null;
+  rating_count: number;
+};
+
+export function NarasumberTab({
+  projectId,
+  assignments,
+  candidates,
+  narasumberDetailBase,
+}: {
+  projectId: string;
+  assignments: NarasumberAssignment[];
+  candidates: UserListRow[];
+  narasumberDetailBase: "/atourin/narasumber" | "/mitra/narasumber";
+}) {
+  const router = useRouter();
+  const [pending, startTransition] = useTransition();
+  const [showAdd, setShowAdd] = useState(false);
+  const [q, setQ] = useState("");
+  const [selUser, setSelUser] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  const memberIds = new Set(assignments.map((a) => a.user.id));
+  const filtered = q
+    ? candidates
+        .filter((u) => u.global_role === "narasumber")
+        .filter((u) => !memberIds.has(u.id))
+        .filter(
+          (u) =>
+            u.full_name.toLowerCase().includes(q.toLowerCase()) ||
+            (u.email ?? "").toLowerCase().includes(q.toLowerCase()),
+        )
+        .slice(0, 30)
+    : [];
+
+  function add() {
+    if (!selUser) return;
+    setError(null);
+    startTransition(async () => {
+      const r = await addProjectMember({
+        project_id: projectId,
+        user_id: selUser,
+        role: "narasumber",
+        desa_id: null,
+      });
+      if (r.error) setError(r.error);
+      else {
+        setShowAdd(false);
+        setSelUser(null);
+        setQ("");
+        router.refresh();
+      }
+    });
+  }
+
+  function remove(membershipId: string | null) {
+    if (!membershipId) return;
+    if (
+      !confirm(
+        "Lepas narasumber ini dari project? Riwayat sesi & rating tetap tersimpan.",
+      )
+    )
+      return;
+    startTransition(async () => {
+      await removeProjectMember({
+        membership_id: membershipId,
+        project_id: projectId,
+      });
+      router.refresh();
+    });
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <div>
+          <h3 className="text-base font-bold text-atr-fg">
+            Narasumber project
+          </h3>
+          <p className="text-sm text-atr-fg-muted">
+            {assignments.length} narasumber terdaftar — penilaian dari
+            kuisioner peserta diakumulasi otomatis.
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={() => setShowAdd((s) => !s)}
+          className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-atr-purple px-3 text-sm font-bold text-white transition hover:bg-atr-purple-600"
+        >
+          <Plus className="h-4 w-4" />
+          Tambah Narasumber
+        </button>
+      </div>
+
+      {showAdd && (
+        <div className="space-y-3 rounded-2xl border border-atr-outline bg-white p-5 shadow-atr-1">
+          <div className="relative">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-atr-fg-muted" />
+            <input
+              type="search"
+              placeholder="Cari narasumber (nama atau email)…"
+              value={q}
+              onChange={(e) => {
+                setQ(e.target.value);
+                setSelUser(null);
+              }}
+              autoFocus
+              className="h-10 w-full rounded-lg border border-atr-outline pl-10 pr-3 text-sm outline-none focus:border-atr-purple focus:ring-2 focus:ring-atr-purple/15"
+            />
+          </div>
+          <ul className="max-h-48 divide-y divide-atr-outline overflow-y-auto rounded-lg border border-atr-outline">
+            {!q ? (
+              <li className="p-4 text-center text-xs text-atr-fg-muted">
+                Ketik minimal 1 huruf untuk mencari narasumber dari database.
+              </li>
+            ) : filtered.length === 0 ? (
+              <li className="p-4 text-center text-xs text-atr-fg-muted">
+                Tidak ada narasumber cocok. Tambahkan dulu lewat menu
+                Narasumber → Bulk Import.
+              </li>
+            ) : (
+              filtered.map((u) => (
+                <li
+                  key={u.id}
+                  className={`flex items-center justify-between gap-2 p-3 ${
+                    selUser === u.id
+                      ? "bg-atr-purple-50"
+                      : "hover:bg-atr-bg-soft"
+                  }`}
+                >
+                  <div className="min-w-0 flex-1">
+                    <div className="truncate text-sm font-bold text-atr-fg">
+                      {u.full_name}
+                    </div>
+                    <div className="truncate text-xs text-atr-fg-muted">
+                      {u.email_artificial ? "(no email)" : u.email}
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setSelUser(u.id)}
+                    className={`inline-flex h-7 items-center rounded-md px-2.5 text-xs font-bold transition ${
+                      selUser === u.id
+                        ? "bg-atr-purple text-white"
+                        : "border border-atr-outline bg-white text-atr-fg hover:bg-atr-bg-soft"
+                    }`}
+                  >
+                    {selUser === u.id ? "Dipilih" : "Pilih"}
+                  </button>
+                </li>
+              ))
+            )}
+          </ul>
+          {error && (
+            <div className="rounded-lg border border-atr-red/30 bg-atr-red/10 px-3 py-2 text-xs text-atr-red">
+              {error}
+            </div>
+          )}
+          <div className="flex justify-end gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                setShowAdd(false);
+                setSelUser(null);
+                setError(null);
+              }}
+              className="inline-flex h-9 items-center rounded-lg border border-atr-outline bg-white px-3 text-sm font-bold text-atr-fg transition hover:bg-atr-bg-soft"
+            >
+              Batal
+            </button>
+            <button
+              type="button"
+              onClick={add}
+              disabled={pending || !selUser}
+              className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-atr-purple px-3 text-sm font-bold text-white transition hover:bg-atr-purple-600 disabled:opacity-50"
+            >
+              {pending && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+              Tambahkan
+            </button>
+          </div>
+        </div>
+      )}
+
+      {assignments.length === 0 ? (
+        <div className="rounded-2xl border border-dashed border-atr-outline bg-white p-12 text-center">
+          <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-atr-bg-soft">
+            <GraduationCap className="h-5 w-5 text-atr-fg-muted" />
+          </div>
+          <p className="text-sm font-bold text-atr-fg">Belum ada narasumber</p>
+          <p className="mt-1 text-xs text-atr-fg-muted">
+            Tambahkan narasumber agar bisa dijadwalkan sesi pendampingan.
+          </p>
+        </div>
+      ) : (
+        <div className="grid gap-3 sm:grid-cols-2">
+          {assignments.map((a) => (
+            <article
+              key={a.user.id}
+              className="rounded-2xl border border-atr-outline bg-white p-4 shadow-atr-1"
+            >
+              <div className="flex items-start gap-3">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-atr-yellow/30 text-atr-fg">
+                  <GraduationCap className="h-5 w-5" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <Link
+                    href={`${narasumberDetailBase}/${a.user.id}`}
+                    className="inline-flex items-center gap-1 text-sm font-bold text-atr-fg hover:text-atr-purple-600"
+                  >
+                    {a.user.full_name}
+                    <ChevronRight className="h-3 w-3" />
+                  </Link>
+                  <div className="truncate text-[11px] text-atr-fg-muted">
+                    {a.user.email ?? "—"}
+                  </div>
+                </div>
+                {a.membership_id && (
+                  <button
+                    type="button"
+                    onClick={() => remove(a.membership_id)}
+                    title="Lepas dari project"
+                    className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-atr-outline bg-white text-atr-fg-muted transition hover:border-atr-red/30 hover:text-atr-red"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                )}
+              </div>
+
+              <div className="mt-3 flex items-center justify-between gap-2 rounded-lg bg-atr-bg-soft px-3 py-2 text-xs">
+                <div className="flex items-center gap-1.5">
+                  <Star className="h-3.5 w-3.5 fill-atr-yellow text-atr-yellow" />
+                  <span className="font-bold text-atr-fg">
+                    {a.avg_rating != null ? a.avg_rating.toFixed(2) : "—"}
+                  </span>
+                  <span className="text-atr-fg-muted">
+                    ({a.rating_count} kuisioner)
+                  </span>
+                </div>
+                <span className="text-atr-fg-muted">
+                  {a.sessions_count} sesi
+                </span>
+              </div>
+
+              {a.desa.length > 0 ? (
+                <div className="mt-3">
+                  <div className="text-[10px] font-bold uppercase tracking-wide text-atr-fg-muted">
+                    Mendampingi
+                  </div>
+                  <div className="mt-1 flex flex-wrap gap-1">
+                    {a.desa.map((d) => (
+                      <span
+                        key={d.id}
+                        className="inline-flex items-center gap-1 rounded-full bg-atr-purple-50 px-2 py-0.5 text-[10px] font-bold text-atr-purple-600"
+                      >
+                        <MapPin className="h-2.5 w-2.5" />
+                        {d.name}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <p className="mt-3 text-[11px] italic text-atr-fg-muted">
+                  Belum ada sesi tercatat untuk desa di project ini.
+                </p>
+              )}
+            </article>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}

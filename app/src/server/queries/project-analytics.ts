@@ -17,8 +17,12 @@ export type ProjectAnalytics = {
   // Materi pendampingan (count sessions per pilar competence)
   // We approximate per-narasumber kompetensi: each session links to a narasumber's kompetensi
   materi_by_kompetensi: Array<{ kompetensi: string; sessions: number }>;
-  // Top narasumber by # sesi pendampingan (max 5)
-  top_narasumber: Array<{ name: string; sessions: number }>;
+  // Top narasumber by avg kuisioner rating (max 5)
+  top_narasumber: Array<{
+    name: string;
+    avg_rating: number;
+    rating_count: number;
+  }>;
   // Sesi summary
   sessions_total: number;
   sessions_verified: number;
@@ -33,17 +37,51 @@ export type ProjectAnalytics = {
     completion_pct: number;
     peserta_count: number;
     sessions_done: number;
+    action_plans_done: number;
+    action_plans_total: number;
+    action_plans_pct: number;
   }>;
   // Action plans stats
   action_plans_total: number;
   action_plans_by_status: Record<"rencana" | "on_track" | "selesai" | "ditunda", number>;
-  // Hub assessment results (Versi 2)
+  // Hub assessment results (V2 Atourin)
   hub_assessment_results: Array<{
     desa_id: string;
     desa_name: string;
     level_hasil: string | null;
     skor_total: number | null;
     status: string;
+  }>;
+  // V1 ADWI assessment progress per desa, derived from
+  // national_criteria_progress (counts of approved / submitted / total).
+  v1_assessment_results: Array<{
+    desa_id: string;
+    desa_name: string;
+    approved: number;
+    submitted: number;
+    rejected: number;
+    total_progress: number;
+  }>;
+  // Narasumber roster size (memberships role=narasumber + anyone running
+  // a session in this project, deduped).
+  narasumber_count: number;
+  // Distinct kompetensi covered by the narasumber roster.
+  narasumber_kompetensi_count: number;
+  // Project-wide kuisioner narasumber aggregate
+  kuisioner: {
+    avg_rating: number | null;
+    rating_count: number;
+    distribution: { "1": number; "2": number; "3": number; "4": number; "5": number };
+  };
+  // Per-topik checklist completion (% averaged across desa instances).
+  // Checklist progress is per-desa (peserta from same desa share it), so we
+  // average desa_topik_instance.completion_percent grouped by project_topik.
+  checklist_by_topik: Array<{
+    topik_id: string;
+    topik_name: string;
+    completion_pct: number;
+    desa_done: number;
+    desa_total: number;
   }>;
 };
 
@@ -114,29 +152,59 @@ export async function getProjectAnalytics(
   const { data: sessions } = await supabase
     .from("pendampingan_sessions")
     .select(
-      "id, status, narasumber:users!pendampingan_sessions_narasumber_id_fkey(full_name, kompetensi)",
+      "id, status, narasumber:users!pendampingan_sessions_narasumber_id_fkey(id, full_name, kompetensi)",
     )
     .eq("project_id", projectId);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const sRows = (sessions ?? []) as any[];
   const materiMap = new Map<string, number>();
-  const narasumberMap = new Map<string, number>();
-  let ses_verified = 0, ses_submitted = 0, ses_draft = 0;
+  let ses_verified = 0,
+    ses_submitted = 0,
+    ses_draft = 0;
+  // Track full_name per narasumber_id so we can join ratings without
+  // re-fetching the user table.
+  const narasumberNameById = new Map<string, string>();
   for (const s of sRows) {
     if (s.status === "verified") ses_verified++;
     else if (s.status === "submitted") ses_submitted++;
     else ses_draft++;
     const k = s.narasumber?.kompetensi ?? "Lain-lain";
     materiMap.set(k, (materiMap.get(k) ?? 0) + 1);
-    const nm = s.narasumber?.full_name;
-    if (nm) narasumberMap.set(nm, (narasumberMap.get(nm) ?? 0) + 1);
+    if (s.narasumber?.full_name && s.narasumber?.id)
+      narasumberNameById.set(s.narasumber.id, s.narasumber.full_name);
   }
   const materi_by_kompetensi = Array.from(materiMap.entries()).map(
     ([kompetensi, sessions]) => ({ kompetensi, sessions }),
   );
-  const top_narasumber = Array.from(narasumberMap.entries())
-    .map(([name, sessions]) => ({ name, sessions }))
-    .sort((a, b) => b.sessions - a.sessions)
+
+  // Top narasumber by kuisioner rating — average of peserta ratings, scoped
+  // to this project. Include narasumber that have a rating even if they didn't
+  // run a session in our session list (covers seeded data).
+  const { data: ratingRows } = await supabase
+    .from("narasumber_ratings")
+    .select("narasumber_id, rating, narasumber:users(full_name)")
+    .eq("project_id", projectId);
+  const ratingAgg = new Map<
+    string,
+    { name: string; sum: number; count: number }
+  >();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  for (const r of ((ratingRows ?? []) as any[])) {
+    const id = r.narasumber_id as string;
+    const name =
+      r.narasumber?.full_name ?? narasumberNameById.get(id) ?? "Narasumber";
+    const cur = ratingAgg.get(id) ?? { name, sum: 0, count: 0 };
+    cur.sum += r.rating;
+    cur.count += 1;
+    ratingAgg.set(id, cur);
+  }
+  const top_narasumber = Array.from(ratingAgg.values())
+    .map((r) => ({
+      name: r.name,
+      avg_rating: r.count > 0 ? r.sum / r.count : 0,
+      rating_count: r.count,
+    }))
+    .sort((a, b) => b.avg_rating - a.avg_rating || b.rating_count - a.rating_count)
     .slice(0, 5);
 
   // Attendance avg pct
@@ -193,6 +261,23 @@ export async function getProjectAnalytics(
       );
     }
   }
+  // Per-desa rencana aksi counts (done + total) so the Top Desa table can
+  // show action plan progress alongside checklist progress.
+  const apByPd = new Map<string, { done: number; total: number }>();
+  if (projectDesaIds.length > 0) {
+    const { data: apPerDesa } = await supabase
+      .from("desa_action_plans")
+      .select("project_desa_id, status")
+      .in("project_desa_id", projectDesaIds);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    for (const r of (apPerDesa ?? []) as any[]) {
+      const cur = apByPd.get(r.project_desa_id) ?? { done: 0, total: 0 };
+      cur.total += 1;
+      if (r.status === "selesai") cur.done += 1;
+      apByPd.set(r.project_desa_id, cur);
+    }
+  }
+
   const top_desa = desaRows
     .map((d) => {
       const completions = completionByPd.get(d.id) ?? [];
@@ -203,12 +288,17 @@ export async function getProjectAnalytics(
                 10,
             ) / 10
           : 0;
+      const ap = apByPd.get(d.id) ?? { done: 0, total: 0 };
+      const apPct = ap.total > 0 ? (ap.done / ap.total) * 100 : 0;
       return {
         desa_id: d.desa_id as string,
         desa_name: (d.desa?.name as string) ?? "—",
         completion_pct: avg,
         peserta_count: pesertaByDesa.get(d.desa_id) ?? 0,
         sessions_done: sessionsByDesa.get(d.id) ?? 0,
+        action_plans_done: ap.done,
+        action_plans_total: ap.total,
+        action_plans_pct: Math.round(apPct),
       };
     })
     .sort((a, b) => b.completion_pct - a.completion_pct)
@@ -230,6 +320,43 @@ export async function getProjectAnalytics(
     if (r.status in apStatus) apStatus[r.status as keyof typeof apStatus]++;
   }
 
+  // V1 ADWI assessment progress per desa (national_criteria_progress)
+  let v1_assessment_results: ProjectAnalytics["v1_assessment_results"] = [];
+  if (desaIds.length > 0) {
+    const { data: ncp } = await supabase
+      .from("national_criteria_progress")
+      .select("desa_id, status, desa:desa(name)")
+      .in("desa_id", desaIds);
+    const agg = new Map<
+      string,
+      { name: string; approved: number; submitted: number; rejected: number; total: number }
+    >();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    for (const r of (ncp ?? []) as any[]) {
+      const id = r.desa_id as string;
+      const cur = agg.get(id) ?? {
+        name: r.desa?.name ?? "—",
+        approved: 0,
+        submitted: 0,
+        rejected: 0,
+        total: 0,
+      };
+      cur.total += 1;
+      if (r.status === "approved") cur.approved += 1;
+      else if (r.status === "submitted") cur.submitted += 1;
+      else if (r.status === "rejected") cur.rejected += 1;
+      agg.set(id, cur);
+    }
+    v1_assessment_results = Array.from(agg.entries()).map(([desa_id, v]) => ({
+      desa_id,
+      desa_name: v.name,
+      approved: v.approved,
+      submitted: v.submitted,
+      rejected: v.rejected,
+      total_progress: v.total,
+    }));
+  }
+
   // Hub assessment results for desa in this project
   let hub_assessment_results: ProjectAnalytics["hub_assessment_results"] = [];
   if (desaIds.length > 0) {
@@ -248,6 +375,90 @@ export async function getProjectAnalytics(
       status: r.status,
     }));
   }
+
+  // Narasumber roster — union of memberships (role=narasumber) and anyone
+  // running a session in this project. Plus distinct kompetensi covered.
+  const narasumberIds = new Set<string>();
+  const kompetensiSet = new Set<string>();
+  const { data: nsMemberships } = await supabase
+    .from("project_memberships")
+    .select(
+      "user_id, user:users!project_memberships_user_id_fkey(kompetensi)",
+    )
+    .eq("project_id", projectId)
+    .eq("role", "narasumber")
+    .eq("status", "active");
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  for (const m of (nsMemberships ?? []) as any[]) {
+    if (m.user_id) narasumberIds.add(m.user_id);
+    if (m.user?.kompetensi) kompetensiSet.add(m.user.kompetensi);
+  }
+  for (const s of sRows) {
+    if (s.narasumber?.id) narasumberIds.add(s.narasumber.id);
+    if (s.narasumber?.kompetensi) kompetensiSet.add(s.narasumber.kompetensi);
+  }
+
+  // Kuisioner aggregate — also produce 1..5 distribution for the histogram.
+  const distribution = { "1": 0, "2": 0, "3": 0, "4": 0, "5": 0 };
+  let kuisionerSum = 0;
+  let kuisionerCount = 0;
+  // ratingRows was loaded earlier for top_narasumber
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  for (const r of ((ratingRows ?? []) as any[])) {
+    const v = Number(r.rating);
+    if (!Number.isFinite(v) || v < 1 || v > 5) continue;
+    kuisionerSum += v;
+    kuisionerCount += 1;
+    const key = String(Math.round(v)) as keyof typeof distribution;
+    distribution[key] += 1;
+  }
+
+  // Per-topik completion across all desa in the project. Group
+  // desa_topik_instance.completion_percent by project_topik.id.
+  type TopikAggRow = {
+    completion_percent: number | null;
+    project_topik: {
+      id: string;
+      name: string | null;
+      title: string | null;
+    } | null;
+  };
+  const { data: ptInstances } = await supabase
+    .from("desa_topik_instance")
+    .select(
+      "completion_percent, project_topik:project_topik!inner(id, name, project_id)",
+    )
+    .eq("project_topik.project_id", projectId);
+  const topikAgg = new Map<
+    string,
+    { name: string; sum: number; count: number; done: number; total: number }
+  >();
+  for (const r of ((ptInstances ?? []) as unknown) as TopikAggRow[]) {
+    const pt = r.project_topik;
+    if (!pt) continue;
+    const cur = topikAgg.get(pt.id) ?? {
+      name: pt.name ?? pt.title ?? "—",
+      sum: 0,
+      count: 0,
+      done: 0,
+      total: 0,
+    };
+    const pct = Number(r.completion_percent ?? 0);
+    cur.sum += pct;
+    cur.count += 1;
+    cur.total += 1;
+    if (pct >= 100) cur.done += 1;
+    topikAgg.set(pt.id, cur);
+  }
+  const checklist_by_topik = Array.from(topikAgg.entries())
+    .map(([topik_id, v]) => ({
+      topik_id,
+      topik_name: v.name,
+      completion_pct: v.count > 0 ? v.sum / v.count : 0,
+      desa_done: v.done,
+      desa_total: v.total,
+    }))
+    .sort((a, b) => b.completion_pct - a.completion_pct);
 
   return {
     project: {
@@ -270,5 +481,14 @@ export async function getProjectAnalytics(
     action_plans_total: (aps ?? []).length,
     action_plans_by_status: apStatus,
     hub_assessment_results,
+    v1_assessment_results,
+    narasumber_count: narasumberIds.size,
+    narasumber_kompetensi_count: kompetensiSet.size,
+    kuisioner: {
+      avg_rating: kuisionerCount > 0 ? kuisionerSum / kuisionerCount : null,
+      rating_count: kuisionerCount,
+      distribution,
+    },
+    checklist_by_topik,
   };
 }

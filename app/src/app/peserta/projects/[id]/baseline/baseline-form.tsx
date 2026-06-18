@@ -104,7 +104,7 @@ export function BaselineForm({
           ) : (
             <Send className="h-4 w-4" />
           )}
-          Submit final
+          Simpan &amp; Update
         </button>
       </div>
     </div>

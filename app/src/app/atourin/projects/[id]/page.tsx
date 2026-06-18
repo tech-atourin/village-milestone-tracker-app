@@ -11,13 +11,19 @@ import { listProjectTopikWithItems } from "@/server/queries/topik";
 import { createClient } from "@/lib/supabase/server";
 import { DesaTab } from "./desa-tab";
 import { PesertaTab } from "./peserta-tab";
+import { NarasumberTab } from "./narasumber-tab";
+import { loadNarasumberAssignments } from "@/server/queries/narasumber-assignments";
 import { TopikTab } from "./topik-tab";
 import { EvidenceTab } from "./evidence-tab";
 import { ProjectActions } from "./project-actions";
+import { OverviewTab } from "./overview-tab";
 import { SettingsTab } from "./settings-tab";
 import { type GformRow } from "./gforms-panel";
-import { GformsTab, type TestResultRow } from "./gforms-tab";
-import { AnalyticsSection } from "./analytics-section";
+import {
+  GformsTab,
+  type TestResultRow,
+  type NarasumberRatingRow,
+} from "./gforms-tab";
 import { SummaryTab } from "./summary-tab";
 import { ActionPlanBoard } from "@/components/action-plans/action-plan-board";
 import { listActionPlans } from "@/server/queries/action-plans";
@@ -59,6 +65,7 @@ const TABS = [
   { key: "desa", label: "Desa" },
   { key: "topik", label: "Topik" },
   { key: "peserta", label: "Peserta" },
+  { key: "narasumber", label: "Narasumber" },
   { key: "rencana-aksi", label: "Rencana Aksi" },
   { key: "evidence", label: "Evidence" },
   { key: "gforms", label: "Test Results" },
@@ -160,6 +167,9 @@ export default async function ProjectDetailPage({
       {activeTab === "desa" && <DesaTabLoader projectId={project.id} />}
       {activeTab === "topik" && <TopikTabLoader projectId={project.id} />}
       {activeTab === "peserta" && <PesertaTabLoader projectId={project.id} />}
+      {activeTab === "narasumber" && (
+        <NarasumberTabLoader projectId={project.id} />
+      )}
       {activeTab === "rencana-aksi" && (
         <RencanaAksiTabLoader projectId={project.id} />
       )}
@@ -206,6 +216,21 @@ async function PesertaTabLoader({ projectId }: { projectId: string }) {
   );
 }
 
+async function NarasumberTabLoader({ projectId }: { projectId: string }) {
+  const [assignments, candidates] = await Promise.all([
+    loadNarasumberAssignments(projectId),
+    listUsers({ role: "narasumber" }),
+  ]);
+  return (
+    <NarasumberTab
+      projectId={projectId}
+      assignments={assignments}
+      candidates={candidates}
+      narasumberDetailBase="/atourin/narasumber"
+    />
+  );
+}
+
 async function TopikTabLoader({ projectId }: { projectId: string }) {
   const topik = await listProjectTopikWithItems(projectId);
   return <TopikTab projectId={projectId} topik={topik} editable />;
@@ -231,7 +256,9 @@ async function RencanaAksiTabLoader({ projectId }: { projectId: string }) {
     project_name: r.project?.name ?? "—",
     desa_name: r.desa?.name ?? "—",
   }));
-  return <ActionPlanBoard rows={rows} desaOptions={desaOptions} canEdit />;
+  return (
+    <ActionPlanBoard rows={rows} desaOptions={desaOptions} canEdit={false} />
+  );
 }
 
 async function GformsAndResultsLoader({ projectId }: { projectId: string }) {
@@ -273,93 +300,38 @@ async function GformsAndResultsLoader({ projectId }: { projectId: string }) {
     }));
   }
 
+  // Narasumber kuisioner data — joined separately because it lives in
+  // narasumber_ratings (not synced from a gform).
+  const { data: nrData } = await supabase
+    .from("narasumber_ratings")
+    .select(
+      "id, narasumber_id, rater_id, rating, comment, created_at, narasumber:users!narasumber_ratings_narasumber_id_fkey(full_name), rater:users!narasumber_ratings_rater_id_fkey(full_name, email)",
+    )
+    .eq("project_id", projectId)
+    .order("created_at", { ascending: false })
+    .limit(500);
+  const narasumberRatings: NarasumberRatingRow[] = (
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (nrData ?? []) as any[]
+  ).map((r) => ({
+    id: r.id,
+    narasumber_id: r.narasumber_id,
+    narasumber_name: r.narasumber?.full_name ?? "Narasumber",
+    rater_id: r.rater_id,
+    rater_name: r.rater?.full_name ?? null,
+    rater_email: r.rater?.email ?? null,
+    rating: r.rating,
+    comment: r.comment,
+    submitted_at: r.created_at,
+  }));
+
   return (
     <GformsTab
       projectId={projectId}
       gforms={gforms}
       testResults={testResults}
+      narasumberRatings={narasumberRatings}
     />
   );
 }
 
-function OverviewTab({
-  project,
-  projectId,
-}: {
-  project: Awaited<ReturnType<typeof getProject>> & object;
-  projectId: string;
-}) {
-  return (
-    <div className="space-y-6">
-      <div className="grid gap-6 lg:grid-cols-3">
-        <div className="space-y-4 lg:col-span-2">
-          <Card title="Deskripsi">
-            {project.description ? (
-              <p className="whitespace-pre-line text-sm text-atr-fg">
-                {project.description}
-              </p>
-            ) : (
-              <p className="text-sm italic text-atr-fg-muted">
-                Tidak ada deskripsi.
-              </p>
-            )}
-          </Card>
-
-          <Card title="Modul aktif">
-            <ul className="space-y-1.5 text-sm text-atr-fg">
-              {Object.entries(project.enabled_modules).map(([k, v]) => (
-                <li key={k} className="flex items-center justify-between">
-                  <span className="capitalize">{k.replace(/_/g, " ")}</span>
-                  <span
-                    className={`rounded-full px-2 py-0.5 text-xs font-bold ${
-                      v
-                        ? "bg-atr-arti/15 text-atr-arti"
-                        : "bg-atr-bg-soft text-atr-fg-muted"
-                    }`}
-                  >
-                    {v ? "Aktif" : "Off"}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </Card>
-        </div>
-
-        <div className="space-y-4">
-          <Stat label="Topik" value={project.topik_count} />
-          <Stat label="Checklist items" value={project.checklist_count} />
-          <Stat label="Desa" value={project.desa_count} />
-          <Stat label="Anggota project" value={project.member_count} />
-        </div>
-      </div>
-
-      {/* Analytics merged into Overview */}
-      <section className="space-y-3">
-        <h3 className="text-sm font-bold uppercase tracking-wide text-atr-fg-muted">
-          Analytics
-        </h3>
-        <AnalyticsSection projectId={projectId} />
-      </section>
-    </div>
-  );
-}
-
-function Card({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <div className="rounded-2xl border border-atr-outline bg-white p-5 shadow-atr-1">
-      <h3 className="mb-3 text-sm font-bold text-atr-fg">{title}</h3>
-      {children}
-    </div>
-  );
-}
-
-function Stat({ label, value }: { label: string; value: number }) {
-  return (
-    <div className="rounded-2xl border border-atr-outline bg-white p-5 shadow-atr-1">
-      <div className="text-xs font-bold uppercase tracking-wide text-atr-fg-muted">
-        {label}
-      </div>
-      <div className="mt-1 text-2xl font-bold text-atr-fg">{value}</div>
-    </div>
-  );
-}

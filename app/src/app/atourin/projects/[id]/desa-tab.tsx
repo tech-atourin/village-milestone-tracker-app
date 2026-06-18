@@ -12,10 +12,7 @@ import {
   X,
   Database,
 } from "lucide-react";
-import {
-  attachDesaToProject,
-  createDesaAction,
-} from "@/server/actions/desa";
+import { attachDesaToProject } from "@/server/actions/desa";
 import { importHubDesaToProject } from "@/server/actions/hub-import";
 import type { DesaRow, ProjectDesaRow } from "@/server/queries/desa";
 
@@ -39,10 +36,12 @@ export function DesaTab({
   projectId,
   attached,
   allDesa,
+  scope = "atourin",
 }: {
   projectId: string;
   attached: ProjectDesaRow[];
   allDesa: DesaRow[];
+  scope?: "atourin" | "mitra";
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -53,12 +52,10 @@ export function DesaTab({
   const [hubResults, setHubResults] = useState<any[]>([]);
   const [hubSearching, setHubSearching] = useState(false);
   const [q, setQ] = useState("");
-  const [newDesaForm, setNewDesaForm] = useState<null | {
-    name: string;
-    kabupaten: string;
-    provinsi: string;
-  }>(null);
   const [error, setError] = useState<string | null>(null);
+  // Both scopes need a way to register a brand-new desa. Atourin has the
+  // master Desa menu; mitra is routed there as well (mirror added).
+  const desaMenuHref = scope === "mitra" ? "/mitra/desa" : "/atourin/desa";
 
   async function searchHub() {
     setHubSearching(true);
@@ -106,29 +103,6 @@ export function DesaTab({
       const r = await attachDesaToProject({ project_id: projectId, desa_id: desaId });
       if (r.error) setError(r.error);
       else router.refresh();
-    });
-  }
-
-  function createAndAttach() {
-    if (!newDesaForm) return;
-    setError(null);
-    startTransition(async () => {
-      const c = await createDesaAction({
-        name: newDesaForm.name.trim(),
-        kabupaten: newDesaForm.kabupaten || null,
-        provinsi: newDesaForm.provinsi || null,
-      });
-      if (c.error || !c.desa) {
-        setError(c.error || "Gagal create desa");
-        return;
-      }
-      const r = await attachDesaToProject({ project_id: projectId, desa_id: c.desa.id });
-      if (r.error) setError(r.error);
-      else {
-        setNewDesaForm(null);
-        setShowSearch(false);
-        router.refresh();
-      }
     });
   }
 
@@ -260,151 +234,94 @@ export function DesaTab({
       )}
 
       {showSearch && (
-        <div className="rounded-2xl border border-atr-outline bg-white p-5 shadow-atr-1">
-          {newDesaForm ? (
-            <div className="space-y-3">
-              <h4 className="text-sm font-bold text-atr-fg">
-                Buat desa baru
-              </h4>
+        <div className="space-y-3 rounded-2xl border border-atr-outline bg-white p-5 shadow-atr-1">
+          <div>
+            <div className="relative">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-atr-fg-muted" />
               <input
-                type="text"
-                placeholder="Nama desa (cth: Desa Wisata Wanurejo)"
-                value={newDesaForm.name}
-                onChange={(e) =>
-                  setNewDesaForm({ ...newDesaForm, name: e.target.value })
-                }
-                className="h-10 w-full rounded-lg border border-atr-outline px-3 text-sm outline-none focus:border-atr-purple focus:ring-2 focus:ring-atr-purple/15"
+                type="search"
+                placeholder="Ketik nama desa, kabupaten, atau provinsi…"
+                value={q}
+                onChange={(e) => setQ(e.target.value)}
+                autoFocus
+                className="h-10 w-full rounded-lg border border-atr-outline bg-white pl-10 pr-3 text-sm outline-none focus:border-atr-purple focus:ring-2 focus:ring-atr-purple/15"
               />
-              <div className="grid gap-3 sm:grid-cols-2">
-                <input
-                  type="text"
-                  placeholder="Kabupaten"
-                  value={newDesaForm.kabupaten}
-                  onChange={(e) =>
-                    setNewDesaForm({
-                      ...newDesaForm,
-                      kabupaten: e.target.value,
-                    })
-                  }
-                  className="h-10 w-full rounded-lg border border-atr-outline px-3 text-sm outline-none focus:border-atr-purple focus:ring-2 focus:ring-atr-purple/15"
-                />
-                <input
-                  type="text"
-                  placeholder="Provinsi"
-                  value={newDesaForm.provinsi}
-                  onChange={(e) =>
-                    setNewDesaForm({
-                      ...newDesaForm,
-                      provinsi: e.target.value,
-                    })
-                  }
-                  className="h-10 w-full rounded-lg border border-atr-outline px-3 text-sm outline-none focus:border-atr-purple focus:ring-2 focus:ring-atr-purple/15"
-                />
-              </div>
-              {error && (
-                <div className="rounded-lg border border-atr-red/30 bg-atr-red/10 px-3 py-2 text-xs text-atr-red">
-                  {error}
-                </div>
-              )}
-              <div className="flex gap-2">
-                <button
-                  type="button"
-                  onClick={() => setNewDesaForm(null)}
-                  className="inline-flex h-9 items-center rounded-lg border border-atr-outline bg-white px-3 text-sm font-bold text-atr-fg transition hover:bg-atr-bg-soft"
-                >
-                  Batal
-                </button>
-                <button
-                  type="button"
-                  onClick={createAndAttach}
-                  disabled={pending || !newDesaForm.name.trim()}
-                  className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-atr-purple px-3 text-sm font-bold text-white transition hover:bg-atr-purple-600 disabled:opacity-50"
-                >
-                  {pending && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
-                  Buat + Lampirkan
-                </button>
-              </div>
             </div>
-          ) : (
-            <div className="space-y-3">
-              <div className="flex items-center gap-2">
-                <div className="relative flex-1">
-                  <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-atr-fg-muted" />
-                  <input
-                    type="search"
-                    placeholder="Cari desa di master…"
-                    value={q}
-                    onChange={(e) => setQ(e.target.value)}
-                    className="h-10 w-full rounded-lg border border-atr-outline bg-white pl-10 pr-3 text-sm outline-none focus:border-atr-purple focus:ring-2 focus:ring-atr-purple/15"
-                  />
-                </div>
-                <button
-                  type="button"
-                  onClick={() =>
-                    setNewDesaForm({ name: q, kabupaten: "", provinsi: "" })
-                  }
-                  className="inline-flex h-10 items-center gap-1.5 rounded-lg border border-atr-outline bg-white px-3 text-sm font-bold text-atr-fg transition hover:bg-atr-bg-soft"
-                >
-                  <Plus className="h-3.5 w-3.5" />
-                  Buat baru
-                </button>
-              </div>
+            <p className="mt-1.5 text-[11px] text-atr-fg-muted">
+              Pilih dari master desa yang sudah terdaftar. Belum ada?{" "}
+              <Link
+                href={desaMenuHref}
+                className="font-bold text-atr-purple-600 hover:underline"
+              >
+                Daftarkan dulu di menu Desa →
+              </Link>
+            </p>
+          </div>
 
-              {error && (
-                <div className="rounded-lg border border-atr-red/30 bg-atr-red/10 px-3 py-2 text-xs text-atr-red">
-                  {error}
-                </div>
-              )}
-
-              <ul className="max-h-64 divide-y divide-atr-outline overflow-y-auto rounded-lg border border-atr-outline">
-                {candidates.length === 0 ? (
-                  <li className="p-4 text-center text-xs text-atr-fg-muted">
-                    Tidak ada desa di master yang cocok. Klik &quot;Buat
-                    baru&quot;.
-                  </li>
-                ) : (
-                  candidates.map((d) => (
-                    <li
-                      key={d.id}
-                      className="flex items-center justify-between gap-3 p-3 hover:bg-atr-bg-soft"
-                    >
-                      <div className="min-w-0 flex-1">
-                        <div className="truncate text-sm font-bold text-atr-fg">
-                          {d.name}
-                        </div>
-                        <div className="text-xs text-atr-fg-muted">
-                          {[d.kabupaten, d.provinsi].filter(Boolean).join(" · ") ||
-                            "—"}
-                        </div>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => attach(d.id)}
-                        disabled={pending}
-                        className="inline-flex h-8 shrink-0 items-center gap-1 rounded-md bg-atr-purple px-2.5 text-xs font-bold text-white transition hover:bg-atr-purple-600 disabled:opacity-50"
-                      >
-                        {pending ? (
-                          <Loader2 className="h-3 w-3 animate-spin" />
-                        ) : (
-                          <Plus className="h-3 w-3" />
-                        )}
-                        Lampirkan
-                      </button>
-                    </li>
-                  ))
-                )}
-              </ul>
-              <div className="flex justify-end">
-                <button
-                  type="button"
-                  onClick={() => setShowSearch(false)}
-                  className="text-xs text-atr-fg-muted hover:text-atr-fg"
-                >
-                  Tutup
-                </button>
-              </div>
+          {error && (
+            <div className="rounded-lg border border-atr-red/30 bg-atr-red/10 px-3 py-2 text-xs text-atr-red">
+              {error}
             </div>
           )}
+
+          {q && (
+            <ul className="max-h-64 divide-y divide-atr-outline overflow-y-auto rounded-lg border border-atr-outline">
+              {candidates.length === 0 ? (
+                <li className="p-4 text-center text-xs text-atr-fg-muted">
+                  Tidak ada desa di master yang cocok. Daftarkan dulu di menu{" "}
+                  <Link
+                    href={desaMenuHref}
+                    className="font-bold text-atr-purple-600 hover:underline"
+                  >
+                    Desa
+                  </Link>
+                  .
+                </li>
+              ) : (
+                candidates.map((d) => (
+                  <li
+                    key={d.id}
+                    className="flex items-center justify-between gap-3 p-3 hover:bg-atr-bg-soft"
+                  >
+                    <div className="min-w-0 flex-1">
+                      <div className="truncate text-sm font-bold text-atr-fg">
+                        {d.name}
+                      </div>
+                      <div className="inline-flex items-center gap-1 text-xs text-atr-fg-muted">
+                        <MapPin className="h-3 w-3" />
+                        {[d.kabupaten, d.provinsi]
+                          .filter(Boolean)
+                          .join(" · ") || "Lokasi belum diisi"}
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => attach(d.id)}
+                      disabled={pending}
+                      className="inline-flex h-8 shrink-0 items-center gap-1 rounded-md bg-atr-purple px-2.5 text-xs font-bold text-white transition hover:bg-atr-purple-600 disabled:opacity-50"
+                    >
+                      {pending ? (
+                        <Loader2 className="h-3 w-3 animate-spin" />
+                      ) : (
+                        <Plus className="h-3 w-3" />
+                      )}
+                      Lampirkan
+                    </button>
+                  </li>
+                ))
+              )}
+            </ul>
+          )}
+
+          <div className="flex justify-end">
+            <button
+              type="button"
+              onClick={() => setShowSearch(false)}
+              className="text-xs text-atr-fg-muted hover:text-atr-fg"
+            >
+              Tutup
+            </button>
+          </div>
         </div>
       )}
 
@@ -421,7 +338,11 @@ export function DesaTab({
           </p>
         </div>
       ) : (
-        <AttachedDesaTable projectId={projectId} attached={attached} />
+        <AttachedDesaTable
+          projectId={projectId}
+          attached={attached}
+          scope={scope}
+        />
       )}
     </div>
   );
@@ -430,9 +351,11 @@ export function DesaTab({
 function AttachedDesaTable({
   projectId,
   attached,
+  scope,
 }: {
   projectId: string;
   attached: ProjectDesaRow[];
+  scope: "atourin" | "mitra";
 }) {
   const rows = attached.map((p) => ({
     ...p,
@@ -513,7 +436,7 @@ function AttachedDesaTable({
       enableSorting: false,
       cell: ({ row }) => (
         <Link
-          href={`/atourin/projects/${projectId}/desa/${row.original.id}`}
+          href={`/${scope}/projects/${projectId}/desa/${row.original.id}`}
           className="text-sm font-bold text-atr-purple hover:text-atr-purple-600"
         >
           Detail →
