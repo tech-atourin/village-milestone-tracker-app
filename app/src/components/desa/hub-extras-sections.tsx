@@ -4,6 +4,7 @@ import {
   Award as AwardIcon,
   Calendar,
 } from "lucide-react";
+import { CountBadge } from "@/components/ui/count-badge";
 
 export type HubProduk = {
   id: string;
@@ -82,7 +83,8 @@ export function HubExtrasSections({
         <article className="rounded-2xl border border-atr-outline bg-white p-6 shadow-atr-1">
           <h3 className="mb-4 flex items-center gap-2 text-sm font-bold uppercase tracking-wide text-atr-purple">
             <ImageIcon className="h-4 w-4" />
-            Foto Galeri ({foto.length})
+            Foto Galeri
+            <CountBadge n={foto.length} />
           </h3>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
             {foto.slice(0, 12).map((f) => (
@@ -114,7 +116,8 @@ export function HubExtrasSections({
         <article className="rounded-2xl border border-atr-outline bg-white p-6 shadow-atr-1">
           <h3 className="mb-4 flex items-center gap-2 text-sm font-bold uppercase tracking-wide text-atr-purple">
             <Package className="h-4 w-4" />
-            Produk & Paket Wisata ({produk.length})
+            Produk & Paket Wisata
+            <CountBadge n={produk.length} />
           </h3>
           <ul className="space-y-2">
             {produk.slice(0, 10).map((p) => (
@@ -165,7 +168,8 @@ export function HubExtrasSections({
         <article className="rounded-2xl border border-atr-outline bg-white p-6 shadow-atr-1">
           <h3 className="mb-4 flex items-center gap-2 text-sm font-bold uppercase tracking-wide text-atr-purple">
             <AwardIcon className="h-4 w-4" />
-            Penghargaan & Prestasi ({awards.length})
+            Penghargaan & Prestasi
+            <CountBadge n={awards.length} />
           </h3>
           <ul className="grid gap-2 sm:grid-cols-2">
             {awards.map((a) => (
@@ -197,7 +201,8 @@ export function HubExtrasSections({
         <article className="rounded-2xl border border-atr-outline bg-white p-6 shadow-atr-1">
           <h3 className="mb-4 flex items-center gap-2 text-sm font-bold uppercase tracking-wide text-atr-purple">
             <Calendar className="h-4 w-4" />
-            Event & Kegiatan ({events.length})
+            Event & Kegiatan
+            <CountBadge n={events.length} />
           </h3>
           <ul className="space-y-2">
             {events.slice(0, 10).map((e) => (

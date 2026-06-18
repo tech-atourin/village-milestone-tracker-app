@@ -63,7 +63,7 @@ export default async function NarasumberReviewPage({
         </p>
       </header>
 
-      <ReviewQueue projectId={params.id} items={queue} />
+      <ReviewQueue projectId={params.id} items={queue} currentUserId={user.id} />
     </div>
   );
 }

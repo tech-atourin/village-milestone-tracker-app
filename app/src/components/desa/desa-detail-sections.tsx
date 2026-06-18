@@ -20,6 +20,7 @@ import type { DesaDetail } from "@/server/queries/desa-master";
 import type { TierJourney } from "@/server/queries/tier-journey";
 import { HubExtrasSections } from "@/components/desa/hub-extras-sections";
 import { TierJourneyCard } from "@/components/desa/tier-journey-card";
+import { CountBadge } from "@/components/ui/count-badge";
 
 const TIER_BADGE: Record<string, string> = {
   rintisan: "bg-atr-yellow/20 text-atr-fg",
@@ -547,7 +548,8 @@ export function DesaDetailSections({
             {pengelola.jaringan_kerjasama && pengelola.jaringan_kerjasama.length > 0 && (
               <div>
                 <div className="text-xs font-bold uppercase tracking-wide text-atr-fg-muted">
-                  Jaringan Kerjasama ({pengelola.jaringan_kerjasama.length})
+                  Jaringan Kerjasama
+                  <CountBadge n={pengelola.jaringan_kerjasama.length} />
                 </div>
                 <div className="mt-1.5 flex flex-wrap gap-1.5">
                   {pengelola.jaringan_kerjasama.map((j) => (
@@ -636,7 +638,8 @@ export function DesaDetailSections({
             {penghargaanMerged.length > 0 && (
               <div>
                 <div className="mb-2 text-xs font-bold uppercase tracking-wide text-atr-fg-muted">
-                  Penghargaan ({penghargaanMerged.length})
+                  Penghargaan
+                  <CountBadge n={penghargaanMerged.length} />
                 </div>
                 <RepeaterTable
                   rows={penghargaanMerged}
@@ -653,7 +656,8 @@ export function DesaDetailSections({
             {partisipasi_event.length > 0 && (
               <div>
                 <div className="mb-2 text-xs font-bold uppercase tracking-wide text-atr-fg-muted">
-                  Partisipasi Event / Kompetisi ({partisipasi_event.length})
+                  Partisipasi Event / Kompetisi
+                  <CountBadge n={partisipasi_event.length} />
                 </div>
                 <RepeaterTable
                   rows={partisipasi_event}
@@ -668,7 +672,8 @@ export function DesaDetailSections({
             {exposure_publikasi.length > 0 && (
               <div>
                 <div className="mb-2 text-xs font-bold uppercase tracking-wide text-atr-fg-muted">
-                  Exposure / Publikasi ({exposure_publikasi.length})
+                  Exposure / Publikasi
+                  <CountBadge n={exposure_publikasi.length} />
                 </div>
                 <RepeaterTable
                   rows={exposure_publikasi}
@@ -684,7 +689,8 @@ export function DesaDetailSections({
             {sertifikasi.length > 0 && (
               <div>
                 <div className="mb-2 text-xs font-bold uppercase tracking-wide text-atr-fg-muted">
-                  Sertifikasi ({sertifikasi.length})
+                  Sertifikasi
+                  <CountBadge n={sertifikasi.length} />
                 </div>
                 <RepeaterTable
                   rows={sertifikasi}

@@ -12,6 +12,7 @@ import {
   Clock,
 } from "lucide-react";
 import { addProjectGform, triggerGformSync } from "@/server/actions/gforms";
+import { CountBadge } from "@/components/ui/count-badge";
 
 export type GformRow = {
   id: string;
@@ -109,7 +110,8 @@ export function GformsPanel({
         <div className="flex items-center gap-2">
           <FileSpreadsheet className="h-4 w-4 text-atr-purple" />
           <h3 className="text-sm font-bold text-atr-fg">
-            Google Forms ({gforms.length})
+            Google Forms
+            <CountBadge n={gforms.length} />
           </h3>
         </div>
         <button

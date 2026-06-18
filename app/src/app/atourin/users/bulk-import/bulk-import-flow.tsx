@@ -9,13 +9,19 @@ import {
   XCircle,
   AlertTriangle,
   Users,
+  Mail,
+  Check,
+  Copy,
+  KeyRound,
 } from "lucide-react";
 import {
   generateTemplateBase64,
   parseBulkFile,
   commitBulkImport,
   type CommitResult,
+  type ImportedCredential,
 } from "@/server/actions/bulk-import";
+import { sendCredentialsEmail } from "@/server/actions/users";
 import type { BulkRowResult } from "@/lib/excel/bulk-import";
 
 type Stage = "upload" | "preview" | "done";
@@ -346,6 +352,10 @@ export function BulkImportFlow({
           </div>
         </div>
 
+        {commitResult.credentials && commitResult.credentials.length > 0 && (
+          <CredentialsPanel credentials={commitResult.credentials} />
+        )}
+
         {commitResult.errors && commitResult.errors.length > 0 && (
           <div className="rounded-2xl border border-atr-red/30 bg-atr-red/10 p-5">
             <h4 className="text-sm font-semibold text-atr-red">
@@ -409,6 +419,164 @@ function SummaryCard({
         {label}
       </div>
       <div className="mt-1 text-2xl font-semibold">{value}</div>
+    </div>
+  );
+}
+
+function CredentialsPanel({
+  credentials,
+}: {
+  credentials: ImportedCredential[];
+}) {
+  const [sentIds, setSentIds] = useState<Set<string>>(new Set());
+  const [failedIds, setFailedIds] = useState<Map<string, string>>(new Map());
+  const [sendingId, setSendingId] = useState<string | null>(null);
+  const [copiedAll, setCopiedAll] = useState(false);
+
+  async function handleSend(c: ImportedCredential) {
+    setSendingId(c.id);
+    const r = await sendCredentialsEmail({ user_id: c.id, password: c.password });
+    setSendingId(null);
+    if ("error" in r) {
+      setFailedIds((m) => new Map(m).set(c.id, r.error));
+    } else {
+      setSentIds((s) => new Set(s).add(c.id));
+      setFailedIds((m) => {
+        const n = new Map(m);
+        n.delete(c.id);
+        return n;
+      });
+    }
+  }
+
+  function csvEscape(s: string): string {
+    if (/[",\n]/.test(s)) return `"${s.replace(/"/g, '""')}"`;
+    return s;
+  }
+
+  function handleDownloadCsv() {
+    const header = "Nama,Email,Password\n";
+    const body = credentials
+      .map((c) => `${csvEscape(c.full_name)},${csvEscape(c.email)},${csvEscape(c.password)}`)
+      .join("\n");
+    const blob = new Blob([header + body], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `kredensial-import-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  async function handleCopyAll() {
+    const lines = ["Nama\tEmail\tPassword"];
+    for (const c of credentials) {
+      lines.push(`${c.full_name}\t${c.email}\t${c.password}`);
+    }
+    await navigator.clipboard.writeText(lines.join("\n"));
+    setCopiedAll(true);
+    setTimeout(() => setCopiedAll(false), 1800);
+  }
+
+  return (
+    <div className="rounded-2xl border border-atr-yellow/40 bg-atr-yellow/5 p-5">
+      <div className="flex items-start gap-3">
+        <KeyRound className="mt-0.5 h-5 w-5 flex-shrink-0 text-atr-fg" />
+        <div className="flex-1">
+          <h4 className="text-sm font-bold text-atr-fg">
+            Kredensial login ({credentials.length} user)
+          </h4>
+          <p className="mt-0.5 text-xs text-atr-fg-muted">
+            Password ditampilkan satu kali saja. Simpan/bagikan sekarang sebelum
+            menutup halaman ini. User sebaiknya ganti password setelah login
+            pertama.
+          </p>
+        </div>
+      </div>
+
+      <div className="mt-4 flex flex-wrap items-center gap-2">
+        <button
+          type="button"
+          onClick={handleDownloadCsv}
+          className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-atr-outline bg-white px-3 text-sm font-bold text-atr-fg hover:bg-atr-bg-soft"
+        >
+          <Download className="h-3.5 w-3.5" />
+          Download CSV
+        </button>
+        <button
+          type="button"
+          onClick={handleCopyAll}
+          className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-atr-outline bg-white px-3 text-sm font-bold text-atr-fg hover:bg-atr-bg-soft"
+        >
+          {copiedAll ? (
+            <Check className="h-3.5 w-3.5 text-atr-arti" />
+          ) : (
+            <Copy className="h-3.5 w-3.5" />
+          )}
+          {copiedAll ? "Tersalin" : "Salin semua"}
+        </button>
+      </div>
+
+      <div className="mt-4 max-h-96 overflow-auto rounded-xl border border-atr-outline bg-white">
+        <table className="w-full text-sm">
+          <thead className="sticky top-0 bg-atr-bg-soft text-xs font-bold uppercase tracking-wide text-atr-fg-muted">
+            <tr>
+              <th className="px-3 py-2 text-left">Nama</th>
+              <th className="px-3 py-2 text-left">Email</th>
+              <th className="px-3 py-2 text-left">Password</th>
+              <th className="px-3 py-2 text-right">Aksi</th>
+            </tr>
+          </thead>
+          <tbody>
+            {credentials.map((c) => {
+              const sent = sentIds.has(c.id);
+              const failed = failedIds.get(c.id);
+              const sending = sendingId === c.id;
+              return (
+                <tr key={c.id} className="border-t border-atr-outline">
+                  <td className="px-3 py-2 text-atr-fg">{c.full_name}</td>
+                  <td className="px-3 py-2 font-mono text-xs text-atr-fg">
+                    {c.email}
+                  </td>
+                  <td className="px-3 py-2 font-mono text-xs text-atr-fg">
+                    {c.password}
+                  </td>
+                  <td className="px-3 py-2 text-right">
+                    <button
+                      type="button"
+                      onClick={() => handleSend(c)}
+                      disabled={sending}
+                      className={`inline-flex h-7 items-center gap-1 rounded-md border px-2 text-xs font-bold transition disabled:opacity-50 ${
+                        sent
+                          ? "border-atr-arti/30 bg-atr-arti/10 text-atr-arti"
+                          : failed
+                            ? "border-atr-red/30 bg-atr-red/10 text-atr-red"
+                            : "border-atr-outline bg-white text-atr-fg hover:bg-atr-bg-soft"
+                      }`}
+                      title={failed ?? (sent ? "Email terkirim" : "Kirim email kredensial")}
+                    >
+                      {sending ? (
+                        <Loader2 className="h-3 w-3 animate-spin" />
+                      ) : sent ? (
+                        <Check className="h-3 w-3" />
+                      ) : (
+                        <Mail className="h-3 w-3" />
+                      )}
+                      {sending
+                        ? "Mengirim"
+                        : sent
+                          ? "Terkirim"
+                          : failed
+                            ? "Coba lagi"
+                            : "Kirim email"}
+                    </button>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }

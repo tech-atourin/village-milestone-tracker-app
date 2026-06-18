@@ -41,7 +41,7 @@ export default async function NotificationsPage() {
         </div>
       ) : (
         <div className="mt-6">
-          <NotificationsClient items={items} />
+          <NotificationsClient items={items} userRole={user.global_role} />
         </div>
       )}
     </div>

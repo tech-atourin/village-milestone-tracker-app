@@ -331,6 +331,7 @@ export async function submitCriteriaItemForReview(
         criteria_title: m?.criteria_item?.title,
         tier: m?.criteria_item?.tier,
         desa_name: m?.desa?.name,
+        desa_id: body.desa_id,
       },
     });
     await audit({

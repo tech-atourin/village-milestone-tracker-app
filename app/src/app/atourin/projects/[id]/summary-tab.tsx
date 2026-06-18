@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { getProjectAnalytics } from "@/server/queries/project-analytics";
 import { createAdminClient } from "@/lib/supabase/server";
+import { CountBadge } from "@/components/ui/count-badge";
 
 type DesaCardData = {
   project_desa_id: string;
@@ -437,7 +438,8 @@ export async function SummaryTab({
       <section>
         <h3 className="mb-3 inline-flex items-center gap-2 text-sm font-bold uppercase tracking-wide text-atr-fg-muted">
           <Sparkles className="h-4 w-4 text-atr-purple" />
-          Ringkasan per Desa ({summary.desa_cards.length})
+          Ringkasan per Desa
+          <CountBadge n={summary.desa_cards.length} />
         </h3>
         <div className="grid gap-3 sm:grid-cols-2">
           {summary.desa_cards.map((d) => (

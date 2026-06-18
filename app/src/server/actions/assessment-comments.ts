@@ -113,6 +113,7 @@ export async function addAssessmentComment(input: z.input<typeof schema>) {
             parsed.data.body.length > 140
               ? parsed.data.body.slice(0, 140) + "…"
               : parsed.data.body,
+          desa_id: parsed.data.desa_id,
         },
       });
     } catch {

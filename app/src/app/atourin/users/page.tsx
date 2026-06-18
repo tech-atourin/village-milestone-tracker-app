@@ -46,7 +46,7 @@ export default async function UsersListPage() {
           </p>
         </div>
       ) : (
-        <UsersTable users={users} />
+        <UsersTable users={users} orgOptions={orgOptions} />
       )}
     </div>
   );

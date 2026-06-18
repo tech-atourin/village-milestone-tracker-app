@@ -79,6 +79,8 @@ export default async function MitraUsersListPage() {
           users={users}
           detailHrefBase="/mitra/users"
           roleFilterOptions={MITRA_ROLE_FILTERS}
+          orgOptions={orgOptions}
+          allowedRoles={["peserta", "narasumber", "desa_wisata"]}
         />
       )}
     </div>

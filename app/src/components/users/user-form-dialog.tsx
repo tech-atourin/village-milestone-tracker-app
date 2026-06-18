@@ -17,6 +17,15 @@ export type UserFormRole = (typeof ALL_ROLES)[number]["value"];
 
 export type OrgOption = { id: string; name: string };
 
+export type UserFormInitial = {
+  id: string;
+  full_name: string;
+  email: string | null;
+  phone: string | null;
+  global_role: UserFormRole;
+  organization_id: string | null;
+};
+
 /**
  * Reusable single-user create / edit dialog.
  *
@@ -31,6 +40,7 @@ export function UserFormDialog({
   forceOrgId,
   orgOptions,
   initialRole,
+  initialUser,
 }: {
   open: boolean;
   onClose: () => void;
@@ -38,7 +48,10 @@ export function UserFormDialog({
   forceOrgId?: string;
   orgOptions: OrgOption[];
   initialRole?: UserFormRole;
+  // When provided, dialog enters edit mode and updates this user in place.
+  initialUser?: UserFormInitial | null;
 }) {
+  const isEdit = Boolean(initialUser);
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
@@ -53,27 +66,29 @@ export function UserFormDialog({
     global_role: UserFormRole;
     organization_id: string;
   }>({
-    full_name: "",
-    email: "",
-    phone: "",
-    global_role: initialRole ?? "peserta",
-    organization_id: forceOrgId ?? "",
+    full_name: initialUser?.full_name ?? "",
+    email: initialUser?.email ?? "",
+    phone: initialUser?.phone ?? "",
+    global_role: initialUser?.global_role ?? initialRole ?? "peserta",
+    organization_id:
+      initialUser?.organization_id ?? forceOrgId ?? "",
   });
 
   useEffect(() => {
     if (open) {
       setForm({
-        full_name: "",
-        email: "",
-        phone: "",
-        global_role: initialRole ?? "peserta",
-        organization_id: forceOrgId ?? "",
+        full_name: initialUser?.full_name ?? "",
+        email: initialUser?.email ?? "",
+        phone: initialUser?.phone ?? "",
+        global_role: initialUser?.global_role ?? initialRole ?? "peserta",
+        organization_id:
+          initialUser?.organization_id ?? forceOrgId ?? "",
       });
       setError(null);
       setCredentials(null);
       setCopied(false);
     }
-  }, [open, initialRole, forceOrgId]);
+  }, [open, initialRole, forceOrgId, initialUser]);
 
   useEffect(() => {
     if (!open) return;
@@ -98,6 +113,7 @@ export function UserFormDialog({
     const email = form.email.trim() || null;
     startTransition(async () => {
       const r = await upsertUser({
+        id: initialUser?.id ?? null,
         full_name: form.full_name.trim(),
         email,
         phone: form.phone.trim() || null,
@@ -202,11 +218,12 @@ export function UserFormDialog({
             <header className="mb-4 flex items-start justify-between">
               <div>
                 <h2 className="text-lg font-bold text-atr-fg">
-                  Tambah User Baru
+                  {isEdit ? "Edit User" : "Tambah User Baru"}
                 </h2>
                 <p className="text-xs text-atr-fg-muted">
-                  Isi email untuk auto-generate akun login. Tanpa email = user
-                  hanya jadi profil (tidak bisa login).
+                  {isEdit
+                    ? "Ubah data profil user. Untuk ubah email login atau reset password, buka halaman detail user."
+                    : "Isi email untuk auto-generate akun login. Tanpa email = user hanya jadi profil (tidak bisa login)."}
                 </p>
               </div>
               <button
@@ -239,8 +256,14 @@ export function UserFormDialog({
                     setForm((f) => ({ ...f, email: e.target.value }))
                   }
                   placeholder="eko@example.com"
-                  className="h-10 w-full rounded-lg border border-atr-outline bg-white px-3 text-sm outline-none focus:border-atr-purple focus:ring-2 focus:ring-atr-purple/15"
+                  disabled={isEdit}
+                  className="h-10 w-full rounded-lg border border-atr-outline bg-white px-3 text-sm outline-none focus:border-atr-purple focus:ring-2 focus:ring-atr-purple/15 disabled:bg-atr-bg-soft disabled:text-atr-fg-muted"
                 />
+                {isEdit && (
+                  <p className="mt-1 text-[10px] italic text-atr-fg-muted">
+                    Ubah email login lewat halaman detail user.
+                  </p>
+                )}
               </Field>
               <Field label="No. HP / WA">
                 <input
@@ -323,7 +346,7 @@ export function UserFormDialog({
                 ) : (
                   <Save className="h-3.5 w-3.5" />
                 )}
-                Tambah User
+                {isEdit ? "Simpan Perubahan" : "Tambah User"}
               </button>
             </footer>
           </>

@@ -13,6 +13,7 @@ import {
 import { getCurrentUser, scopeHomePath } from "@/lib/auth/rbac";
 import { createClient } from "@/lib/supabase/server";
 import { ChangePasswordCard } from "./change-password";
+import { CountBadge } from "@/components/ui/count-badge";
 
 async function fetchProjectsAndRapor(userId: string) {
   const supabase = createClient();
@@ -119,7 +120,8 @@ export default async function ProfilePage() {
         <section className="rounded-2xl border border-atr-outline bg-white p-6 shadow-atr-1">
           <h2 className="mb-4 flex items-center gap-2 text-sm font-bold text-atr-fg">
             <Folder className="h-4 w-4 text-atr-purple" />
-            Riwayat project ({history.length})
+            Riwayat project
+            <CountBadge n={history.length} />
           </h2>
 
           {history.length === 0 ? (

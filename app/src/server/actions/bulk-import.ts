@@ -271,6 +271,12 @@ const commitSchema = z.object({
 });
 
 export type CommitInput = z.input<typeof commitSchema>;
+export type ImportedCredential = {
+  id: string;
+  full_name: string;
+  email: string;
+  password: string;
+};
 export type CommitResult = {
   error?: string;
   created?: number;
@@ -279,6 +285,7 @@ export type CommitResult = {
   invites_sent?: number;
   invites_failed?: number;
   errors?: string[];
+  credentials?: ImportedCredential[];
 };
 
 export async function commitBulkImport(
@@ -317,6 +324,7 @@ export async function commitBulkImport(
   let attached = 0;
   let invitesSent = 0;
   let invitesFailed = 0;
+  const credentials: ImportedCredential[] = [];
 
   // Pre-resolve project's desa (name → id) for membership attachment
   const projectId = parsed.data.project_id ?? null;
@@ -408,12 +416,12 @@ export async function commitBulkImport(
     }
 
     // 3. Create auth user (email-confirmed so they can log in once we set password)
+    const generatedPassword = cryptoRandomPassword();
     const { data: authResult, error: authError } =
       await admin.auth.admin.createUser({
         email,
         email_confirm: true,
-        // Random password - user resets via "Lupa password"
-        password: cryptoRandomPassword(),
+        password: generatedPassword,
         user_metadata: {
           full_name: row.full_name,
           imported: true,
@@ -458,14 +466,29 @@ export async function commitBulkImport(
     created++;
     await attachToProject(authResult.user.id, row.role, row.desa_name);
 
-    // 5. Send invite email (best-effort)
+    if (!emailArtificial) {
+      credentials.push({
+        id: authResult.user.id,
+        full_name: row.full_name,
+        email,
+        password: generatedPassword,
+      });
+    }
+
+    // 5. Send invite email (best-effort) - includes credentials
     if (parsed.data.send_invites && !emailArtificial && transporter && fromEmail) {
       try {
         await transporter.sendMail({
           from: `"${fromName}" <${fromEmail}>`,
           to: email,
-          subject: `Anda diundang ke ${appName}`,
-          html: invitationHtml(row.full_name, appName, appUrl),
+          subject: `Akun login Anda di ${appName}`,
+          html: invitationHtml(
+            row.full_name,
+            email,
+            generatedPassword,
+            appName,
+            appUrl,
+          ),
         });
         invitesSent++;
       } catch (e) {
@@ -481,6 +504,7 @@ export async function commitBulkImport(
     invites_sent: invitesSent,
     invites_failed: invitesFailed,
     errors: errors.slice(0, 20),
+    credentials,
   };
 }
 
@@ -490,23 +514,29 @@ function cryptoRandomPassword(): string {
   return Buffer.from(arr).toString("base64").replace(/[+/=]/g, "_");
 }
 
-function invitationHtml(
+export function invitationHtml(
   fullName: string,
+  email: string,
+  password: string,
   appName: string,
   appUrl: string,
 ): string {
+  const loginUrl = `${appUrl}/login`;
   const resetUrl = `${appUrl}/forgot-password`;
   return `
 <!doctype html>
 <html lang="id">
   <body style="font-family: -apple-system, system-ui, sans-serif; color:#0f172a; max-width:560px; margin:0 auto; padding:24px;">
-    <h2 style="color:#047857;">Halo ${escapeHtml(fullName)},</h2>
-    <p>Anda telah diundang bergabung dengan <strong>${escapeHtml(appName)}</strong> - platform pendampingan desa wisata Atourin.</p>
-    <p>Untuk login pertama kali, silakan klik tombol di bawah untuk set password Anda:</p>
+    <h2 style="color:#7c3aed;">Halo ${escapeHtml(fullName)},</h2>
+    <p>Akun Anda di <strong>${escapeHtml(appName)}</strong> sudah dibuat. Gunakan kredensial berikut untuk login:</p>
+    <table style="width:100%; border-collapse:collapse; margin:16px 0; background:#f8fafc; border-radius:8px;">
+      <tr><td style="padding:10px 14px; font-size:12px; color:#64748b; width:100px;">Email</td><td style="padding:10px 14px; font-family:monospace; font-size:14px; color:#0f172a;">${escapeHtml(email)}</td></tr>
+      <tr><td style="padding:10px 14px; font-size:12px; color:#64748b; border-top:1px solid #e2e8f0;">Password</td><td style="padding:10px 14px; font-family:monospace; font-size:14px; color:#0f172a; border-top:1px solid #e2e8f0;">${escapeHtml(password)}</td></tr>
+    </table>
     <p style="margin: 24px 0;">
-      <a href="${resetUrl}" style="background:#059669; color:#fff; padding:10px 18px; border-radius:8px; text-decoration:none; font-weight:600;">Set Password</a>
+      <a href="${loginUrl}" style="background:#7c3aed; color:#fff; padding:10px 18px; border-radius:8px; text-decoration:none; font-weight:600;">Login Sekarang</a>
     </p>
-    <p style="color:#475569; font-size:13px;">Jika tombol tidak berfungsi, salin URL ini ke browser: ${resetUrl}</p>
+    <p style="color:#475569; font-size:13px;">Untuk keamanan, ganti password Anda setelah login pertama. Atau gunakan <a href="${resetUrl}">link reset password</a> jika diperlukan.</p>
     <p style="color:#94a3b8; font-size:12px; margin-top:32px;">Email ini dikirim otomatis. Jika Anda merasa menerima ini secara keliru, abaikan saja.</p>
   </body>
 </html>`.trim();

@@ -20,6 +20,8 @@ import {
 import { uploadEvidence, deleteEvidence } from "@/server/actions/evidence";
 import { submitChecklistItem } from "@/server/actions/checklist";
 import { compressIfImage } from "@/lib/image-compress";
+import { CountBadge } from "@/components/ui/count-badge";
+import { ChecklistDiscussion } from "@/components/checklist/checklist-discussion";
 
 type Evidence = {
   id: string;
@@ -64,12 +66,14 @@ export function ItemDetailForm({
   projectDesaId,
   projectTopikId,
   checklistItemId,
+  currentUserId,
   existingProgress,
   existingEvidence,
 }: {
   projectDesaId: string;
   projectTopikId: string;
   checklistItemId: string;
+  currentUserId: string;
   existingProgress: {
     id: string;
     status: "not_started" | "submitted" | "approved" | "rejected";
@@ -150,6 +154,14 @@ export function ItemDetailForm({
           setError(
             `${errors.length} dari ${list.length} file gagal: ${errors.slice(0, 3).join("; ")}`,
           );
+        // Auto-resubmit if peserta uploads new evidence on a rejected item
+        if (existingProgress?.status === "rejected") {
+          await submitChecklistItem({
+            project_desa_id: projectDesaId,
+            project_topik_id: projectTopikId,
+            project_checklist_item_id: checklistItemId,
+          });
+        }
         setCaption("");
         router.refresh();
       } finally {
@@ -208,7 +220,8 @@ export function ItemDetailForm({
 
       <section className="space-y-3">
         <h2 className="text-sm font-bold uppercase tracking-wide text-atr-fg-muted">
-          Evidence ({existingEvidence.length})
+          Evidence
+          <CountBadge n={existingEvidence.length} />
         </h2>
         {existingEvidence.length === 0 ? (
           <p className="rounded-2xl border border-dashed border-atr-outline bg-white p-6 text-center text-sm text-atr-fg-muted">
@@ -350,6 +363,13 @@ export function ItemDetailForm({
             Serahkan untuk review
           </button>
         </div>
+      )}
+
+      {existingProgress && (
+        <ChecklistDiscussion
+          checklistProgressId={existingProgress.id}
+          currentUserId={currentUserId}
+        />
       )}
     </div>
   );

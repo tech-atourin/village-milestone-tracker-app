@@ -30,6 +30,7 @@ import {
   type PesertaEvidenceForDesa,
 } from "@/server/actions/self-assessment";
 import { compressIfImage } from "@/lib/image-compress";
+import { CountBadge } from "@/components/ui/count-badge";
 
 function fileIcon(type: string) {
   if (type === "image") return ImageIcon;
@@ -274,7 +275,8 @@ export function CriteriaEvidenceManager({
           {/* Existing linked evidence */}
           <section>
             <h3 className="mb-2 text-xs font-bold uppercase tracking-wide text-atr-fg-muted">
-              Bukti tersaring untuk kriteria ini ({linked.length})
+              Bukti tersaring untuk kriteria ini
+              <CountBadge n={linked.length} />
             </h3>
             {loadingLinked ? (
               <div className="rounded-lg border border-dashed border-atr-outline bg-atr-bg-soft p-4 text-center text-xs text-atr-fg-muted">

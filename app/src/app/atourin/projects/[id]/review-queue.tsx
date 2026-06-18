@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import {
   Check,
@@ -9,35 +9,62 @@ import {
   FileText,
   ClipboardCheck,
   MessageCircle,
+  Search,
 } from "lucide-react";
 import {
   reviewChecklistItem,
   bulkReviewChecklistItems,
 } from "@/server/actions/review";
 import type { ReviewQueueItem } from "@/server/queries/review";
+import { CountBadge } from "@/components/ui/count-badge";
+import { ChecklistDiscussion } from "@/components/checklist/checklist-discussion";
 
 export function ReviewQueue({
   projectId,
   items: allItems,
   filterTopikId,
   filterDesaId,
+  currentUserId,
 }: {
   projectId: string;
   items: ReviewQueueItem[];
   filterTopikId?: string;
   filterDesaId?: string;
+  currentUserId: string;
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [expanded, setExpanded] = useState<string | null>(null);
   const [note, setNote] = useState("");
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [search, setSearch] = useState("");
+  const [desaFilter, setDesaFilter] = useState<string>("");
+
+  // Build desa options from the unfiltered list so the dropdown always
+  // shows every desa even after a search narrows the queue.
+  const desaOptions = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const it of allItems) {
+      if (it.project_desa_id) map.set(it.project_desa_id, it.desa.name);
+    }
+    return Array.from(map.entries())
+      .map(([id, name]) => ({ id, name }))
+      .sort((a, b) => a.name.localeCompare(b.name));
+  }, [allItems]);
 
   // Server-side filter chips arrive via URL; surface them as visible chips
   // so the reviewer can clear them.
   const items = allItems.filter((it) => {
     if (filterTopikId && it.topik.id !== filterTopikId) return false;
     if (filterDesaId && it.project_desa_id !== filterDesaId) return false;
+    if (desaFilter && it.project_desa_id !== desaFilter) return false;
+    if (search.trim()) {
+      const q = search.toLowerCase();
+      const hay = `${it.checklist_item.title} ${it.topik.name} ${it.desa.name} ${
+        it.submitted_by?.full_name ?? ""
+      }`.toLowerCase();
+      if (!hay.includes(q)) return false;
+    }
     return true;
   });
 
@@ -110,7 +137,7 @@ export function ReviewQueue({
     });
   }
 
-  if (items.length === 0) {
+  if (allItems.length === 0) {
     return (
       <div className="rounded-2xl border border-dashed border-atr-outline bg-white p-12 text-center">
         <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-atr-arti/15">
@@ -185,6 +212,51 @@ export function ReviewQueue({
         )}
       </div>
 
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+        <div className="relative min-w-[220px] flex-1">
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-atr-fg-muted" />
+          <input
+            type="search"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Cari checklist, topik, desa, atau peserta…"
+            className="h-10 w-full rounded-lg border border-atr-outline bg-white pl-10 pr-3 text-sm outline-none transition focus:border-atr-purple focus:ring-2 focus:ring-atr-purple/15"
+          />
+        </div>
+        {desaOptions.length > 1 && (
+          <select
+            value={desaFilter}
+            onChange={(e) => setDesaFilter(e.target.value)}
+            aria-label="Filter desa"
+            className={`h-10 rounded-lg border bg-white px-3 text-sm outline-none transition focus:border-atr-purple focus:ring-2 focus:ring-atr-purple/15 ${
+              desaFilter
+                ? "border-atr-purple/50 text-atr-fg"
+                : "border-atr-outline text-atr-fg-muted"
+            }`}
+          >
+            <option value="">Desa: Semua</option>
+            {desaOptions.map((o) => (
+              <option key={o.id} value={o.id}>
+                Desa: {o.name}
+              </option>
+            ))}
+          </select>
+        )}
+        {(search || desaFilter) && (
+          <button
+            type="button"
+            onClick={() => {
+              setSearch("");
+              setDesaFilter("");
+            }}
+            className="inline-flex h-10 items-center gap-1 rounded-lg border border-atr-outline bg-white px-3 text-xs font-bold text-atr-fg-muted transition hover:bg-atr-bg-soft"
+          >
+            <X className="h-3.5 w-3.5" />
+            Reset
+          </button>
+        )}
+      </div>
+
       <label className="flex cursor-pointer items-center gap-2 rounded-lg border border-atr-outline bg-atr-bg-soft px-3 py-2 text-xs text-atr-fg-muted">
         <input
           type="checkbox"
@@ -192,8 +264,15 @@ export function ReviewQueue({
           onChange={toggleAll}
           className="h-3.5 w-3.5 accent-atr-purple"
         />
-        Pilih semua ({items.length})
+        Pilih semua
+        <CountBadge n={items.length} />
       </label>
+
+      {items.length === 0 ? (
+        <div className="rounded-2xl border border-dashed border-atr-outline bg-white p-10 text-center text-sm text-atr-fg-muted">
+          Tidak ada item yang cocok dengan pencarian/filter ini.
+        </div>
+      ) : null}
 
       <ul className="space-y-3">
         {items.map((item) => {
@@ -269,6 +348,10 @@ export function ReviewQueue({
                       {item.checklist_item.description}
                     </div>
                   )}
+                  <ChecklistDiscussion
+                    checklistProgressId={item.checklist_progress_id}
+                    currentUserId={currentUserId}
+                  />
                   <label className="flex flex-col gap-1.5">
                     <span className="text-xs font-bold text-atr-fg">
                       Catatan review (wajib jika reject)

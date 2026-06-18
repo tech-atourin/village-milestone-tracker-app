@@ -3,6 +3,7 @@ import { listReviewQueue } from "@/server/queries/review";
 import { listProjectEvidenceDirectory } from "@/server/queries/evidence-directory";
 import { EvidenceDirectory } from "./evidence-directory";
 import { EvidenceTabModes } from "./evidence-tab-modes";
+import { getCurrentUser } from "@/lib/auth/rbac";
 
 export async function EvidenceTab({
   projectId,
@@ -13,9 +14,10 @@ export async function EvidenceTab({
   filterTopikId?: string;
   filterDesaId?: string;
 }) {
-  const [queue, files] = await Promise.all([
+  const [queue, files, user] = await Promise.all([
     listReviewQueue(projectId, "submitted"),
     listProjectEvidenceDirectory(projectId),
+    getCurrentUser(),
   ]);
 
   return (
@@ -29,6 +31,7 @@ export async function EvidenceTab({
           items={queue}
           filterTopikId={filterTopikId}
           filterDesaId={filterDesaId}
+          currentUserId={user?.id ?? ""}
         />
       }
     />

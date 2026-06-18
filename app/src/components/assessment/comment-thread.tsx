@@ -16,6 +16,7 @@ import {
   addAssessmentComment,
   deleteAssessmentComment,
 } from "@/server/actions/assessment-comments";
+import { CountBadge } from "@/components/ui/count-badge";
 
 const ROLE_LABEL: Record<string, string> = {
   superadmin: "Admin Atourin",
@@ -102,7 +103,8 @@ export function CommentThread({
       >
         <span className="inline-flex items-center gap-1.5">
           <MessageSquare className="h-3.5 w-3.5" />
-          Diskusi ({comments.length})
+          Diskusi
+          <CountBadge n={comments.length} />
         </span>
         <span className="text-[10px] text-atr-purple-600">
           {open ? "Tutup" : "Buka"}

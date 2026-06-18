@@ -88,6 +88,7 @@ export async function submitChecklistItem(
           topik_name: c?.project_checklist_item?.project_topik?.name,
           desa_name: c?.desa_topik_instance?.project_desa?.desa?.name,
           peserta_name: user.full_name,
+          project_id: projectId,
         },
       });
     }

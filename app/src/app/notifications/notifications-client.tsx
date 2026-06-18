@@ -2,6 +2,7 @@
 
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import {
   CheckCircle2,
   AlertCircle,
@@ -14,6 +15,7 @@ import {
 } from "lucide-react";
 import type { NotificationRow } from "@/server/queries/notifications";
 import { markNotificationsRead } from "@/server/actions/notifications";
+import { CountBadge } from "@/components/ui/count-badge";
 
 const ICON_FOR: Record<
   string,
@@ -47,7 +49,71 @@ function fmtRelative(iso: string): string {
 
 type Filter = "all" | "unread";
 
-export function NotificationsClient({ items }: { items: NotificationRow[] }) {
+function scopeFor(role: string): "atourin" | "mitra" | "narasumber" | "peserta" | "desa" {
+  if (role === "superadmin") return "atourin";
+  if (role === "mitra_admin") return "mitra";
+  if (role === "narasumber") return "narasumber";
+  if (role === "desa_wisata") return "desa";
+  return "peserta";
+}
+
+function linkFor(
+  template_key: string,
+  payload: Record<string, unknown>,
+  role: string,
+): string | null {
+  const scope = scopeFor(role);
+  const projectId = (payload.project_id as string | undefined) ?? null;
+  const desaId = (payload.desa_id as string | undefined) ?? null;
+
+  switch (template_key) {
+    case "checklist_submitted":
+    case "evidence_submitted":
+      // Reviewer goes to project review queue
+      if (projectId && (scope === "atourin" || scope === "mitra" || scope === "narasumber"))
+        return `/${scope}/projects/${projectId}?tab=review`;
+      return projectId ? `/${scope}/projects/${projectId}` : null;
+    case "checklist_approved":
+    case "checklist_rejected":
+      // Peserta — go to their project
+      return projectId ? `/peserta/projects/${projectId}` : "/peserta";
+    case "criteria_submitted":
+      // Reviewer goes to klasifikasi v1 detail for that desa
+      if (desaId && (scope === "atourin" || scope === "mitra"))
+        return `/${scope}/klasifikasi/v1/${desaId}`;
+      return scope === "atourin" ? "/atourin/klasifikasi" : null;
+    case "criteria_verified":
+    case "criteria_rejected":
+      // Desa wisata — go to their self-assessment
+      if (scope === "desa") return "/desa/self-assessment";
+      if (desaId && (scope === "atourin" || scope === "mitra"))
+        return `/${scope}/klasifikasi/v1/${desaId}`;
+      return null;
+    case "comment_added":
+      if (scope === "desa") return "/desa/self-assessment";
+      if (desaId && (scope === "atourin" || scope === "mitra"))
+        return `/${scope}/klasifikasi/v1/${desaId}`;
+      return null;
+    case "baseline_submitted":
+      if (projectId) return `/${scope}/projects/${projectId}`;
+      return null;
+    case "project_invitation":
+      if (projectId) return `/${scope}/projects/${projectId}`;
+      return scope === "narasumber" ? "/narasumber" : `/${scope}/projects`;
+    case "evidence_linked":
+      return projectId ? `/peserta/projects/${projectId}` : null;
+    default:
+      return null;
+  }
+}
+
+export function NotificationsClient({
+  items,
+  userRole,
+}: {
+  items: NotificationRow[];
+  userRole: string;
+}) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [filter, setFilter] = useState<Filter>("all");
@@ -106,7 +172,11 @@ export function NotificationsClient({ items }: { items: NotificationRow[] }) {
                 : "border border-atr-outline bg-white text-atr-fg-muted hover:bg-atr-bg-soft"
             }`}
           >
-            Semua ({items.length})
+            Semua
+            <CountBadge
+              n={items.length}
+              tone={filter === "all" ? "inverted" : "muted"}
+            />
           </button>
           <button
             type="button"
@@ -117,7 +187,11 @@ export function NotificationsClient({ items }: { items: NotificationRow[] }) {
                 : "border border-atr-outline bg-white text-atr-fg-muted hover:bg-atr-bg-soft"
             }`}
           >
-            Belum dibaca ({unreadCount})
+            Belum dibaca
+            <CountBadge
+              n={unreadCount}
+              tone={filter === "unread" ? "inverted" : "muted"}
+            />
           </button>
         </nav>
         {unreadCount > 0 && (
@@ -160,16 +234,16 @@ export function NotificationsClient({ items }: { items: NotificationRow[] }) {
                   n.payload._rendered?.subject ??
                   n.template_key;
                 const subject = n.payload._rendered?.subject;
-                return (
-                  <li
-                    key={n.id}
-                    onClick={() => isUnread && markOneRead(n.id)}
-                    className={`flex cursor-pointer items-start gap-3 rounded-2xl border p-4 shadow-atr-1 transition ${
-                      isUnread
-                        ? "border-atr-purple/30 bg-atr-purple-50/30 hover:bg-atr-purple-50/60"
-                        : "border-atr-outline bg-white hover:bg-atr-bg-soft"
-                    }`}
-                  >
+                const href = linkFor(n.template_key, n.payload, userRole);
+                const cardClass = `flex items-start gap-3 rounded-2xl border p-4 shadow-atr-1 transition ${
+                  href ? "cursor-pointer" : ""
+                } ${
+                  isUnread
+                    ? "border-atr-purple/30 bg-atr-purple-50/30 hover:bg-atr-purple-50/60"
+                    : "border-atr-outline bg-white hover:bg-atr-bg-soft"
+                }`;
+                const inner = (
+                  <>
                     <div
                       className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-atr-bg-soft ${cfg.color}`}
                     >
@@ -190,9 +264,6 @@ export function NotificationsClient({ items }: { items: NotificationRow[] }) {
                       </p>
                       <p className="mt-1 text-[11px] text-atr-fg-muted">
                         {fmtRelative(n.created_at)}
-                        {n.channel !== "in_app" && (
-                          <> · via {n.channel}</>
-                        )}
                       </p>
                     </div>
                     {isUnread && (
@@ -200,6 +271,26 @@ export function NotificationsClient({ items }: { items: NotificationRow[] }) {
                         className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-atr-purple"
                         aria-label="Belum dibaca"
                       />
+                    )}
+                  </>
+                );
+                return (
+                  <li key={n.id}>
+                    {href ? (
+                      <Link
+                        href={href}
+                        onClick={() => isUnread && markOneRead(n.id)}
+                        className={cardClass}
+                      >
+                        {inner}
+                      </Link>
+                    ) : (
+                      <div
+                        onClick={() => isUnread && markOneRead(n.id)}
+                        className={`${cardClass} ${isUnread ? "cursor-pointer" : ""}`}
+                      >
+                        {inner}
+                      </div>
                     )}
                   </li>
                 );

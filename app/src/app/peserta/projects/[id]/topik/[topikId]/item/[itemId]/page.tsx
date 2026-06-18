@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { listEvidenceForChecklist, signEvidenceUrls } from "@/server/actions/evidence";
+import { getCurrentUser } from "@/lib/auth/rbac";
 import { ItemDetailForm } from "./item-detail-form";
 
 async function loadItem(
@@ -67,6 +68,7 @@ export default async function PesertaItemDetailPage({
   const data = await loadItem(params.id, params.topikId, params.itemId);
   if (!data) notFound();
 
+  const currentUser = await getCurrentUser();
   const evidence = data.progress
     ? await listEvidenceForChecklist(data.progress.id)
     : [];
@@ -121,6 +123,7 @@ export default async function PesertaItemDetailPage({
         projectDesaId={params.id}
         projectTopikId={params.topikId}
         checklistItemId={params.itemId}
+        currentUserId={currentUser?.id ?? ""}
         existingProgress={data.progress}
         existingEvidence={evidence.map((e) => ({
           id: e.evidence.id,

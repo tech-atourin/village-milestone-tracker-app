@@ -275,9 +275,134 @@ export async function resetUserPassword(
   return { ok: true, password };
 }
 
-export async function deleteUser(id: string) {
-  const user = await requireRole("superadmin");
+// =====================================================
+// sendCredentialsEmail - email login credentials to a user
+// (used by bulk import after-table per-row "Kirim email" button)
+// =====================================================
+const sendCredsSchema = z.object({
+  user_id: z.string().uuid(),
+  password: z.string().min(1).max(128),
+});
+
+export async function sendCredentialsEmail(
+  input: z.input<typeof sendCredsSchema>,
+): Promise<{ ok: true } | { error: string }> {
+  const parsed = sendCredsSchema.safeParse(input);
+  if (!parsed.success) return { error: "Input tidak valid" };
+
   const admin = createAdminClient();
+  const { data: target } = await admin
+    .from("users")
+    .select("id, full_name, email, global_role, organization_id")
+    .eq("id", parsed.data.user_id)
+    .maybeSingle();
+  if (!target) return { error: "User tidak ditemukan" };
+  const t = target as {
+    id: string;
+    full_name: string;
+    email: string | null;
+    global_role: string;
+    organization_id: string | null;
+  };
+  if (!t.email) return { error: "User belum punya email" };
+  const access = await ensureAccess(t.global_role, t.organization_id);
+  if ("error" in access) return { error: access.error ?? "Tidak diizinkan" };
+
+  const smtpUser = process.env.SMTP_USER;
+  const smtpPass = process.env.SMTP_PASSWORD;
+  const fromEmail = process.env.SMTP_FROM_EMAIL || smtpUser;
+  const fromName = process.env.SMTP_FROM_NAME ?? "Atourin Milestone Tracker";
+  const appName =
+    process.env.NEXT_PUBLIC_APP_NAME ?? "Atourin Milestone Tracker";
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+  if (!smtpUser || !smtpPass || !fromEmail)
+    return { error: "SMTP belum dikonfigurasi" };
+
+  const nodemailer = await import("nodemailer");
+  const { invitationHtml } = await import("./bulk-import");
+  const transporter = nodemailer.default.createTransport({
+    host: process.env.SMTP_HOST ?? "smtp.gmail.com",
+    port: Number(process.env.SMTP_PORT ?? 465),
+    secure: (process.env.SMTP_SECURE ?? "true") === "true",
+    auth: { user: smtpUser, pass: smtpPass },
+  });
+  try {
+    await transporter.sendMail({
+      from: `"${fromName}" <${fromEmail}>`,
+      to: t.email,
+      subject: `Akun login Anda di ${appName}`,
+      html: invitationHtml(
+        t.full_name,
+        t.email,
+        parsed.data.password,
+        appName,
+        appUrl,
+      ),
+    });
+  } catch (e) {
+    return { error: (e as Error).message };
+  }
+  await audit({
+    actor_id: access.user.id,
+    action: "member.added",
+    entity_type: "user.credentials_emailed",
+    entity_id: t.id,
+  });
+  return { ok: true };
+}
+
+// =====================================================
+// Bulk operations - hapus & kirim ulang email kredensial
+// =====================================================
+export async function bulkDeleteUsers(
+  ids: string[],
+): Promise<{ ok: number; failed: Array<{ id: string; error: string }> }> {
+  const failed: Array<{ id: string; error: string }> = [];
+  let ok = 0;
+  for (const id of ids) {
+    const r = await deleteUser(id);
+    if ("error" in r) failed.push({ id, error: r.error });
+    else ok++;
+  }
+  return { ok, failed };
+}
+
+export async function bulkResendCredentials(
+  ids: string[],
+): Promise<{ ok: number; failed: Array<{ id: string; error: string }> }> {
+  const failed: Array<{ id: string; error: string }> = [];
+  let ok = 0;
+  for (const id of ids) {
+    const r = await resetUserPassword(id);
+    if ("error" in r) {
+      failed.push({ id, error: r.error });
+      continue;
+    }
+    const s = await sendCredentialsEmail({ user_id: id, password: r.password });
+    if ("error" in s) failed.push({ id, error: s.error });
+    else ok++;
+  }
+  return { ok, failed };
+}
+
+export async function deleteUser(
+  id: string,
+): Promise<{ ok: true } | { error: string }> {
+  if (!id) return { error: "User ID required" };
+  const admin = createAdminClient();
+  const { data: target } = await admin
+    .from("users")
+    .select("id, global_role, organization_id")
+    .eq("id", id)
+    .maybeSingle();
+  if (!target) return { error: "User tidak ditemukan" };
+  const t = target as {
+    id: string;
+    global_role: string;
+    organization_id: string | null;
+  };
+  const access = await ensureAccess(t.global_role, t.organization_id);
+  if ("error" in access) return { error: access.error ?? "Tidak diizinkan" };
   // Soft-delete the profile only; auth user kept so audit trail survives
   const { error } = await admin
     .from("users")
@@ -285,11 +410,12 @@ export async function deleteUser(id: string) {
     .eq("id", id);
   if (error) return { error: error.message };
   await audit({
-    actor_id: user.id,
+    actor_id: access.user.id,
     action: "member.removed",
     entity_type: "user",
     entity_id: id,
   });
   revalidatePath("/atourin/users");
+  revalidatePath("/mitra/users");
   return { ok: true };
 }

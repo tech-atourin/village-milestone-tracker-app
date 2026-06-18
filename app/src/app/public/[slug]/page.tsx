@@ -3,6 +3,7 @@ export const metadata = { title: "Dashboard Publik" };
 import { notFound } from "next/navigation";
 import Image from "next/image";
 import { createAdminClient } from "@/lib/supabase/server";
+import { CountBadge } from "@/components/ui/count-badge";
 
 export const revalidate = 300; // 5 min ISR
 
@@ -220,7 +221,8 @@ export default async function PublicDashboardPage({
         {/* Desa leaderboard */}
         <section className="rounded-2xl border border-atr-outline bg-white p-6 shadow-atr-1">
           <h2 className="mb-4 text-sm font-bold uppercase tracking-wide text-atr-fg-muted">
-            Desa peserta ({summary.desa.length})
+            Desa peserta
+            <CountBadge n={summary.desa.length} />
           </h2>
           <div className="overflow-x-auto">
             <table className="w-full">

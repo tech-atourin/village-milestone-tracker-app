@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import type { getNarasumberDetail } from "@/server/queries/narasumber";
 import { EmptyState } from "@/components/ui/empty-state";
+import { CountBadge } from "@/components/ui/count-badge";
 
 type NarasumberDetail = NonNullable<
   Awaited<ReturnType<typeof getNarasumberDetail>>
@@ -162,7 +163,8 @@ export function NarasumberDetailView({
       <section>
         <h2 className="mb-3 flex items-center gap-2 text-sm font-bold uppercase tracking-wide text-atr-fg-muted">
           <Calendar className="h-3.5 w-3.5" />
-          Riwayat Program ({data.riwayat.length})
+          Riwayat Program
+          <CountBadge n={data.riwayat.length} />
         </h2>
         {data.riwayat.length === 0 ? (
           <EmptyState

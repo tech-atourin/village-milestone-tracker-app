@@ -21,6 +21,7 @@ import {
   type CriteriaProgressEvidence,
 } from "@/server/actions/self-assessment";
 import { CommentThread } from "@/components/assessment/comment-thread";
+import { CountBadge } from "@/components/ui/count-badge";
 
 const TIER_COLOR: Record<string, string> = {
   rintisan: "bg-atr-yellow/20 text-atr-fg border-atr-yellow/40",
@@ -341,7 +342,8 @@ function CriteriaEvidenceList({ progressId }: { progressId: string }) {
   return (
     <div className="space-y-1.5">
       <div className="text-[10px] font-bold uppercase tracking-wide text-atr-fg-muted">
-        Bukti pendukung ({items.length})
+        Bukti pendukung
+        <CountBadge n={items.length} />
       </div>
       <ul className="flex flex-wrap gap-1.5">
         {items.map((ev) => (
