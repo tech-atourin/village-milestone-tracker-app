@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   Globe,
   Loader2,
@@ -25,6 +26,7 @@ export function ProjectActions({
   initialSlug: string | null;
   scope?: "atourin" | "mitra" | "narasumber";
 }) {
+  const router = useRouter();
   const canTogglePublic = scope !== "narasumber";
   const [enabled, setEnabled] = useState(initialEnabled);
   const [slug, setSlug] = useState(initialSlug);
@@ -35,16 +37,25 @@ export function ProjectActions({
   function toggle(next: boolean) {
     setError(null);
     startTransition(async () => {
-      const r = await togglePublicDashboard({
-        project_id: projectId,
-        enabled: next,
-      });
-      if (r.error) {
-        setError(r.error);
-        return;
+      try {
+        const r = await togglePublicDashboard({
+          project_id: projectId,
+          enabled: next,
+        });
+        if ("error" in r) {
+          setError(r.error);
+          return;
+        }
+        setEnabled(next);
+        setSlug(r.slug);
+        router.refresh();
+      } catch (e) {
+        setError(
+          e instanceof Error
+            ? `Gagal: ${e.message}`
+            : "Gagal mengubah shareable link.",
+        );
       }
-      setEnabled(next);
-      if (r.slug) setSlug(r.slug);
     });
   }
 

@@ -1,11 +1,30 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useMemo, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Save, Loader2, FileText, Award } from "lucide-react";
+import {
+  Save,
+  Loader2,
+  FileText,
+  Award,
+  Search,
+  X,
+  ChevronUp,
+  ChevronDown,
+  ChevronsUpDown,
+} from "lucide-react";
 import { saveRapor } from "@/server/actions/rapor";
 import type { RaporRow } from "@/server/queries/rapor";
+
+type SortKey =
+  | "name"
+  | "desa"
+  | "pre"
+  | "post"
+  | "attendance"
+  | "delta";
+type SortDir = "asc" | "desc";
 
 type EditState = Record<
   string,
@@ -39,6 +58,55 @@ export function RaporEntryTable({
   });
   const [pendingRowId, setPendingRowId] = useState<string | null>(null);
   const [, startTransition] = useTransition();
+  const [search, setSearch] = useState("");
+  const [desaFilter, setDesaFilter] = useState("");
+  const [sortKey, setSortKey] = useState<SortKey>("name");
+  const [sortDir, setSortDir] = useState<SortDir>("asc");
+
+  const desaOptions = useMemo(() => {
+    const set = new Set<string>();
+    for (const r of rows) {
+      if (r.desa_name) set.add(r.desa_name);
+    }
+    return Array.from(set).sort();
+  }, [rows]);
+
+  const visibleRows = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    const filtered = rows.filter((r) => {
+      if (desaFilter && r.desa_name !== desaFilter) return false;
+      if (!q) return true;
+      const hay = `${r.full_name} ${r.email ?? ""} ${r.desa_name ?? ""}`.toLowerCase();
+      return hay.includes(q);
+    });
+    const dir = sortDir === "asc" ? 1 : -1;
+    const num = (v: number | null | undefined) =>
+      v == null ? Number.NEGATIVE_INFINITY : v;
+    return [...filtered].sort((a, b) => {
+      switch (sortKey) {
+        case "name":
+          return a.full_name.localeCompare(b.full_name) * dir;
+        case "desa":
+          return (a.desa_name ?? "").localeCompare(b.desa_name ?? "") * dir;
+        case "pre":
+          return (num(a.pre_test_score) - num(b.pre_test_score)) * dir;
+        case "post":
+          return (num(a.post_test_score) - num(b.post_test_score)) * dir;
+        case "attendance":
+          return (num(a.attendance) - num(b.attendance)) * dir;
+        case "delta":
+          return (num(a.improvement_percent) - num(b.improvement_percent)) * dir;
+      }
+    });
+  }, [rows, search, desaFilter, sortKey, sortDir]);
+
+  function toggleSort(k: SortKey) {
+    if (sortKey === k) setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    else {
+      setSortKey(k);
+      setSortDir("asc");
+    }
+  }
 
   function update(userId: string, field: "pre" | "post" | "attendance", value: string) {
     setEditState((s) => ({
@@ -71,23 +139,79 @@ export function RaporEntryTable({
   }
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-atr-outline bg-white shadow-atr-1">
+    <div className="space-y-3">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+        <div className="relative min-w-[220px] flex-1">
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-atr-fg-muted" />
+          <input
+            type="search"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Cari nama, email, atau desa…"
+            className="h-10 w-full rounded-lg border border-atr-outline bg-white pl-10 pr-3 text-sm outline-none transition focus:border-atr-purple focus:ring-2 focus:ring-atr-purple/15"
+          />
+        </div>
+        {desaOptions.length > 1 && (
+          <select
+            value={desaFilter}
+            onChange={(e) => setDesaFilter(e.target.value)}
+            aria-label="Filter desa"
+            className={`h-10 rounded-lg border bg-white px-3 text-sm outline-none transition focus:border-atr-purple focus:ring-2 focus:ring-atr-purple/15 ${
+              desaFilter
+                ? "border-atr-purple/50 text-atr-fg"
+                : "border-atr-outline text-atr-fg-muted"
+            }`}
+          >
+            <option value="">Desa: Semua</option>
+            {desaOptions.map((d) => (
+              <option key={d} value={d}>
+                Desa: {d}
+              </option>
+            ))}
+          </select>
+        )}
+        {(search || desaFilter) && (
+          <button
+            type="button"
+            onClick={() => {
+              setSearch("");
+              setDesaFilter("");
+            }}
+            className="inline-flex h-10 items-center gap-1 rounded-lg border border-atr-outline bg-white px-3 text-xs font-bold text-atr-fg-muted transition hover:bg-atr-bg-soft"
+          >
+            <X className="h-3.5 w-3.5" />
+            Reset
+          </button>
+        )}
+      </div>
+      <div className="text-xs text-atr-fg-muted">
+        {visibleRows.length} dari {rows.length} peserta
+      </div>
+
+      <div className="overflow-hidden rounded-2xl border border-atr-outline bg-white shadow-atr-1">
       <div className="overflow-x-auto">
         <table className="w-full">
           <thead className="bg-atr-bg-soft">
             <tr className="text-left text-xs font-bold uppercase tracking-wide text-atr-fg-muted">
-              <th className="px-4 py-3">Nama</th>
-              <th className="px-4 py-3">Desa</th>
-              <th className="px-4 py-3 w-24">Pre</th>
-              <th className="px-4 py-3 w-24">Post</th>
-              <th className="px-4 py-3 w-24">Hadir %</th>
-              <th className="px-4 py-3 w-20">Δ</th>
+              <SortableTh label="Nama" k="name" sortKey={sortKey} sortDir={sortDir} onClick={toggleSort} />
+              <SortableTh label="Desa" k="desa" sortKey={sortKey} sortDir={sortDir} onClick={toggleSort} />
+              <SortableTh label="Pre" k="pre" sortKey={sortKey} sortDir={sortDir} onClick={toggleSort} className="w-24" />
+              <SortableTh label="Post" k="post" sortKey={sortKey} sortDir={sortDir} onClick={toggleSort} className="w-24" />
+              <SortableTh label="Hadir %" k="attendance" sortKey={sortKey} sortDir={sortDir} onClick={toggleSort} className="w-28" />
+              <SortableTh label="Δ" k="delta" sortKey={sortKey} sortDir={sortDir} onClick={toggleSort} className="w-20" />
               <th className="px-4 py-3 w-32"></th>
               <th className="px-4 py-3 w-20"></th>
             </tr>
           </thead>
           <tbody className="divide-y divide-atr-outline text-sm">
-            {rows.map((r) => {
+            {visibleRows.length === 0 && (
+              <tr>
+                <td colSpan={8} className="px-4 py-10 text-center text-sm text-atr-fg-muted">
+                  Tidak ada peserta yang cocok dengan filter.
+                </td>
+              </tr>
+            )}
+            {visibleRows.map((r) => {
               const e = editState[r.user_id];
               const dirty =
                 e.pre !== (r.pre_test_score?.toString() ?? "") ||
@@ -188,7 +312,46 @@ export function RaporEntryTable({
           </tbody>
         </table>
       </div>
+      </div>
     </div>
+  );
+}
+
+function SortableTh({
+  label,
+  k,
+  sortKey,
+  sortDir,
+  onClick,
+  className = "",
+}: {
+  label: string;
+  k: SortKey;
+  sortKey: SortKey;
+  sortDir: SortDir;
+  onClick: (k: SortKey) => void;
+  className?: string;
+}) {
+  const active = sortKey === k;
+  return (
+    <th className={`px-4 py-3 ${className}`}>
+      <button
+        type="button"
+        onClick={() => onClick(k)}
+        className="inline-flex items-center gap-1 transition hover:text-atr-fg"
+      >
+        {label}
+        {active ? (
+          sortDir === "asc" ? (
+            <ChevronUp className="h-3 w-3 text-atr-purple" />
+          ) : (
+            <ChevronDown className="h-3 w-3 text-atr-purple" />
+          )
+        ) : (
+          <ChevronsUpDown className="h-3 w-3 text-atr-fg-muted/60" />
+        )}
+      </button>
+    </th>
   );
 }
 

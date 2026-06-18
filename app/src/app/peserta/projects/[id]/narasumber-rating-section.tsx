@@ -17,7 +17,7 @@ export function NarasumberRatingSection({
 }) {
   if (narasumber.length === 0) return null;
   return (
-    <section className="space-y-3">
+    <section id="penilaian-narasumber" className="space-y-3 scroll-mt-20">
       <div>
         <h2 className="text-sm font-bold uppercase tracking-wide text-atr-fg-muted">
           Penilaian Narasumber
@@ -57,13 +57,17 @@ function NarasumberRatingCard({
       setError("Pilih rating bintang dulu.");
       return;
     }
+    if (comment.trim().length < 5) {
+      setError("Komentar wajib diisi (minimal 5 karakter).");
+      return;
+    }
     setError(null);
     startTransition(async () => {
       const r = await rateNarasumber({
         narasumber_id: n.narasumber_id,
         project_id: projectId,
         rating,
-        comment: comment.trim() || null,
+        comment: comment.trim(),
       });
       if ("error" in r) {
         setError(r.error);
@@ -137,7 +141,7 @@ function NarasumberRatingCard({
                 value={comment}
                 onChange={(e) => setComment(e.target.value)}
                 rows={2}
-                placeholder="Komentar (opsional): apa yang membantu / bisa ditingkatkan?"
+                placeholder="Komentar wajib: ceritakan pengalaman pendampingan — apa yang membantu dan apa yang bisa ditingkatkan."
                 className="w-full rounded-lg border border-atr-outline bg-white p-2 text-xs outline-none focus:border-atr-purple focus:ring-2 focus:ring-atr-purple/15"
               />
               {error && (

@@ -63,7 +63,7 @@ export function ChecklistItemList({
     }
     if (
       !confirm(
-        "Tandai item ini sebagai diserahkan? Pastikan sudah upload evidence kalau perlu.",
+        "Tandai item ini sebagai diserahkan? Pastikan sudah upload bukti pendukung kalau perlu.",
       )
     )
       return;
@@ -137,7 +137,7 @@ export function ChecklistItemList({
                     {item.evidence_count > 0 && (
                       <span className="inline-flex items-center gap-1 rounded-full bg-atr-purple-50 px-2 py-0.5 text-[10px] font-bold text-atr-purple-600">
                         <Paperclip className="h-2.5 w-2.5" />
-                        {item.evidence_count} evidence
+                        {item.evidence_count} bukti
                       </span>
                     )}
                     {item.has_unanswered_review && (
@@ -164,7 +164,7 @@ export function ChecklistItemList({
                   href={`/peserta/projects/${projectDesaId}/topik/${projectTopikId}/item/${item.project_checklist_item_id}`}
                   className="inline-flex h-9 items-center justify-center gap-1 rounded-lg border border-atr-outline bg-white px-3 text-xs font-bold text-atr-fg transition hover:bg-atr-bg-soft"
                 >
-                  Buka & upload evidence
+                  Buka & upload bukti pendukung
                   <ChevronRight className="h-3.5 w-3.5" />
                 </Link>
                 {!isApproved && !isPending && (

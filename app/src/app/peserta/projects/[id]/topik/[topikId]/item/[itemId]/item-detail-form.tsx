@@ -173,7 +173,7 @@ export function ItemDetailForm({
   function removeEvidence(ev: Evidence) {
     if (
       !confirm(
-        `Hapus evidence "${ev.filename}"? Tindakan ini tidak bisa dibatalkan.`,
+        `Hapus bukti pendukung "${ev.filename}"? Tindakan ini tidak bisa dibatalkan.`,
       )
     )
       return;
@@ -220,12 +220,12 @@ export function ItemDetailForm({
 
       <section className="space-y-3">
         <h2 className="text-sm font-bold uppercase tracking-wide text-atr-fg-muted">
-          Evidence
+          Bukti Pendukung
           <CountBadge n={existingEvidence.length} />
         </h2>
         {existingEvidence.length === 0 ? (
           <p className="rounded-2xl border border-dashed border-atr-outline bg-white p-6 text-center text-sm text-atr-fg-muted">
-            Belum ada evidence. Upload foto, dokumen, video, atau audio sebagai
+            Belum ada bukti pendukung. Upload foto, dokumen, video, atau audio sebagai
             bukti.
           </p>
         ) : (
@@ -275,7 +275,7 @@ export function ItemDetailForm({
                         type="button"
                         onClick={() => removeEvidence(ev)}
                         disabled={deletingId === ev.id}
-                        title="Hapus evidence"
+                        title="Hapus bukti pendukung"
                         className="inline-flex h-8 items-center gap-1 rounded-md border border-atr-outline bg-white px-2 text-xs font-bold text-atr-fg-muted transition hover:border-atr-red/30 hover:text-atr-red disabled:opacity-50"
                       >
                         {deletingId === ev.id ? (
@@ -296,7 +296,7 @@ export function ItemDetailForm({
 
       <section className="space-y-3">
         <h2 className="text-sm font-bold uppercase tracking-wide text-atr-fg-muted">
-          Tambah evidence baru
+          Tambah bukti pendukung baru
         </h2>
         <label className="flex flex-col gap-1.5">
           <span className="text-xs font-bold text-atr-fg">

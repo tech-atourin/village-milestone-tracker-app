@@ -15,7 +15,7 @@ const rateSchema = z.object({
   narasumber_id: z.string().uuid(),
   project_id: z.string().uuid(),
   rating: z.number().int().min(1).max(5),
-  comment: z.string().max(1000).optional().nullable(),
+  comment: z.string().min(5, "Komentar wajib diisi").max(1000),
 });
 
 export async function rateNarasumber(

@@ -7,6 +7,9 @@ import {
   AlertCircle,
   Clock,
   MessageSquare,
+  ListChecks,
+  Star,
+  Target,
 } from "lucide-react";
 import { notFound } from "next/navigation";
 import { listPesertaTopik } from "@/server/queries/peserta";
@@ -115,9 +118,9 @@ export default async function PesertaProjectPage({
           className="flex items-center justify-between rounded-2xl border border-atr-outline bg-white p-4 shadow-atr-1 transition hover:bg-atr-bg-soft"
         >
           <div>
-            <div className="text-sm font-bold text-atr-fg">Baseline desa</div>
+            <div className="text-sm font-bold text-atr-fg">Data Baseline</div>
             <div className="text-xs text-atr-fg-muted">
-              Isi profil dasar desa Anda.
+              Isi profil lengkap desa Anda.
             </div>
           </div>
           <span className="text-xs font-bold text-atr-purple-600">Isi →</span>
@@ -127,16 +130,55 @@ export default async function PesertaProjectPage({
           className="flex items-center justify-between rounded-2xl border border-atr-outline bg-white p-4 shadow-atr-1 transition hover:bg-atr-bg-soft"
         >
           <div>
-            <div className="text-sm font-bold text-atr-fg">Evidence Library</div>
+            <div className="text-sm font-bold text-atr-fg">
+              Kumpulan Bukti Pendukung
+            </div>
             <div className="text-xs text-atr-fg-muted">
-              Browse semua file + tag ke banyak checklist.
+              Lihat semua dokumen diunggah.
+            </div>
+          </div>
+          <span className="text-xs font-bold text-atr-purple-600">Buka →</span>
+        </Link>
+        <Link
+          href={`/peserta/projects/${params.id}/rencana-aksi`}
+          className="flex items-center justify-between rounded-2xl border border-atr-outline bg-white p-4 shadow-atr-1 transition hover:bg-atr-bg-soft sm:col-span-2"
+        >
+          <div>
+            <div className="text-sm font-bold text-atr-fg">Rencana Aksi</div>
+            <div className="text-xs text-atr-fg-muted">
+              Rencana tindak lanjut yang disusun bersama narasumber.
             </div>
           </div>
           <span className="text-xs font-bold text-atr-purple-600">Buka →</span>
         </Link>
       </div>
 
-      <section className="space-y-3">
+      {/* Quick anchor nav */}
+      <nav className="flex flex-wrap gap-2 rounded-2xl border border-atr-outline bg-white p-2 shadow-atr-1">
+        <a
+          href="#topik"
+          className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-atr-bg-soft px-3 text-xs font-bold text-atr-fg transition hover:bg-atr-purple-50"
+        >
+          <ListChecks className="h-3.5 w-3.5" />
+          Topik
+        </a>
+        <a
+          href="#penilaian-narasumber"
+          className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-atr-bg-soft px-3 text-xs font-bold text-atr-fg transition hover:bg-atr-purple-50"
+        >
+          <Star className="h-3.5 w-3.5" />
+          Penilaian Narasumber
+        </a>
+        <Link
+          href={`/peserta/projects/${params.id}/rencana-aksi`}
+          className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-atr-bg-soft px-3 text-xs font-bold text-atr-fg transition hover:bg-atr-purple-50"
+        >
+          <Target className="h-3.5 w-3.5" />
+          Rencana Aksi
+        </Link>
+      </nav>
+
+      <section id="topik" className="space-y-3 scroll-mt-20">
         <h2 className="text-sm font-bold uppercase tracking-wide text-atr-fg-muted">
           Topik
         </h2>

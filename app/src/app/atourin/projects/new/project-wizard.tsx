@@ -8,7 +8,6 @@ import {
   ChevronRight,
   FileText,
   LayoutTemplate,
-  Settings,
   Users,
   ClipboardCheck,
   Loader2,
@@ -23,7 +22,6 @@ import type {
 const STEPS = [
   { key: "basic", label: "Info Dasar", icon: FileText },
   { key: "template", label: "Pilih Template", icon: LayoutTemplate },
-  { key: "modules", label: "Configure Modul", icon: Settings },
   { key: "mitra", label: "Assign Mitra", icon: Users },
   { key: "review", label: "Review & Publish", icon: ClipboardCheck },
 ] as const;
@@ -42,14 +40,6 @@ type State = {
     klasifikasi_nasional: boolean;
     public_dashboard: boolean;
   };
-};
-
-const MODULE_LABELS: Record<keyof State["enabled_modules"], string> = {
-  desa_baseline: "Desa Baseline (form profil desa)",
-  topik_pendampingan: "Topik Pendampingan (checklist per topik)",
-  capacity_building: "Capacity Building (RAPOR peserta)",
-  klasifikasi_nasional: "Klasifikasi Nasional (Permenpar)",
-  public_dashboard: "Public Dashboard (shareable link)",
 };
 
 export function ProjectWizard({
@@ -80,8 +70,8 @@ export function ProjectWizard({
       desa_baseline: true,
       topik_pendampingan: true,
       capacity_building: true,
-      klasifikasi_nasional: false,
-      public_dashboard: false,
+      klasifikasi_nasional: true,
+      public_dashboard: true,
     },
   });
 
@@ -99,10 +89,8 @@ export function ProjectWizard({
       case 1:
         return true; // template optional
       case 2:
-        return true;
-      case 3:
         return state.organization_id !== "";
-      case 4:
+      case 3:
         return true;
       default:
         return false;
@@ -272,47 +260,6 @@ export function ProjectWizard({
         {step === 2 && (
           <div className="space-y-4">
             <h3 className="text-base font-semibold text-atr-fg">
-              Configure modul aktif
-            </h3>
-            <p className="text-sm text-atr-fg-muted">
-              Nonaktifkan modul yang tidak digunakan di project ini.
-            </p>
-            <div className="space-y-2">
-              {(
-                Object.keys(state.enabled_modules) as Array<
-                  keyof State["enabled_modules"]
-                >
-              ).map((key) => (
-                <label
-                  key={key}
-                  className="flex cursor-pointer items-center justify-between rounded-lg border border-atr-outline p-3 transition hover:bg-atr-bg-soft"
-                >
-                  <span className="text-sm text-atr-fg">
-                    {MODULE_LABELS[key]}
-                  </span>
-                  <input
-                    type="checkbox"
-                    checked={state.enabled_modules[key]}
-                    onChange={(e) =>
-                      setState({
-                        ...state,
-                        enabled_modules: {
-                          ...state.enabled_modules,
-                          [key]: e.target.checked,
-                        },
-                      })
-                    }
-                    className="h-4 w-4 accent-atr-purple"
-                  />
-                </label>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {step === 3 && (
-          <div className="space-y-4">
-            <h3 className="text-base font-semibold text-atr-fg">
               Assign Mitra
             </h3>
             <p className="text-sm text-atr-fg-muted">
@@ -341,7 +288,7 @@ export function ProjectWizard({
           </div>
         )}
 
-        {step === 4 && (
+        {step === 3 && (
           <div className="space-y-4">
             <h3 className="text-base font-semibold text-atr-fg">
               Review & publish
@@ -361,19 +308,6 @@ export function ProjectWizard({
                 value={selectedTemplate?.name ?? "Blank"}
               />
               <Row label="Mitra" value={selectedOrg?.name ?? "-"} />
-              <Row
-                label="Modul aktif"
-                value={
-                  (
-                    Object.keys(state.enabled_modules) as Array<
-                      keyof State["enabled_modules"]
-                    >
-                  )
-                    .filter((k) => state.enabled_modules[k])
-                    .map((k) => MODULE_LABELS[k].split(" (")[0])
-                    .join(", ") || "-"
-                }
-              />
             </dl>
 
             <div className="flex flex-col gap-2 pt-2 sm:flex-row sm:justify-end">
@@ -401,7 +335,7 @@ export function ProjectWizard({
       </div>
 
       {/* Nav */}
-      {step < 4 && (
+      {step < 3 && (
         <div className="flex items-center justify-between border-t border-atr-outline bg-atr-bg-soft px-6 py-4">
           <button
             type="button"

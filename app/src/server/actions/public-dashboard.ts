@@ -18,23 +18,40 @@ function randomSlug(): string {
   ).slice(0, 12);
 }
 
-export async function togglePublicDashboard(input: z.input<typeof schema>) {
-  await requireRole("superadmin", "mitra_admin");
+export async function togglePublicDashboard(
+  input: z.input<typeof schema>,
+): Promise<{ ok: true; slug: string } | { error: string }> {
+  try {
+    await requireRole("superadmin", "mitra_admin");
+  } catch {
+    return { error: "Tidak diizinkan: butuh akses superadmin atau mitra admin." };
+  }
   const parsed = schema.safeParse(input);
   if (!parsed.success) return { error: "Input tidak valid" };
   const supabase = createAdminClient();
 
-  // Re-use existing slug when re-enabling so the URL stays stable.
   const { data: existing, error: readErr } = await supabase
     .from("projects")
     .select("public_dashboard_slug")
     .eq("id", parsed.data.project_id)
     .maybeSingle();
-  if (readErr) return { error: readErr.message };
+  if (readErr) return { error: `Read gagal: ${readErr.message}` };
 
-  const slug =
+  let slug =
     (existing as { public_dashboard_slug: string | null } | null)
-      ?.public_dashboard_slug ?? randomSlug();
+      ?.public_dashboard_slug ?? null;
+
+  // Generate a slug only when none exists yet. Retry once on the rare
+  // unique-constraint collision.
+  if (!slug) {
+    slug = randomSlug();
+    const dup = await supabase
+      .from("projects")
+      .select("id")
+      .eq("public_dashboard_slug", slug)
+      .maybeSingle();
+    if (dup.data) slug = randomSlug();
+  }
 
   const { error: updErr } = await supabase
     .from("projects")
@@ -43,9 +60,9 @@ export async function togglePublicDashboard(input: z.input<typeof schema>) {
       public_dashboard_slug: slug,
     })
     .eq("id", parsed.data.project_id);
-  if (updErr) return { error: updErr.message };
+  if (updErr) return { error: `Update gagal: ${updErr.message}` };
 
   revalidatePath(`/atourin/projects/${parsed.data.project_id}`);
   revalidatePath(`/mitra/projects/${parsed.data.project_id}`);
-  return { slug };
+  return { ok: true, slug };
 }

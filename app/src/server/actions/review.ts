@@ -124,7 +124,7 @@ export async function reviewChecklistItem(input: z.input<typeof reviewSchema>) {
     const { data: cp } = await admin
       .from("checklist_progress")
       .select(
-        "submitted_by, project_checklist_item:project_checklist_item(title, project_topik:project_topik(name)), desa_topik_instance:desa_topik_instance(project_desa:project_desa(desa_id))",
+        "submitted_by, project_checklist_item:project_checklist_item(title, project_topik:project_topik(name)), desa_topik_instance:desa_topik_instance(project_desa:project_desa(id, desa_id))",
       )
       .eq("id", parsed.data.checklist_progress_id)
       .maybeSingle();
@@ -155,6 +155,7 @@ export async function reviewChecklistItem(input: z.input<typeof reviewSchema>) {
           topik_name: c.project_checklist_item?.project_topik?.name,
           note: parsed.data.note,
           project_id: parsed.data.project_id,
+          project_desa_id: c.desa_topik_instance?.project_desa?.id ?? null,
         },
       });
     }

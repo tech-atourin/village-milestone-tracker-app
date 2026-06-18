@@ -145,28 +145,6 @@ export function SettingsTab({ project }: { project: Project }) {
         </div>
       </section>
 
-      <section className="rounded-2xl border border-atr-outline bg-white p-6 shadow-atr-1">
-        <h3 className="mb-4 text-sm font-bold text-atr-fg">Modul aktif</h3>
-        <div className="space-y-2">
-          {MODULES.map(([key, label]) => (
-            <label
-              key={key}
-              className="flex cursor-pointer items-center justify-between rounded-lg border border-atr-outline p-3 transition hover:bg-atr-bg-soft"
-            >
-              <span className="text-sm text-atr-fg">{label}</span>
-              <input
-                type="checkbox"
-                checked={modules[key]}
-                onChange={(e) =>
-                  setModules((m) => ({ ...m, [key]: e.target.checked }))
-                }
-                className="h-4 w-4 accent-atr-purple"
-              />
-            </label>
-          ))}
-        </div>
-      </section>
-
       {error && (
         <div className="rounded-lg border border-atr-red/30 bg-atr-red/10 px-4 py-3 text-sm text-atr-red">
           {error}

@@ -64,7 +64,13 @@ function linkFor(
 ): string | null {
   const scope = scopeFor(role);
   const projectId = (payload.project_id as string | undefined) ?? null;
+  const projectDesaId = (payload.project_desa_id as string | undefined) ?? null;
   const desaId = (payload.desa_id as string | undefined) ?? null;
+
+  // Peserta's route uses project_desa_id, not project_id.
+  const pesertaProjectHref = projectDesaId
+    ? `/peserta/projects/${projectDesaId}`
+    : "/peserta/home";
 
   switch (template_key) {
     case "checklist_submitted":
@@ -75,8 +81,8 @@ function linkFor(
       return projectId ? `/${scope}/projects/${projectId}` : null;
     case "checklist_approved":
     case "checklist_rejected":
-      // Peserta — go to their project
-      return projectId ? `/peserta/projects/${projectId}` : "/peserta";
+      // Peserta — go to their project_desa
+      return pesertaProjectHref;
     case "criteria_submitted":
       // Reviewer goes to klasifikasi v1 detail for that desa
       if (desaId && (scope === "atourin" || scope === "mitra"))
@@ -91,8 +97,7 @@ function linkFor(
       return null;
     case "comment_added":
       // Checklist discussion (payload has project_id) → project review queue
-      if (projectId && scope === "peserta")
-        return `/peserta/projects/${projectId}`;
+      if (projectId && scope === "peserta") return pesertaProjectHref;
       if (
         projectId &&
         (scope === "atourin" || scope === "mitra" || scope === "narasumber")
@@ -110,7 +115,7 @@ function linkFor(
       if (projectId) return `/${scope}/projects/${projectId}`;
       return scope === "narasumber" ? "/narasumber" : `/${scope}/projects`;
     case "evidence_linked":
-      return projectId ? `/peserta/projects/${projectId}` : null;
+      return pesertaProjectHref;
     default:
       return null;
   }

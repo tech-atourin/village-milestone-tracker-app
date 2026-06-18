@@ -222,7 +222,6 @@ export function NarasumberDetailView({
                             <tr>
                               <th className="px-3 py-1.5">Materi</th>
                               <th className="px-3 py-1.5 text-right">Sesi</th>
-                              <th className="px-3 py-1.5 text-right">Rating</th>
                             </tr>
                           </thead>
                           <tbody className="divide-y divide-atr-outline">
@@ -233,18 +232,6 @@ export function NarasumberDetailView({
                                 </td>
                                 <td className="px-3 py-1.5 text-right text-atr-fg-muted">
                                   {t.sessions}
-                                </td>
-                                <td className="px-3 py-1.5 text-right">
-                                  {t.avg_rating != null ? (
-                                    <span className="font-bold text-atr-fg">
-                                      ★ {t.avg_rating.toFixed(2)}{" "}
-                                      <span className="font-normal text-atr-fg-muted">
-                                        ({t.rating_count})
-                                      </span>
-                                    </span>
-                                  ) : (
-                                    <span className="text-atr-fg-muted">-</span>
-                                  )}
                                 </td>
                               </tr>
                             ))}

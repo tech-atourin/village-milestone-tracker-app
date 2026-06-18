@@ -45,37 +45,81 @@ export async function listNarasumbersWithStats(): Promise<NarasumberRow[]> {
   if (rows.length === 0) return [];
   const ids = rows.map((r) => r.id);
 
-  // Sessions count + distinct project_desa per narasumber
+  // Sessions count + distinct project_desa per narasumber, joined with
+  // project_desa.desa_id so we know which desa the narasumber actually
+  // served (needed to filter out bogus ratings).
   const { data: sessions } = await supabase
     .from("pendampingan_sessions")
-    .select("narasumber_id, project_id, project_desa_id")
+    .select(
+      "narasumber_id, project_id, project_desa_id, project_desa:project_desa(desa_id)",
+    )
     .in("narasumber_id", ids);
   const sCount = new Map<string, number>();
   const pSet = new Map<string, Set<string>>();
   const dSet = new Map<string, Set<string>>();
-  for (const s of (sessions ?? []) as Array<{
-    narasumber_id: string;
-    project_id: string;
-    project_desa_id: string;
-  }>) {
+  // narasumber_id → set of "project_id::desa_id" (where they actually held a session)
+  const eligiblePairs = new Map<string, Set<string>>();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  for (const s of (sessions ?? []) as any[]) {
     sCount.set(s.narasumber_id, (sCount.get(s.narasumber_id) ?? 0) + 1);
     if (!pSet.has(s.narasumber_id)) pSet.set(s.narasumber_id, new Set());
     pSet.get(s.narasumber_id)!.add(s.project_id);
     if (!dSet.has(s.narasumber_id)) dSet.set(s.narasumber_id, new Set());
     dSet.get(s.narasumber_id)!.add(s.project_desa_id);
+    const desaId = s.project_desa?.desa_id;
+    if (desaId) {
+      if (!eligiblePairs.has(s.narasumber_id))
+        eligiblePairs.set(s.narasumber_id, new Set());
+      eligiblePairs
+        .get(s.narasumber_id)!
+        .add(`${s.project_id}::${desaId}`);
+    }
   }
 
-  // Ratings: avg + count per narasumber
+  // Peserta memberships — lookup which (project, desa) each user belongs to
+  const { data: members } = await supabase
+    .from("project_memberships")
+    .select("user_id, project_id, desa_id")
+    .eq("role", "peserta")
+    .eq("status", "active");
+  const memberPairs = new Map<string, Set<string>>();
+  for (const m of ((members ?? []) as Array<{
+    user_id: string;
+    project_id: string;
+    desa_id: string | null;
+  }>)) {
+    if (!m.desa_id) continue;
+    if (!memberPairs.has(m.user_id)) memberPairs.set(m.user_id, new Set());
+    memberPairs.get(m.user_id)!.add(`${m.project_id}::${m.desa_id}`);
+  }
+
+  // Ratings: avg + count per narasumber — but only count ratings where the
+  // rater is a peserta in the same (project, desa) the narasumber served.
+  // This filters out demo-seed bogus ratings.
   const { data: ratings } = await supabase
     .from("narasumber_ratings")
-    .select("narasumber_id, rating")
+    .select("narasumber_id, rater_id, project_id, rating")
     .in("narasumber_id", ids);
   const rSum = new Map<string, number>();
   const rCount = new Map<string, number>();
   for (const r of (ratings ?? []) as Array<{
     narasumber_id: string;
+    rater_id: string;
+    project_id: string;
     rating: number;
   }>) {
+    const eligible = eligiblePairs.get(r.narasumber_id);
+    const raterIn = memberPairs.get(r.rater_id);
+    if (!eligible || !raterIn) continue;
+    // rater must share at least one (project, desa) with this narasumber,
+    // AND scoped to the rating's project_id
+    let match = false;
+    raterIn.forEach((pair) => {
+      if (!match && pair.startsWith(`${r.project_id}::`) && eligible.has(pair)) {
+        match = true;
+      }
+    });
+    if (!match) continue;
     rSum.set(r.narasumber_id, (rSum.get(r.narasumber_id) ?? 0) + r.rating);
     rCount.set(r.narasumber_id, (rCount.get(r.narasumber_id) ?? 0) + 1);
   }

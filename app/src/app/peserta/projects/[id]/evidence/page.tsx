@@ -1,4 +1,4 @@
-export const metadata = { title: "Evidence" };
+export const metadata = { title: "Bukti Pendukung" };
 
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
@@ -23,11 +23,11 @@ export default async function PesertaEvidenceLibraryPage({
       </Link>
       <header>
         <h1 className="text-xl font-bold tracking-tight text-atr-fg">
-          Evidence Library
+          Kumpulan Bukti Pendukung
         </h1>
         <p className="text-sm text-atr-fg-muted">
           Semua file yang sudah di-upload untuk desa Anda. Klik file untuk
-          tag/untag ke checklist topik.
+          kaitkan ke checklist topik.
         </p>
       </header>
       <EvidenceLibraryView projectDesaId={params.id} items={evidence} />

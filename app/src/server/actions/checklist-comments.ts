@@ -187,6 +187,7 @@ export async function addChecklistComment(
               ? parsed.data.body.slice(0, 140) + "…"
               : parsed.data.body,
           project_id: ctx.project_id,
+          project_desa_id: ctx.project_desa_id,
         },
       });
     }

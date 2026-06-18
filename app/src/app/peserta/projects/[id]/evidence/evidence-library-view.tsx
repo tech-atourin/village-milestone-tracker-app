@@ -48,11 +48,11 @@ export function EvidenceLibraryView({
   function remove(it: EvidenceLibraryItem) {
     const tagWarn =
       it.tag_count > 0
-        ? `\n\nFile ini ter-tag ke ${it.tag_count} checklist; tag tersebut juga akan dilepas.`
+        ? `\n\nFile ini terkait ke ${it.tag_count} checklist; kaitan tersebut juga akan dilepas.`
         : "";
     if (
       !confirm(
-        `Hapus "${it.original_filename ?? "evidence ini"}"? Tindakan ini tidak bisa dibatalkan.${tagWarn}`,
+        `Hapus "${it.original_filename ?? "bukti ini"}"? Tindakan ini tidak bisa dibatalkan.${tagWarn}`,
       )
     )
       return;
@@ -72,9 +72,9 @@ export function EvidenceLibraryView({
     return (
       <div className="rounded-2xl border border-dashed border-atr-outline bg-white p-12 text-center">
         <Paperclip className="mx-auto mb-3 h-6 w-6 text-atr-fg-muted" />
-        <p className="text-sm font-bold text-atr-fg">Belum ada evidence</p>
+        <p className="text-sm font-bold text-atr-fg">Belum ada bukti pendukung</p>
         <p className="mt-1 text-xs text-atr-fg-muted">
-          Buka topik → checklist → upload evidence. File akan muncul di sini.
+          Buka topik → checklist → upload bukti pendukung. File akan muncul di sini.
         </p>
       </div>
     );
@@ -124,7 +124,7 @@ export function EvidenceLibraryView({
                 {it.tag_count > 0 && (
                   <div className="inline-flex items-center gap-1 rounded-full bg-atr-purple-50 px-2 py-0.5 text-[10px] font-bold text-atr-purple-600">
                     <Tag className="h-2.5 w-2.5" />
-                    Tagged ke {it.tag_count} checklist
+                    Terkait ke {it.tag_count} checklist
                   </div>
                 )}
                 <div className="flex gap-1">
@@ -151,7 +151,7 @@ export function EvidenceLibraryView({
                     type="button"
                     onClick={() => remove(it)}
                     disabled={deletingId === it.id}
-                    title="Hapus evidence"
+                    title="Hapus bukti pendukung"
                     className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-atr-outline bg-white text-atr-fg-muted transition hover:border-atr-red/30 hover:text-atr-red disabled:opacity-50"
                   >
                     {deletingId === it.id ? (
@@ -276,7 +276,7 @@ function TagDialog({
         <header className="flex items-center justify-between border-b border-atr-outline px-5 py-3">
           <div>
             <h3 className="text-sm font-bold text-atr-fg">
-              Tag ke checklist
+              Kaitkan ke checklist
             </h3>
             <p className="text-xs text-atr-fg-muted">
               Centang topik yang relevan. 1 file bisa di-tag ke banyak.

@@ -22,27 +22,56 @@ export async function loadNarasumberAssignments(
 ): Promise<NarasumberAssignment[]> {
   const supabase = createAdminClient();
 
-  const [{ data: memberships }, { data: sessions }, { data: ratings }] =
-    await Promise.all([
-      supabase
-        .from("project_memberships")
-        .select(
-          "id, user:users!project_memberships_user_id_fkey(id, full_name, email)",
-        )
-        .eq("project_id", projectId)
-        .eq("role", "narasumber")
-        .eq("status", "active"),
-      supabase
-        .from("pendampingan_sessions")
-        .select(
-          "narasumber_id, project_desa_id, narasumber:users!pendampingan_sessions_narasumber_id_fkey(id, full_name, email), project_desa:project_desa(id, desa:desa(id, name))",
-        )
-        .eq("project_id", projectId),
-      supabase
-        .from("narasumber_ratings")
-        .select("narasumber_id, rating")
-        .eq("project_id", projectId),
-    ]);
+  const [
+    { data: memberships },
+    { data: sessions },
+    { data: ratings },
+    { data: pesertaMembers },
+  ] = await Promise.all([
+    supabase
+      .from("project_memberships")
+      .select(
+        "id, user:users!project_memberships_user_id_fkey(id, full_name, email)",
+      )
+      .eq("project_id", projectId)
+      .eq("role", "narasumber")
+      .eq("status", "active"),
+    supabase
+      .from("pendampingan_sessions")
+      .select(
+        "narasumber_id, project_desa_id, narasumber:users!pendampingan_sessions_narasumber_id_fkey(id, full_name, email), project_desa:project_desa(id, desa:desa(id, name))",
+      )
+      .eq("project_id", projectId),
+    supabase
+      .from("narasumber_ratings")
+      .select("narasumber_id, rater_id, rating")
+      .eq("project_id", projectId),
+    supabase
+      .from("project_memberships")
+      .select("user_id, desa_id")
+      .eq("project_id", projectId)
+      .eq("role", "peserta")
+      .eq("status", "active"),
+  ]);
+
+  // Build narasumber → set of desa_ids they actually held a session in
+  const sessionDesaByNara = new Map<string, Set<string>>();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  for (const s of (sessions ?? []) as any[]) {
+    const nid = s.narasumber_id as string | null;
+    const did = s.project_desa?.desa?.id as string | null;
+    if (!nid || !did) continue;
+    if (!sessionDesaByNara.has(nid)) sessionDesaByNara.set(nid, new Set());
+    sessionDesaByNara.get(nid)!.add(did);
+  }
+  // Peserta → desa_id in this project
+  const pesertaDesa = new Map<string, string>();
+  for (const m of ((pesertaMembers ?? []) as Array<{
+    user_id: string;
+    desa_id: string | null;
+  }>)) {
+    if (m.desa_id) pesertaDesa.set(m.user_id, m.desa_id);
+  }
 
   type Bucket = {
     user: { id: string; full_name: string; email: string | null };
@@ -96,9 +125,14 @@ export async function loadNarasumberAssignments(
     byId.set(id, cur);
   }
 
+  // Only count ratings where the rater is a peserta in a desa the
+  // narasumber actually mentored. Filters out bogus seeded ratings.
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   for (const r of (ratings ?? []) as any[]) {
     const id = r.narasumber_id as string;
+    const raterDesa = pesertaDesa.get(r.rater_id as string);
+    const eligible = sessionDesaByNara.get(id);
+    if (!raterDesa || !eligible || !eligible.has(raterDesa)) continue;
     const cur = byId.get(id);
     if (!cur) continue;
     cur.rating_sum += r.rating;

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
@@ -45,6 +45,28 @@ export function NarasumberTab({
   const [q, setQ] = useState("");
   const [selUser, setSelUser] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [listSearch, setListSearch] = useState("");
+  const [desaFilter, setDesaFilter] = useState("");
+
+  const desaOptions = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const a of assignments) {
+      for (const d of a.desa) map.set(d.id, d.name);
+    }
+    return Array.from(map.entries())
+      .map(([id, name]) => ({ id, name }))
+      .sort((a, b) => a.name.localeCompare(b.name));
+  }, [assignments]);
+
+  const visibleAssignments = useMemo(() => {
+    const q = listSearch.trim().toLowerCase();
+    return assignments.filter((a) => {
+      if (desaFilter && !a.desa.some((d) => d.id === desaFilter)) return false;
+      if (!q) return true;
+      const hay = `${a.user.full_name} ${a.user.email ?? ""}`.toLowerCase();
+      return hay.includes(q);
+    });
+  }, [assignments, listSearch, desaFilter]);
 
   const memberIds = new Set(assignments.map((a) => a.user.id));
   const filtered = q
@@ -217,8 +239,60 @@ export function NarasumberTab({
           </p>
         </div>
       ) : (
-        <div className="grid gap-3 sm:grid-cols-2">
-          {assignments.map((a) => (
+        <>
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+            <div className="relative min-w-[220px] flex-1">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-atr-fg-muted" />
+              <input
+                type="search"
+                value={listSearch}
+                onChange={(e) => setListSearch(e.target.value)}
+                placeholder="Cari nama atau email narasumber…"
+                className="h-10 w-full rounded-lg border border-atr-outline bg-white pl-10 pr-3 text-sm outline-none transition focus:border-atr-purple focus:ring-2 focus:ring-atr-purple/15"
+              />
+            </div>
+            {desaOptions.length > 1 && (
+              <select
+                value={desaFilter}
+                onChange={(e) => setDesaFilter(e.target.value)}
+                aria-label="Filter desa"
+                className={`h-10 rounded-lg border bg-white px-3 text-sm outline-none transition focus:border-atr-purple focus:ring-2 focus:ring-atr-purple/15 ${
+                  desaFilter
+                    ? "border-atr-purple/50 text-atr-fg"
+                    : "border-atr-outline text-atr-fg-muted"
+                }`}
+              >
+                <option value="">Desa: Semua</option>
+                {desaOptions.map((o) => (
+                  <option key={o.id} value={o.id}>
+                    Desa: {o.name}
+                  </option>
+                ))}
+              </select>
+            )}
+            {(listSearch || desaFilter) && (
+              <button
+                type="button"
+                onClick={() => {
+                  setListSearch("");
+                  setDesaFilter("");
+                }}
+                className="inline-flex h-10 items-center gap-1 rounded-lg border border-atr-outline bg-white px-3 text-xs font-bold text-atr-fg-muted transition hover:bg-atr-bg-soft"
+              >
+                <X className="h-3.5 w-3.5" />
+                Reset
+              </button>
+            )}
+          </div>
+
+          {visibleAssignments.length === 0 ? (
+            <div className="rounded-2xl border border-dashed border-atr-outline bg-white p-10 text-center text-sm text-atr-fg-muted">
+              Tidak ada narasumber yang cocok dengan filter ini.
+            </div>
+          ) : null}
+
+          <div className="grid gap-3 sm:grid-cols-2">
+            {visibleAssignments.map((a) => (
             <article
               key={a.user.id}
               className="rounded-2xl border border-atr-outline bg-white p-4 shadow-atr-1"
@@ -292,7 +366,8 @@ export function NarasumberTab({
               )}
             </article>
           ))}
-        </div>
+          </div>
+        </>
       )}
     </div>
   );
