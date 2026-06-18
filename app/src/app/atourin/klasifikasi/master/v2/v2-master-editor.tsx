@@ -16,12 +16,14 @@ import {
 import { updateHubTemplate } from "@/server/actions/klasifikasi-master";
 
 type QType = "single" | "multi" | "slider" | "text";
+type Tier = "rintisan" | "berkembang" | "maju" | "mandiri";
 
 type Question = {
   id: string;
   type: QType;
   label: string;
   weight: number;
+  tier: Tier;
   options?: string[];
   min?: number;
   max?: number;
@@ -35,16 +37,19 @@ type Pillar = {
 
 type Definisi = { pillars: Pillar[] };
 
-function asDefinisi(input: unknown): Definisi {
-  if (
-    input &&
-    typeof input === "object" &&
-    Array.isArray((input as { pillars?: unknown }).pillars)
-  ) {
-    return input as Definisi;
-  }
-  return { pillars: [] };
-}
+const TIERS: Tier[] = ["rintisan", "berkembang", "maju", "mandiri"];
+const TIER_LABEL: Record<Tier, string> = {
+  rintisan: "Rintisan",
+  berkembang: "Berkembang",
+  maju: "Maju",
+  mandiri: "Mandiri",
+};
+const TIER_STYLE: Record<Tier, string> = {
+  rintisan: "bg-atr-yellow/20 text-atr-fg",
+  berkembang: "bg-atr-arti/15 text-atr-arti",
+  maju: "bg-atr-purple-50 text-atr-purple-600",
+  mandiri: "bg-atr-purple-light/60 text-atr-purple-800",
+};
 
 const TYPE_LABEL: Record<QType, string> = {
   single: "Pilihan tunggal",
@@ -52,6 +57,48 @@ const TYPE_LABEL: Record<QType, string> = {
   slider: "Skala (slider)",
   text: "Teks bebas",
 };
+
+function slugify(s: string): string {
+  return (
+    s
+      .toLowerCase()
+      .trim()
+      .replace(/[^a-z0-9]+/g, "_")
+      .replace(/^_|_$/g, "") || `p_${Math.random().toString(36).slice(2, 8)}`
+  );
+}
+function randomId(): string {
+  return `q_${Math.random().toString(36).slice(2, 10)}`;
+}
+
+function asDefinisi(input: unknown): Definisi {
+  if (
+    input &&
+    typeof input === "object" &&
+    Array.isArray((input as { pillars?: unknown }).pillars)
+  ) {
+    // Migrate: ensure every question has a tier (default rintisan)
+    // and every pillar has a key (auto-derive from title if missing).
+    const raw = (input as Definisi).pillars;
+    return {
+      pillars: raw.map((p) => ({
+        key: p.key && p.key.trim() ? p.key : slugify(p.title ?? "pillar"),
+        title: p.title ?? "",
+        questions: (p.questions ?? []).map((q) => ({
+          id: q.id && q.id.trim() ? q.id : randomId(),
+          type: q.type ?? "single",
+          label: q.label ?? "",
+          weight: typeof q.weight === "number" ? q.weight : 1,
+          tier: (q.tier as Tier) ?? "rintisan",
+          options: q.options,
+          min: q.min,
+          max: q.max,
+        })),
+      })),
+    };
+  }
+  return { pillars: [] };
+}
 
 export function V2MasterEditor({
   template,
@@ -81,7 +128,21 @@ export function V2MasterEditor({
   }
 
   function updatePillar(idx: number, patch: Partial<Pillar>) {
-    setPillars((arr) => arr.map((p, i) => (i === idx ? { ...p, ...patch } : p)));
+    setPillars((arr) =>
+      arr.map((p, i) =>
+        i === idx
+          ? {
+              ...p,
+              ...patch,
+              // Auto-update key when title changes (only when key was derived from old title)
+              key:
+                patch.title !== undefined
+                  ? slugify(patch.title)
+                  : (patch.key ?? p.key),
+            }
+          : p,
+      ),
+    );
     setSaved(false);
   }
   function removePillar(idx: number) {
@@ -90,10 +151,11 @@ export function V2MasterEditor({
     setSaved(false);
   }
   function addPillar() {
-    const newKey = `pillar_${Date.now().toString(36)}`;
+    const newTitle = "Pillar Baru";
+    const newKey = slugify(newTitle) + "_" + Math.random().toString(36).slice(2, 5);
     setPillars((arr) => [
       ...arr,
-      { key: newKey, title: "Pillar Baru", questions: [] },
+      { key: newKey, title: newTitle, questions: [] },
     ]);
     setOpenPillars((p) => ({ ...p, [newKey]: true }));
     setSaved(false);
@@ -129,8 +191,7 @@ export function V2MasterEditor({
     );
     setSaved(false);
   }
-  function addQuestion(pIdx: number) {
-    const newId = `q_${Date.now().toString(36)}`;
+  function addQuestion(pIdx: number, tier: Tier) {
     setPillars((arr) =>
       arr.map((p, i) =>
         i === pIdx
@@ -139,10 +200,11 @@ export function V2MasterEditor({
               questions: [
                 ...p.questions,
                 {
-                  id: newId,
+                  id: randomId(),
                   type: "single",
                   label: "Pertanyaan baru",
                   weight: 1,
+                  tier,
                   options: ["Belum sama sekali", "Sebagian", "Sudah penuh"],
                 },
               ],
@@ -155,25 +217,31 @@ export function V2MasterEditor({
 
   function save() {
     setSaved(false);
-    // Validation
+    // Validation — keys/ids auto-generated, only check user-facing
     const ids = new Set<string>();
     for (const p of pillars) {
-      if (!p.key.trim() || !p.title.trim()) {
-        setError("Setiap pillar wajib punya key dan title.");
+      if (!p.title.trim()) {
+        setError("Setiap pillar wajib punya nama.");
         return;
       }
+      // Ensure key is set (auto-derive if empty)
+      if (!p.key || !p.key.trim()) p.key = slugify(p.title);
       for (const q of p.questions) {
-        if (!q.id.trim() || !q.label.trim()) {
-          setError(`Pillar "${p.title}": ada pertanyaan tanpa id atau label.`);
+        if (!q.label.trim()) {
+          setError(`Pillar "${p.title}": ada pertanyaan kosong.`);
           return;
         }
-        if (ids.has(q.id)) {
-          setError(`ID pertanyaan duplikat: "${q.id}". Harus unik.`);
-          return;
-        }
+        if (!q.id || !q.id.trim()) q.id = randomId();
+        if (ids.has(q.id)) q.id = randomId(); // self-heal duplicate ids
         ids.add(q.id);
-        if ((q.type === "single" || q.type === "multi") && (!q.options || q.options.length === 0)) {
-          setError(`Pertanyaan "${q.label}" tipe ${q.type} butuh minimal 1 pilihan.`);
+        if (!q.tier) q.tier = "rintisan";
+        if (
+          (q.type === "single" || q.type === "multi") &&
+          (!q.options || q.options.filter((o) => o.trim()).length === 0)
+        ) {
+          setError(
+            `Pertanyaan "${q.label}" tipe ${TYPE_LABEL[q.type].toLowerCase()} butuh minimal 1 pilihan.`,
+          );
           return;
         }
         if (q.type === "slider" && (q.min == null || q.max == null || q.max <= q.min)) {
@@ -243,6 +311,13 @@ export function V2MasterEditor({
         </div>
       </div>
 
+      <div className="rounded-2xl border border-atr-purple/30 bg-atr-purple-50/40 p-3 text-[11px] text-atr-fg-muted">
+        💡 Setiap pertanyaan harus dimasukkan ke salah satu kategori tier:
+        <b className="text-atr-fg"> Rintisan → Berkembang → Maju → Mandiri</b>.
+        Desa wisata baru naik ke tier berikutnya kalau semua pertanyaan di tier
+        sebelumnya sudah dijawab &amp; diapprove reviewer.
+      </div>
+
       <div className="flex items-center justify-between">
         <h2 className="text-sm font-bold uppercase tracking-wide text-atr-purple">
           Pillar &amp; Pertanyaan
@@ -271,7 +346,7 @@ export function V2MasterEditor({
               onToggle={() => togglePillar(p.key)}
               onChange={(patch) => updatePillar(pIdx, patch)}
               onRemove={() => removePillar(pIdx)}
-              onAddQuestion={() => addQuestion(pIdx)}
+              onAddQuestion={(tier) => addQuestion(pIdx, tier)}
               onQuestionChange={(qIdx, patch) =>
                 updateQuestion(pIdx, qIdx, patch)
               }
@@ -328,10 +403,21 @@ function PillarCard({
   onToggle: () => void;
   onChange: (patch: Partial<Pillar>) => void;
   onRemove: () => void;
-  onAddQuestion: () => void;
+  onAddQuestion: (tier: Tier) => void;
   onQuestionChange: (qIdx: number, patch: Partial<Question>) => void;
   onQuestionRemove: (qIdx: number) => void;
 }) {
+  // Group question indices by tier for the visual layout
+  const byTier: Record<Tier, Array<{ q: Question; idx: number }>> = {
+    rintisan: [],
+    berkembang: [],
+    maju: [],
+    mandiri: [],
+  };
+  pillar.questions.forEach((q, idx) => {
+    byTier[q.tier ?? "rintisan"].push({ q, idx });
+  });
+
   return (
     <article className="overflow-hidden rounded-2xl border border-atr-outline bg-white shadow-atr-1">
       <header className="flex items-center gap-2 border-b border-atr-outline bg-atr-bg-soft/60 px-4 py-2">
@@ -362,49 +448,55 @@ function PillarCard({
       </header>
       {open && (
         <div className="space-y-4 p-4">
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <Field label="Key (slug, untuk identifier internal)">
-              <input
-                type="text"
-                value={pillar.key}
-                onChange={(e) => onChange({ key: e.target.value })}
-                className={INPUT_CLS}
-              />
-            </Field>
-            <Field label="Title (ditampilkan ke desa)">
-              <input
-                type="text"
-                value={pillar.title}
-                onChange={(e) => onChange({ title: e.target.value })}
-                className={INPUT_CLS}
-              />
-            </Field>
-          </div>
+          <Field label="Nama pillar">
+            <input
+              type="text"
+              value={pillar.title}
+              onChange={(e) => onChange({ title: e.target.value })}
+              placeholder="Cth: Daya Tarik Wisata"
+              className={INPUT_CLS}
+            />
+          </Field>
 
-          <div className="space-y-2">
-            {pillar.questions.length === 0 ? (
-              <p className="rounded-lg border border-dashed border-atr-outline bg-atr-bg-soft px-3 py-3 text-center text-xs italic text-atr-fg-muted">
-                Belum ada pertanyaan di pillar ini.
-              </p>
-            ) : (
-              pillar.questions.map((q, qIdx) => (
-                <QuestionCard
-                  key={q.id + qIdx}
-                  question={q}
-                  index={qIdx}
-                  onChange={(patch) => onQuestionChange(qIdx, patch)}
-                  onRemove={() => onQuestionRemove(qIdx)}
-                />
-              ))
-            )}
-            <button
-              type="button"
-              onClick={onAddQuestion}
-              className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-atr-purple/40 bg-atr-purple-50 px-3 text-xs font-bold text-atr-purple-600 hover:bg-atr-purple-light/40"
-            >
-              <Plus className="h-3.5 w-3.5" /> Tambah Pertanyaan
-            </button>
-          </div>
+          {TIERS.map((tier) => (
+            <div key={tier} className="space-y-2 rounded-xl border border-atr-outline bg-atr-bg-soft/30 p-3">
+              <div className="flex items-center justify-between">
+                <div className="inline-flex items-center gap-2">
+                  <span
+                    className={`inline-flex h-6 items-center rounded-full px-2.5 text-[11px] font-bold ${TIER_STYLE[tier]}`}
+                  >
+                    {TIER_LABEL[tier]}
+                  </span>
+                  <span className="text-[10px] text-atr-fg-muted">
+                    {byTier[tier].length} pertanyaan
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => onAddQuestion(tier)}
+                  className="inline-flex h-7 items-center gap-1 rounded-md border border-atr-purple/30 bg-white px-2 text-[11px] font-bold text-atr-purple-600 hover:bg-atr-purple-50"
+                >
+                  <Plus className="h-3 w-3" /> Tambah di {TIER_LABEL[tier]}
+                </button>
+              </div>
+              {byTier[tier].length === 0 ? (
+                <p className="rounded-lg border border-dashed border-atr-outline bg-white px-3 py-2 text-center text-[11px] italic text-atr-fg-muted">
+                  Belum ada pertanyaan tier {TIER_LABEL[tier]}.
+                </p>
+              ) : (
+                <div className="space-y-2">
+                  {byTier[tier].map(({ q, idx }) => (
+                    <QuestionCard
+                      key={q.id + idx}
+                      question={q}
+                      onChange={(patch) => onQuestionChange(idx, patch)}
+                      onRemove={() => onQuestionRemove(idx)}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+          ))}
         </div>
       )}
     </article>
@@ -413,12 +505,10 @@ function PillarCard({
 
 function QuestionCard({
   question,
-  index,
   onChange,
   onRemove,
 }: {
   question: Question;
-  index: number;
   onChange: (patch: Partial<Question>) => void;
   onRemove: () => void;
 }) {
@@ -450,11 +540,20 @@ function QuestionCard({
   }
 
   return (
-    <div className="space-y-3 rounded-xl border border-atr-outline bg-atr-bg-soft/40 p-3">
+    <div className="space-y-3 rounded-xl border border-atr-outline bg-white p-3">
       <div className="flex items-center gap-2">
-        <span className="text-[10px] font-bold uppercase tracking-wide text-atr-fg-muted">
-          Pertanyaan #{index + 1}
-        </span>
+        <select
+          value={question.tier}
+          onChange={(e) => onChange({ tier: e.target.value as Tier })}
+          aria-label="Tier"
+          className={`h-7 rounded-full border px-2 text-[10px] font-bold ${TIER_STYLE[question.tier]}`}
+        >
+          {TIERS.map((t) => (
+            <option key={t} value={t}>
+              {TIER_LABEL[t]}
+            </option>
+          ))}
+        </select>
         <span className="text-[10px] text-atr-fg-muted">·</span>
         <span className="text-[10px] text-atr-fg-muted">{TYPE_LABEL[question.type]}</span>
         <button
@@ -465,49 +564,31 @@ function QuestionCard({
           <Trash2 className="h-3 w-3" /> Hapus
         </button>
       </div>
-      <Field label="Pertanyaan / label">
+      <Field label="Pertanyaan">
         <textarea
           value={question.label}
           onChange={(e) => onChange({ label: e.target.value })}
           rows={2}
+          placeholder="Cth: Apakah desa Anda memiliki daya tarik wisata yang terdokumentasi?"
           className="w-full rounded-lg border border-atr-outline p-2 text-sm outline-none focus:border-atr-purple focus:ring-2 focus:ring-atr-purple/15"
         />
       </Field>
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-        <Field label="ID (unik)">
-          <input
-            type="text"
-            value={question.id}
-            onChange={(e) => onChange({ id: e.target.value })}
-            className={INPUT_CLS}
-          />
-        </Field>
-        <Field label="Tipe">
-          <select
-            value={question.type}
-            onChange={(e) => changeType(e.target.value as QType)}
-            className={INPUT_CLS}
-          >
-            {(Object.keys(TYPE_LABEL) as QType[]).map((t) => (
-              <option key={t} value={t}>
-                {TYPE_LABEL[t]}
-              </option>
-            ))}
-          </select>
-        </Field>
-        <Field label="Bobot (weight)">
-          <input
-            type="number"
-            step="0.5"
-            value={question.weight}
-            onChange={(e) => onChange({ weight: Number(e.target.value) })}
-            className={INPUT_CLS}
-          />
-        </Field>
-      </div>
+      <Field label="Tipe jawaban">
+        <select
+          value={question.type}
+          onChange={(e) => changeType(e.target.value as QType)}
+          className={INPUT_CLS}
+        >
+          {(Object.keys(TYPE_LABEL) as QType[]).map((t) => (
+            <option key={t} value={t}>
+              {TYPE_LABEL[t]}
+            </option>
+          ))}
+        </select>
+      </Field>
       {(question.type === "single" || question.type === "multi") && (
         <div>
-          <div className="mb-1.5 text-xs font-bold text-atr-fg">Pilihan</div>
+          <div className="mb-1.5 text-xs font-bold text-atr-fg">Pilihan jawaban</div>
           <div className="space-y-1.5">
             {(question.options ?? []).map((opt, i) => (
               <div key={i} className="flex gap-1.5">
