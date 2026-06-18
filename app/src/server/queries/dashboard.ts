@@ -35,19 +35,38 @@ export async function getAttentionItems(): Promise<AttentionItem[]> {
     });
   }
 
-  // 2. Pending criteria verification
-  const { count: pendingCriteria } = await supabase
+  // 2. Pending criteria verification (V1 Permenpar per-kriteria) — show both
+  // the kriteria count AND the desa count so reviewer knows the granularity.
+  const { data: ncpRows } = await supabase
     .from("national_criteria_progress")
-    .select("id", { count: "exact", head: true })
+    .select("desa_id")
     .eq("status", "submitted");
-  if ((pendingCriteria ?? 0) > 0) {
+  const ncpItems = (ncpRows ?? []) as Array<{ desa_id: string }>;
+  const desaWithPending = new Set(ncpItems.map((r) => r.desa_id)).size;
+  if (ncpItems.length > 0) {
     items.push({
       id: "criteria-queue",
       kind: "criteria",
-      title: `${pendingCriteria} self-assessment desa wisata menunggu verifikasi`,
-      subtitle: "Desa wisata sudah klaim kriteria, perlu Anda verifikasi.",
+      title: `${ncpItems.length} klaim kriteria dari ${desaWithPending} desa wisata`,
+      subtitle: "Desa wisata sudah klaim kriteria V1 Permenpar, perlu verifikasi per kriteria.",
       href: "/atourin/klasifikasi",
-      count: pendingCriteria ?? 0,
+      count: ncpItems.length,
+    });
+  }
+
+  // 2b. Pending V2 hub_assessment submissions (whole-assessment, not per-question)
+  const { count: hubSubmitted } = await supabase
+    .from("hub_assessment")
+    .select("id", { count: "exact", head: true })
+    .eq("status", "submitted");
+  if ((hubSubmitted ?? 0) > 0) {
+    items.push({
+      id: "hub-assessment-queue",
+      kind: "criteria",
+      title: `${hubSubmitted} assessment V2 Hub menunggu verifikasi`,
+      subtitle: "Desa wisata sudah submit assessment V2, perlu approve/tolak.",
+      href: "/atourin/klasifikasi",
+      count: hubSubmitted ?? 0,
     });
   }
 

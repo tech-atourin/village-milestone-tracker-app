@@ -19,7 +19,9 @@ import type { DesaRecommendation } from "@/lib/ai/desa-recommendation";
 import { AiSummaryCard } from "./ai-summary-card";
 import { AiRecommendationCard } from "./ai-recommendation-card";
 import { SwotCard } from "./swot-card";
+import { TopikReviewer } from "./topik-reviewer";
 import { sanitizeBackHref } from "@/lib/nav/back-href";
+import { listTopikReviewForDesa } from "@/server/queries/review";
 
 export type DesaSwot = {
   strengths: string[];
@@ -83,12 +85,14 @@ export async function ProjectDesaDetailView({
   const detail = await getProjectDesa(projectId, projectDesaId);
   if (!detail) return null;
 
-  const [topik, cachedSummary, cachedRec, cachedSwot] = await Promise.all([
-    listPesertaTopik(projectDesaId),
-    fetchCachedInsight<DesaSummary>(projectDesaId, "summary"),
-    fetchCachedInsight<DesaRecommendation>(projectDesaId, "recommendation"),
-    fetchCachedInsight<DesaSwot>(projectDesaId, "swot"),
-  ]);
+  const [topik, topikGroups, cachedSummary, cachedRec, cachedSwot] =
+    await Promise.all([
+      listPesertaTopik(projectDesaId),
+      listTopikReviewForDesa(projectDesaId),
+      fetchCachedInsight<DesaSummary>(projectDesaId, "summary"),
+      fetchCachedInsight<DesaRecommendation>(projectDesaId, "recommendation"),
+      fetchCachedInsight<DesaSwot>(projectDesaId, "swot"),
+    ]);
   const aiReady = aiProvider().isReady();
   const overall =
     topik.length > 0
@@ -179,68 +183,11 @@ export async function ProjectDesaDetailView({
         cached={cachedSwot.cached}
       />
 
-      <section className="space-y-3">
-        <h2 className="text-sm font-bold uppercase tracking-wide text-atr-fg-muted">
-          Progress per topik
-        </h2>
-        <ul className="space-y-2">
-          {topik.map((t) => (
-            <li
-              key={t.project_topik_id}
-              className="rounded-2xl border border-atr-outline bg-white p-4 shadow-atr-1"
-            >
-              <div className="flex items-start gap-3">
-                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-atr-purple-50 text-xs font-bold text-atr-purple">
-                  {t.sort_order || "•"}
-                </span>
-                <div className="min-w-0 flex-1">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <h3 className="text-sm font-bold text-atr-fg">{t.name}</h3>
-                    <span
-                      className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-bold ${STATUS_STYLE[t.status]}`}
-                    >
-                      {STATUS_LABEL[t.status]}
-                    </span>
-                  </div>
-                  <div className="mt-2 flex flex-wrap items-center gap-3 text-xs text-atr-fg-muted">
-                    <span className="inline-flex items-center gap-1">
-                      <CheckCircle2 className="h-3 w-3 text-atr-arti" />
-                      {t.approved_items} approved
-                    </span>
-                    {t.pending_items > 0 ? (
-                      <Link
-                        href={`/${scope}/projects/${projectId}?tab=evidence&topik=${t.project_topik_id}&desa=${projectDesaId}`}
-                        className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 font-bold text-atr-fg transition hover:bg-atr-yellow/20"
-                      >
-                        <Clock className="h-3 w-3 text-atr-yellow" />
-                        {t.pending_items} pending
-                        <span className="text-[10px] text-atr-purple-600">
-                          → tinjau
-                        </span>
-                      </Link>
-                    ) : (
-                      <span className="inline-flex items-center gap-1">
-                        <Clock className="h-3 w-3 text-atr-yellow" />
-                        {t.pending_items} pending
-                      </span>
-                    )}
-                    <span>{t.total_items} total</span>
-                  </div>
-                  <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-atr-bg-soft">
-                    <div
-                      className="h-full bg-atr-purple transition-all"
-                      style={{ width: `${Math.round(t.completion_percent)}%` }}
-                    />
-                  </div>
-                </div>
-                <div className="text-sm font-bold text-atr-fg">
-                  {Math.round(t.completion_percent)}%
-                </div>
-              </div>
-            </li>
-          ))}
-        </ul>
-      </section>
+      <TopikReviewer
+        projectId={projectId}
+        groups={topikGroups}
+        canReview={scope === "atourin" || scope === "mitra"}
+      />
     </div>
   );
 }
