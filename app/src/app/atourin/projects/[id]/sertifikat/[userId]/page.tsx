@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
+import { PrintButton } from "@/components/ui/print-button";
 import { createClient } from "@/lib/supabase/server";
 import { requireRole } from "@/lib/auth/rbac";
 
@@ -86,7 +87,7 @@ export default async function SertifikatPage({
         }}
       />
 
-      <div className="no-print mx-auto mb-6 flex max-w-4xl flex-wrap items-center justify-between gap-3 rounded-lg border border-atr-outline bg-atr-bg-soft p-3 text-xs text-atr-fg-muted">
+      <div className="no-print mx-auto mb-6 flex w-full max-w-[1100px] flex-wrap items-center justify-between gap-3 rounded-lg border border-atr-outline bg-atr-bg-soft p-3 text-xs text-atr-fg-muted">
         <Link
           href={`/atourin/projects/${params.id}/rapor/${params.userId}`}
           className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-atr-outline bg-white px-3 text-xs font-bold text-atr-fg transition hover:bg-atr-bg-soft"
@@ -94,26 +95,18 @@ export default async function SertifikatPage({
           <ArrowLeft className="h-3.5 w-3.5" />
           Kembali
         </Link>
-        <div className="flex-1 text-right">
-          <strong className="text-atr-fg">Tips:</strong> Cetak landscape A4
-          (Ctrl/⌘+P, &quot;Save as PDF&quot;).
-          {!eligible && (
-            <span className="ml-2 text-atr-red">
-              Peserta belum memenuhi syarat sertifikat (Post-test ≥70 +
-              improvement ≥20%). Sertifikat tetap bisa di-print untuk preview.
-            </span>
-          )}
+        <div className="flex flex-1 items-center justify-end gap-3">
+          <span className="text-right">
+            <strong className="text-atr-fg">Tips:</strong> Cetak (Ctrl/⌘+P) →
+            pilih layout <strong>landscape</strong> + ukuran A4 → Save as PDF.
+          </span>
+          <PrintButton />
         </div>
       </div>
 
-      {/* Certificate page - A4 landscape (297mm × 210mm) */}
+      {/* Certificate page - A4 landscape aspect, contained */}
       <div
-        className="cert-page relative mx-auto bg-white shadow-atr-4 print:shadow-none"
-        style={{
-          width: "297mm",
-          minHeight: "210mm",
-          padding: "16mm",
-        }}
+        className="cert-page relative mx-auto aspect-[1.414/1] w-full max-w-[1100px] overflow-hidden bg-white p-10 shadow-atr-4 print:shadow-none"
       >
         {/* Purple gradient corner accents */}
         <div
@@ -252,6 +245,13 @@ export default async function SertifikatPage({
           })}
         </div>
       </div>
+
+      {!eligible && (
+        <p className="no-print mx-auto mt-4 max-w-[1100px] text-center text-xs text-atr-red">
+          Peserta belum memenuhi syarat sertifikat (Post-test ≥70 +
+          improvement ≥20%). Sertifikat tetap bisa di-print untuk preview.
+        </p>
+      )}
     </main>
   );
 }

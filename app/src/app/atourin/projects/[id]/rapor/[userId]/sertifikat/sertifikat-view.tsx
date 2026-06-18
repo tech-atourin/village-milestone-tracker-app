@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
+import { PrintButton } from "@/components/ui/print-button";
 
 const ELIGIBILITY_THRESHOLD = 20;
 
@@ -63,16 +64,12 @@ export function SertifikatView({
             Kembali
           </Link>
         ) : <span />}
-        <div className="flex-1 text-right">
-          <strong className="text-atr-fg">Tips:</strong> Cetak (Ctrl/⌘+P) →
-          pilih layout <strong>landscape</strong> + ukuran A4 → Save as PDF.
-          {!eligible && (
-            <span className="ml-2 rounded-md bg-atr-yellow/20 px-1.5 py-0.5 font-bold text-atr-fg">
-              Peningkatan {delta ?? "-"}% belum mencapai ambang batas
-              ({ELIGIBILITY_THRESHOLD}%). Sertifikat tetap bisa dicetak sebagai
-              tanda partisipasi.
-            </span>
-          )}
+        <div className="flex flex-1 items-center justify-end gap-3">
+          <span className="text-right">
+            <strong className="text-atr-fg">Tips:</strong> Cetak (Ctrl/⌘+P) →
+            pilih layout <strong>landscape</strong> + ukuran A4 → Save as PDF.
+          </span>
+          <PrintButton />
         </div>
       </div>
 
@@ -170,6 +167,14 @@ export function SertifikatView({
           · ID {user.id?.slice(0, 8) ?? "-"}-{project.id?.slice(0, 8) ?? "-"}
         </div>
       </article>
+
+      {!eligible && (
+        <p className="no-print mx-auto mt-4 max-w-[1100px] text-center text-xs text-atr-red">
+          Peningkatan {delta ?? "-"}% belum mencapai ambang batas
+          ({ELIGIBILITY_THRESHOLD}%). Sertifikat tetap bisa dicetak sebagai
+          tanda partisipasi.
+        </p>
+      )}
     </main>
   );
 }

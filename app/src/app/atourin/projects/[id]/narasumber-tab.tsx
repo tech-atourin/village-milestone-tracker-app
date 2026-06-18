@@ -104,8 +104,7 @@ export function NarasumberTab({
             Narasumber project
           </h3>
           <p className="text-sm text-atr-fg-muted">
-            {assignments.length} narasumber terdaftar - penilaian dari
-            kuisioner peserta diakumulasi otomatis.
+            {assignments.length} narasumber terdaftar
           </p>
         </div>
         <button
