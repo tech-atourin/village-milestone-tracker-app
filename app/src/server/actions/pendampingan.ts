@@ -34,6 +34,9 @@ export async function createSession(input: z.input<typeof createSchema>) {
 const updateSchema = z.object({
   id: z.string().uuid(),
   materi: z.string().max(5000).optional().nullable(),
+  maksud_tujuan: z.string().max(5000).optional().nullable(),
+  aktivitas: z.string().max(5000).optional().nullable(),
+  output_sesi: z.string().max(5000).optional().nullable(),
   tindak_lanjut: z.string().max(5000).optional().nullable(),
   kondisi_sebelum: z.array(z.string()).optional().nullable(),
   kondisi_setelah: z.array(z.string()).optional().nullable(),

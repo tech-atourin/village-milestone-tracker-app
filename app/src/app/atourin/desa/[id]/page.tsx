@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { requireRole } from "@/lib/auth/rbac";
 import { getDesaDetail } from "@/server/queries/desa-master";
+import { getDesaTierJourney } from "@/server/queries/tier-journey";
 import { DesaDetailSections } from "@/components/desa/desa-detail-sections";
 import { HubSyncButton } from "@/components/desa/hub-sync-button";
 
@@ -14,7 +15,10 @@ export default async function AtourinDesaDetailPage({
   params: { id: string };
 }) {
   await requireRole("superadmin");
-  const data = await getDesaDetail(params.id);
+  const [data, journey] = await Promise.all([
+    getDesaDetail(params.id),
+    getDesaTierJourney(params.id),
+  ]);
   if (!data) notFound();
 
   return (
@@ -29,6 +33,7 @@ export default async function AtourinDesaDetailPage({
       <DesaDetailSections
         data={data}
         viewerRole="superadmin"
+        journey={journey}
         hubSyncSlot={
           <HubSyncButton
             desaId={data.base.id}

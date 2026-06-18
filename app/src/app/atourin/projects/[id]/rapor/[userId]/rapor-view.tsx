@@ -93,12 +93,47 @@ export async function loadRapor(projectId: string, userId: string) {
     rating: ratingByNs.get(n.id) ?? null,
   }));
 
-  return { project, user, rapor, membership, narasumber };
+  // Per-materi pre/post breakdown for this peserta (peserta_test_results
+  // scoped by user_id + project_topik_id). Shown inside the single rapor.
+  const { data: tr } = await supabase
+    .from("peserta_test_results")
+    .select(
+      "score, project_topik:project_topik(id, name, sort_order), gform:project_gforms!inner(form_type, project_id)",
+    )
+    .eq("user_id", userId)
+    .eq("gform.project_id", projectId)
+    .not("project_topik_id", "is", null);
+  type MatRow = { name: string; sort_order: number; pre: number | null; post: number | null };
+  const materiMap = new Map<string, MatRow>();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  for (const r of (tr ?? []) as any[]) {
+    const id = r.project_topik?.id;
+    if (!id) continue;
+    const cur =
+      materiMap.get(id) ??
+      ({
+        name: r.project_topik?.name ?? "—",
+        sort_order: r.project_topik?.sort_order ?? 0,
+        pre: null,
+        post: null,
+      } as MatRow);
+    const score = Number(r.score);
+    if (r.gform?.form_type === "pre_test") cur.pre = score;
+    else if (r.gform?.form_type === "post_test") cur.post = score;
+    materiMap.set(id, cur);
+  }
+  const materi_scores = Array.from(materiMap.values()).sort(
+    (a, b) => a.sort_order - b.sort_order,
+  );
+
+  return { project, user, rapor, membership, narasumber, materi_scores };
 }
 
 export function RaporView({
   data,
+  scope = "atourin",
 }: {
+  scope?: "atourin" | "mitra";
   data: {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     project: any;
@@ -114,9 +149,14 @@ export function RaporView({
       sessions: number;
       rating: number | null;
     }>;
+    materi_scores: Array<{
+      name: string;
+      pre: number | null;
+      post: number | null;
+    }>;
   };
 }) {
-  const { project, user, rapor, membership, narasumber } = data;
+  const { project, user, rapor, membership, narasumber, materi_scores } = data;
 
   const pre = rapor?.pre_test_score ?? null;
   const post = rapor?.post_test_score ?? null;
@@ -139,10 +179,20 @@ export function RaporView({
         }}
       />
 
-      <div className="no-print mb-6 rounded-lg border border-atr-outline bg-atr-bg-soft p-3 text-xs text-atr-fg-muted">
-        <strong className="text-atr-fg">Tips:</strong> Cetak halaman ini
-        (Ctrl/⌘+P) atau &quot;Save as PDF&quot; di dialog print untuk RAPOR
-        final.
+      <div className="no-print mb-6 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-atr-outline bg-atr-bg-soft p-3 text-xs text-atr-fg-muted">
+        <div>
+          <strong className="text-atr-fg">Tips:</strong> Cetak halaman ini
+          (Ctrl/⌘+P) atau &quot;Save as PDF&quot; di dialog print untuk RAPOR
+          final.
+        </div>
+        <a
+          href={`/${scope}/projects/${project.id}/rapor/${user.id}/sertifikat`}
+          target="_blank"
+          rel="noreferrer"
+          className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-atr-purple px-3 text-xs font-bold text-white transition hover:bg-atr-purple-600"
+        >
+          🏆 Buka Sertifikat
+        </a>
       </div>
 
       {/* Header */}
@@ -220,20 +270,56 @@ export function RaporView({
         </div>
       </section>
 
-      {/* Material covered */}
+      {/* Nilai per materi — data-driven dari peserta_test_results */}
       <section className="mb-8">
         <h2 className="mb-3 text-sm font-bold uppercase tracking-wide text-atr-fg-muted">
-          Materi yang Diikuti
+          Hasil Capacity Building per Materi
         </h2>
-        <ul className="space-y-1 text-sm text-atr-fg">
-          <li>• Kelembagaan & Tata Kelola Desa Wisata</li>
-          <li>• Produk Wisata & Storytelling Desa</li>
-          <li>• Amenitas & Standar Homestay</li>
-          <li>• Pemasaran Digital Desa Wisata</li>
-          <li>• Resiliensi & Mitigasi Bencana</li>
-          <li>• Produk Ekonomi Kreatif</li>
-          <li>• Pengelolaan Keuangan Desa Wisata</li>
-        </ul>
+        {materi_scores.length === 0 ? (
+          <p className="text-sm italic text-atr-fg-muted">
+            Belum ada hasil pre/post test per materi untuk peserta ini.
+          </p>
+        ) : (
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-atr-outline text-xs text-atr-fg-muted">
+                <th className="py-2 text-left">Materi</th>
+                <th className="py-2 text-right">Pre-test</th>
+                <th className="py-2 text-right">Post-test</th>
+                <th className="py-2 text-right">Δ</th>
+              </tr>
+            </thead>
+            <tbody>
+              {materi_scores.map((m) => {
+                const delta =
+                  m.pre != null && m.post != null ? m.post - m.pre : null;
+                return (
+                  <tr key={m.name} className="border-b border-atr-outline/50">
+                    <td className="py-2 font-bold text-atr-fg">{m.name}</td>
+                    <td className="py-2 text-right text-atr-fg">
+                      {m.pre ?? "—"}
+                    </td>
+                    <td className="py-2 text-right text-atr-fg">
+                      {m.post ?? "—"}
+                    </td>
+                    <td className="py-2 text-right">
+                      {delta != null ? (
+                        <span
+                          className={`font-bold ${delta >= 0 ? "text-atr-arti" : "text-atr-red"}`}
+                        >
+                          {delta > 0 ? "+" : ""}
+                          {delta}
+                        </span>
+                      ) : (
+                        "—"
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        )}
       </section>
 
       {/* Sesi & Narasumber yang mendampingi peserta ini */}

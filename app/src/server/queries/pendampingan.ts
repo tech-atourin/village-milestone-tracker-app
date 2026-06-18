@@ -112,6 +112,9 @@ export type SessionDetail = {
   start_time: string | null;
   end_time: string | null;
   materi: string | null;
+  maksud_tujuan: string | null;
+  aktivitas: string | null;
+  output_sesi: string | null;
   tindak_lanjut: string | null;
   kondisi_sebelum: string[] | null;
   kondisi_setelah: string[] | null;
@@ -137,7 +140,8 @@ export async function getSessionDetail(
     .select(
       `
       id, project_id, project_desa_id, narasumber_id, day_number, session_date,
-      start_time, end_time, materi, tindak_lanjut, kondisi_sebelum, kondisi_setelah,
+      start_time, end_time, materi, maksud_tujuan, aktivitas, output_sesi,
+      tindak_lanjut, kondisi_sebelum, kondisi_setelah,
       rekomendasi, status,
       project:projects(name, total_pendampingan_days),
       project_desa:project_desa(desa:desa(name, kabupaten, provinsi)),
@@ -191,6 +195,9 @@ export async function getSessionDetail(
     start_time: r.start_time,
     end_time: r.end_time,
     materi: r.materi,
+    maksud_tujuan: r.maksud_tujuan,
+    aktivitas: r.aktivitas,
+    output_sesi: r.output_sesi,
     tindak_lanjut: r.tindak_lanjut,
     kondisi_sebelum: r.kondisi_sebelum,
     kondisi_setelah: r.kondisi_setelah,

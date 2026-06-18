@@ -18,6 +18,7 @@ import type { DesaSummary } from "@/lib/ai/desa-summary";
 import type { DesaRecommendation } from "@/lib/ai/desa-recommendation";
 import { AiSummaryCard } from "./ai-summary-card";
 import { AiRecommendationCard } from "./ai-recommendation-card";
+import { SwotCard } from "./swot-card";
 
 export type DesaSwot = {
   strengths: string[];
@@ -160,7 +161,14 @@ export async function ProjectDesaDetailView({
         />
       </div>
 
-      {cachedSwot.content && <SwotCardSection swot={cachedSwot.content} />}
+      <SwotCard
+        projectDesaId={projectDesaId}
+        initialSwot={cachedSwot.content}
+        initialError={
+          aiReady ? null : "GEMINI_API_KEY belum di-set di .env.local."
+        }
+        cached={cachedSwot.cached}
+      />
 
       <section className="space-y-3">
         <h2 className="text-sm font-bold uppercase tracking-wide text-atr-fg-muted">

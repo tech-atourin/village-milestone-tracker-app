@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import { ArrowLeft, MessageSquare } from "lucide-react";
 import { requireRole, getCurrentUser } from "@/lib/auth/rbac";
 import { getDesaDetail } from "@/server/queries/desa-master";
+import { getDesaTierJourney } from "@/server/queries/tier-journey";
 import { DesaDetailSections } from "@/components/desa/desa-detail-sections";
 import { createClient } from "@/lib/supabase/server";
 import {
@@ -19,7 +20,10 @@ export default async function MitraDesaDetailPage({
 }) {
   await requireRole("mitra_admin");
   const user = await getCurrentUser();
-  const data = await getDesaDetail(params.id);
+  const [data, journey] = await Promise.all([
+    getDesaDetail(params.id),
+    getDesaTierJourney(params.id),
+  ]);
   if (!data || !user) notFound();
 
   // Hub assessment id for this desa (if any) — to fetch thread counts
@@ -56,7 +60,7 @@ export default async function MitraDesaDetailPage({
         <ArrowLeft className="h-4 w-4" />
         Kembali ke daftar desa
       </Link>
-      <DesaDetailSections data={data} viewerRole="mitra" />
+      <DesaDetailSections data={data} viewerRole="mitra" journey={journey} />
       {(criteriaCount > 0 || hubCount > 0) && (
         <article className="rounded-2xl border border-atr-purple/30 bg-atr-purple-50/30 p-5 shadow-atr-1">
           <header className="mb-3 flex items-center gap-2">

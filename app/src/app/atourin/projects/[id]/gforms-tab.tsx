@@ -21,6 +21,8 @@ import { GformsPanel, type GformRow } from "./gforms-panel";
 export type TestResultRow = {
   id: string;
   project_gform_id: string;
+  project_topik_id: string | null;
+  project_topik_name: string | null;
   user_id: string | null;
   user_name: string | null;
   user_email: string | null;
@@ -168,20 +170,44 @@ function FormResultsTable({
 }) {
   const [search, setSearch] = useState("");
   const [matchFilter, setMatchFilter] = useState<string>("all");
+  const [materiFilter, setMateriFilter] = useState<string>("all");
   const [page, setPage] = useState(1);
   const [expandedId, setExpandedId] = useState<string | null>(null);
+
+  const materiOptions = useMemo(() => {
+    const map = new Map<string, string>();
+    let unassigned = 0;
+    for (const r of rows) {
+      if (r.project_topik_id && r.project_topik_name) {
+        map.set(r.project_topik_id, r.project_topik_name);
+      } else {
+        unassigned += 1;
+      }
+    }
+    return {
+      list: Array.from(map.entries()).sort((a, b) =>
+        a[1].localeCompare(b[1], "id"),
+      ),
+      unassigned,
+    };
+  }, [rows]);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     return rows.filter((r) => {
       if (matchFilter !== "all" && r.matched_status !== matchFilter) return false;
+      if (materiFilter === "__unassigned") {
+        if (r.project_topik_id) return false;
+      } else if (materiFilter !== "all") {
+        if (r.project_topik_id !== materiFilter) return false;
+      }
       if (q) {
         const hay = `${r.user_name ?? ""} ${r.user_email ?? ""} ${JSON.stringify(r.raw_response)}`.toLowerCase();
         if (!hay.includes(q)) return false;
       }
       return true;
     });
-  }, [rows, search, matchFilter]);
+  }, [rows, search, matchFilter, materiFilter]);
 
   const stats = useMemo(() => {
     const matched = rows.filter((r) => r.matched_status === "matched").length;
@@ -189,6 +215,32 @@ function FormResultsTable({
     const ambiguous = rows.filter((r) => r.matched_status === "ambiguous").length;
     return { total: rows.length, matched, unmatched, ambiguous };
   }, [rows]);
+
+  // Per-materi summary: average score per topik (only meaningful for tests).
+  const materiSummary = useMemo(() => {
+    if (jenis === "survey_kepuasan") return [];
+    const map = new Map<string, { name: string; scores: number[] }>();
+    for (const r of rows) {
+      if (!r.project_topik_id || !r.project_topik_name) continue;
+      if (r.score == null) continue;
+      const cur = map.get(r.project_topik_id) ?? {
+        name: r.project_topik_name,
+        scores: [],
+      };
+      cur.scores.push(Number(r.score));
+      map.set(r.project_topik_id, cur);
+    }
+    return Array.from(map.entries())
+      .map(([id, v]) => ({
+        id,
+        name: v.name,
+        count: v.scores.length,
+        avg: v.scores.length
+          ? Math.round((v.scores.reduce((a, b) => a + b, 0) / v.scores.length) * 10) / 10
+          : 0,
+      }))
+      .sort((a, b) => a.name.localeCompare(b.name, "id"));
+  }, [rows, jenis]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const effectivePage = Math.min(page, totalPages);
@@ -213,6 +265,43 @@ function FormResultsTable({
 
   return (
     <>
+      {materiSummary.length > 0 && (
+        <div className="rounded-lg border border-atr-outline bg-atr-bg-soft p-3">
+          <div className="mb-2 text-[10px] font-bold uppercase tracking-wide text-atr-fg-muted">
+            Rata-rata Skor per Materi ({CHIP_LABEL[jenis]})
+          </div>
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
+            {materiSummary.map((m) => (
+              <button
+                type="button"
+                key={m.id}
+                onClick={() => {
+                  setMateriFilter(m.id);
+                  setPage(1);
+                }}
+                className={`rounded-md border p-2 text-left transition hover:border-atr-purple ${
+                  materiFilter === m.id
+                    ? "border-atr-purple bg-atr-purple-50/50"
+                    : "border-atr-outline bg-white"
+                }`}
+              >
+                <div className="line-clamp-2 text-[11px] font-bold text-atr-fg">
+                  {m.name}
+                </div>
+                <div className="mt-1 flex items-baseline gap-1.5">
+                  <span className="text-lg font-bold text-atr-purple-600">
+                    {m.avg}
+                  </span>
+                  <span className="text-[10px] text-atr-fg-muted">
+                    rata-rata · {m.count} hasil
+                  </span>
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-atr-fg-muted" />
@@ -244,6 +333,28 @@ function FormResultsTable({
             Status: Ambiguous ({stats.ambiguous})
           </option>
         </select>
+        {(materiOptions.list.length > 0 || materiOptions.unassigned > 0) && (
+          <select
+            value={materiFilter}
+            onChange={(e) => {
+              setMateriFilter(e.target.value);
+              setPage(1);
+            }}
+            className="h-10 rounded-md border border-atr-outline bg-white px-2 text-sm outline-none focus:border-atr-purple"
+          >
+            <option value="all">Materi: Semua</option>
+            {materiOptions.list.map(([id, name]) => (
+              <option key={id} value={id}>
+                Materi: {name}
+              </option>
+            ))}
+            {materiOptions.unassigned > 0 && (
+              <option value="__unassigned">
+                Materi: Belum diklasifikasi ({materiOptions.unassigned})
+              </option>
+            )}
+          </select>
+        )}
       </div>
 
       <p className="text-xs text-atr-fg-muted">
@@ -256,6 +367,7 @@ function FormResultsTable({
           <thead className="bg-atr-bg-soft text-left text-xs font-bold uppercase tracking-wide text-atr-fg-muted">
             <tr>
               <th className="px-3 py-2">Peserta</th>
+              <th className="px-3 py-2">Materi</th>
               {showScore && <th className="px-3 py-2">Skor</th>}
               <th className="px-3 py-2">Status</th>
               <th className="px-3 py-2">Submitted</th>
@@ -266,7 +378,7 @@ function FormResultsTable({
             {pageRows.length === 0 ? (
               <tr>
                 <td
-                  colSpan={showScore ? 5 : 4}
+                  colSpan={showScore ? 6 : 5}
                   className="px-3 py-12 text-center text-sm italic text-atr-fg-muted"
                 >
                   Tidak ada hasil sesuai filter.
@@ -332,6 +444,15 @@ function FragmentRow({
             </span>
           )}
         </td>
+        <td className="px-3 py-2 text-xs text-atr-fg-muted">
+          {row.project_topik_name ? (
+            <span className="inline-flex items-center rounded-full bg-atr-purple-50 px-2 py-0.5 text-[10px] font-bold text-atr-purple-600">
+              {row.project_topik_name}
+            </span>
+          ) : (
+            <span className="italic">—</span>
+          )}
+        </td>
         {showScore && (
           <td className="px-3 py-2 font-bold text-atr-fg">
             {row.score != null ? (
@@ -382,7 +503,7 @@ function FragmentRow({
       </tr>
       {isExpanded && (
         <tr>
-          <td colSpan={5} className="bg-atr-bg-soft px-3 py-3">
+          <td colSpan={showScore ? 6 : 5} className="bg-atr-bg-soft px-3 py-3">
             <div className="rounded-lg border border-atr-outline bg-white p-3">
               <div className="mb-2 text-[10px] font-bold uppercase tracking-wide text-atr-fg-muted">
                 Raw Response dari Google Sheet

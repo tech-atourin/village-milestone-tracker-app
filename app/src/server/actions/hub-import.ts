@@ -84,26 +84,44 @@ export async function importHubDesaToProject(
       .eq("project_desa_id", pdId)
       .maybeSingle();
     if (!hasBaseline) {
-      const baselineData = {
+      // Map Hub profile fields to the ADWI-aligned baseline schema keys
+      // (v1.1.0-adwi). Anything that doesn't have a direct ADWI key goes
+      // into the meta_* namespace so it's still surfaced when AI assembles
+      // context but doesn't clutter the form.
+      const baselineData: Record<string, unknown> = {
+        // Informasi Dasar
         kontak_nama: profile.kontak?.contact_person ?? null,
         kontak_hp: profile.kontak?.phone ?? null,
         kontak_email: profile.kontak?.email ?? null,
-        deskripsi: profile.desa.deskripsi,
-        jumlah_kunjungan_tahunan: profile.desa.jumlah_kunjungan,
-        jumlah_umkm: profile.desa.jumlah_umkm,
-        tenaga_kerja: profile.desa.tenaga_kerja,
-        pendapatan: profile.desa.pendapatan,
-        fasilitas: profile.fasilitas,
-        adwi_history: profile.riwayat_adwi.map(
+        // Atraksi
+        tematik_desa: profile.desa.deskripsi ?? null,
+        kunjungan_tahunan: profile.desa.jumlah_kunjungan ?? null,
+        // Masyarakat
+        pendapatan_tahunan: profile.desa.pendapatan ?? null,
+        jumlah_warga_terlibat: profile.desa.tenaga_kerja ?? null,
+        // Industri & Ekraf
+        jumlah_kios_ekraf: profile.desa.jumlah_umkm ?? null,
+        // Meta
+        meta_fasilitas: profile.fasilitas,
+        meta_adwi_history: profile.riwayat_adwi.map(
           (r) => `${r.tahun}: ${r.peringkat ?? "—"}`,
         ),
         _imported_from_hub: true,
         _hub_desa_id: parsed.data.hub_desa_id,
+        _imported_at: new Date().toISOString(),
       };
+
+      // Drop null/empty entries to keep the form clean
+      for (const k of Object.keys(baselineData)) {
+        const v = baselineData[k];
+        if (v == null || v === "" || (Array.isArray(v) && v.length === 0)) {
+          delete baselineData[k];
+        }
+      }
 
       await supabase.from("desa_baseline_data").insert({
         project_desa_id: pdId,
-        schema_version: "hub-import-v1",
+        schema_version: "1.1.0-adwi-hub",
         data: baselineData,
       });
     }

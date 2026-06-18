@@ -64,6 +64,9 @@ export function SesiDetailEditor({
 
   // Form state
   const [materi, setMateri] = useState(data.materi ?? "");
+  const [maksudTujuan, setMaksudTujuan] = useState(data.maksud_tujuan ?? "");
+  const [aktivitas, setAktivitas] = useState(data.aktivitas ?? "");
+  const [outputSesi, setOutputSesi] = useState(data.output_sesi ?? "");
   const [tindakLanjut, setTindakLanjut] = useState(data.tindak_lanjut ?? "");
   const [rekomendasi, setRekomendasi] = useState(data.rekomendasi ?? "");
   const [sebelum, setSebelum] = useState<string[]>(
@@ -97,6 +100,9 @@ export function SesiDetailEditor({
       const r = await updateSession({
         id: data.id,
         materi: materi || null,
+        maksud_tujuan: maksudTujuan || null,
+        aktivitas: aktivitas || null,
+        output_sesi: outputSesi || null,
         tindak_lanjut: tindakLanjut || null,
       });
       if (r.error) setError(r.error);
@@ -404,23 +410,50 @@ export function SesiDetailEditor({
 
       {/* Laporan Narasumber */}
       {tab === "laporan" && (
-        <Card title="Laporan Narasumber">
+        <Card title="Laporan Narasumber (Format ADWI)">
           <div className="space-y-4">
-            <Field label="Materi yang disampaikan">
+            <Field label="Materi">
               <textarea
                 value={materi}
                 onChange={(e) => setMateri(e.target.value)}
-                rows={5}
-                placeholder="Tuliskan materi pembelajaran/pendampingan hari ini..."
+                rows={3}
+                placeholder="Judul / topik materi yang disampaikan..."
                 className="w-full rounded-lg border border-atr-outline p-3 text-sm outline-none focus:border-atr-purple focus:ring-2 focus:ring-atr-purple/15"
               />
             </Field>
-            <Field label="Tindak Lanjut / Output">
+            <Field label="Maksud & Tujuan">
+              <textarea
+                value={maksudTujuan}
+                onChange={(e) => setMaksudTujuan(e.target.value)}
+                rows={3}
+                placeholder="Apa yang ingin dicapai dari sesi ini..."
+                className="w-full rounded-lg border border-atr-outline p-3 text-sm outline-none focus:border-atr-purple focus:ring-2 focus:ring-atr-purple/15"
+              />
+            </Field>
+            <Field label="Aktivitas">
+              <textarea
+                value={aktivitas}
+                onChange={(e) => setAktivitas(e.target.value)}
+                rows={4}
+                placeholder="Rincian aktivitas yang dilakukan selama sesi (poin per baris)..."
+                className="w-full rounded-lg border border-atr-outline p-3 text-sm outline-none focus:border-atr-purple focus:ring-2 focus:ring-atr-purple/15"
+              />
+            </Field>
+            <Field label="Output Sesi">
+              <textarea
+                value={outputSesi}
+                onChange={(e) => setOutputSesi(e.target.value)}
+                rows={3}
+                placeholder="Hasil konkret dari sesi (artefak, kesepakatan, dokumen)..."
+                className="w-full rounded-lg border border-atr-outline p-3 text-sm outline-none focus:border-atr-purple focus:ring-2 focus:ring-atr-purple/15"
+              />
+            </Field>
+            <Field label="Tindak Lanjut">
               <textarea
                 value={tindakLanjut}
                 onChange={(e) => setTindakLanjut(e.target.value)}
-                rows={4}
-                placeholder="Tugas / PR / target output untuk peserta..."
+                rows={3}
+                placeholder="Tugas / PR / target tindak lanjut untuk peserta..."
                 className="w-full rounded-lg border border-atr-outline p-3 text-sm outline-none focus:border-atr-purple focus:ring-2 focus:ring-atr-purple/15"
               />
             </Field>

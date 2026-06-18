@@ -278,7 +278,7 @@ async function GformsAndResultsLoader({ projectId }: { projectId: string }) {
     const { data: trData } = await supabase
       .from("peserta_test_results")
       .select(
-        "id, project_gform_id, user_id, raw_response, score, max_score, submitted_at, matched_status, user:users(full_name, email), gform:project_gforms(form_type, form_label)",
+        "id, project_gform_id, project_topik_id, user_id, raw_response, score, max_score, submitted_at, matched_status, user:users(full_name, email), gform:project_gforms(form_type, form_label), topik:project_topik(name)",
       )
       .in("project_gform_id", gformIds)
       .order("submitted_at", { ascending: false })
@@ -287,6 +287,8 @@ async function GformsAndResultsLoader({ projectId }: { projectId: string }) {
     testResults = ((trData ?? []) as any[]).map((r) => ({
       id: r.id,
       project_gform_id: r.project_gform_id,
+      project_topik_id: r.project_topik_id ?? null,
+      project_topik_name: r.topik?.name ?? null,
       user_id: r.user_id,
       user_name: r.user?.full_name ?? null,
       user_email: r.user?.email ?? null,

@@ -17,7 +17,9 @@ import {
   Eye,
 } from "lucide-react";
 import type { DesaDetail } from "@/server/queries/desa-master";
+import type { TierJourney } from "@/server/queries/tier-journey";
 import { HubExtrasSections } from "@/components/desa/hub-extras-sections";
+import { TierJourneyCard } from "@/components/desa/tier-journey-card";
 
 const TIER_BADGE: Record<string, string> = {
   rintisan: "bg-atr-yellow/20 text-atr-fg",
@@ -47,10 +49,12 @@ export function DesaDetailSections({
   data,
   hubSyncSlot,
   viewerRole,
+  journey,
 }: {
   data: DesaDetail;
   hubSyncSlot?: React.ReactNode;
   viewerRole?: "superadmin" | "mitra" | "desa" | string;
+  journey?: TierJourney | null;
 }) {
   const { base, profile, pengelola, baseline, baseline_submitted_at, hub_assessment, v1_assessment, projects } = data;
   const tier = base.current_classification ?? "unclassified";
@@ -429,6 +433,20 @@ export function DesaDetailSections({
         awards={profile?.awards ?? null}
         events={profile?.events ?? null}
       />
+
+      {/* Self-Improvement Journey — only when we have a tier journey to show */}
+      {journey && (
+        <TierJourneyCard
+          journey={journey}
+          viewerScope={
+            viewerRole === "desa"
+              ? "desa"
+              : viewerRole === "mitra"
+                ? "mitra"
+                : "atourin"
+          }
+        />
+      )}
 
       {/* Assessment V1 Permenpar */}
       <Section
