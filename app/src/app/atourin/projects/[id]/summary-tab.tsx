@@ -150,7 +150,7 @@ async function loadProjectSummary(projectId: string): Promise<{
   let checklistTotal = 0;
   if (projectTopikIds.length > 0) {
     const { count } = await admin
-      .from("project_checklist_items")
+      .from("project_checklist_item")
       .select("id", { count: "exact", head: true })
       .in("project_topik_id", projectTopikIds);
     checklistTotal = count ?? 0;
