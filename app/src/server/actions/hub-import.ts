@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/server";
 import { requireRole } from "@/lib/auth/rbac";
 import { getHubDesaProfile } from "@/server/queries/hub";
 
@@ -28,7 +28,8 @@ export async function importHubDesaToProject(
   const profile = await getHubDesaProfile(parsed.data.hub_desa_id);
   if (!profile) return { error: "Desa di Hub tidak ditemukan" };
 
-  const supabase = createClient();
+  // vmt.desa has no INSERT policy; caller already gates by role above.
+  const supabase = createAdminClient();
 
   // 1. Upsert vmt.desa from hub.desa
   const tier =
@@ -153,7 +154,8 @@ export async function importHubDesaToMaster(
   const profile = await getHubDesaProfile(parsed.data.hub_desa_id);
   if (!profile) return { error: "Desa di Hub tidak ditemukan" };
 
-  const supabase = createClient();
+  // vmt.desa has no INSERT policy; caller already gates by role above.
+  const supabase = createAdminClient();
   const tier =
     KATEGORI_TO_TIER[profile.desa.kategori ?? ""] ?? "unclassified";
 
