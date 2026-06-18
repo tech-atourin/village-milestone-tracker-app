@@ -86,8 +86,9 @@ export function BaselineForm({
 
   return (
     <div className="space-y-5">
-      {/* Sticky TOC: horizontal-scrollable chip strip with click-to-jump */}
-      <nav className="sticky top-14 z-30 -mx-4 border-y border-atr-outline bg-white/95 px-4 py-2 backdrop-blur sm:mx-0 sm:rounded-xl sm:border sm:shadow-atr-1">
+      {/* Sticky TOC: horizontal-scrollable chip strip with click-to-jump.
+          top-16 = pas di bawah topbar (h-16). z-20 di bawah topbar (z-30). */}
+      <nav className="sticky top-16 z-20 -mx-4 border-y border-atr-outline bg-white/95 px-4 py-2 backdrop-blur sm:mx-0 sm:rounded-xl sm:border sm:shadow-atr-1">
         <div className="flex gap-1.5 overflow-x-auto pb-0.5 [scrollbar-width:thin]">
           {schema.fields.map((section) => {
             const on = activeSection === section.section;
