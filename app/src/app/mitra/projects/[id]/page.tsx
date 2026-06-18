@@ -61,16 +61,16 @@ const STATUS_LABEL = {
 } as const;
 
 const TABS = [
-  { key: "overview", label: "Overview" },
-  { key: "summary", label: "Summary" },
+  { key: "overview", label: "Ringkasan" },
+  { key: "summary", label: "Analisis" },
   { key: "desa", label: "Desa" },
   { key: "topik", label: "Topik" },
   { key: "peserta", label: "Peserta" },
   { key: "narasumber", label: "Narasumber" },
   { key: "rencana-aksi", label: "Rencana Aksi" },
-  { key: "evidence", label: "Evidence" },
-  { key: "gforms", label: "Test Results" },
-  { key: "settings", label: "Settings" },
+  { key: "evidence", label: "Bukti" },
+  { key: "gforms", label: "Hasil Tes" },
+  { key: "settings", label: "Pengaturan" },
 ] as const;
 
 function formatDate(iso: string | null) {

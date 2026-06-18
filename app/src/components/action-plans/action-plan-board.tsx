@@ -329,7 +329,7 @@ function PlanCard({
                 onClick={onEdit}
                 disabled={pending}
                 className="rounded-md border border-atr-outline bg-white p-1.5 text-atr-fg-muted hover:bg-atr-bg-soft hover:text-atr-fg disabled:opacity-50"
-                aria-label="Edit"
+                aria-label="Ubah"
               >
                 <Pencil className="h-3.5 w-3.5" />
               </button>

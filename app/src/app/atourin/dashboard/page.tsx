@@ -11,6 +11,8 @@ import {
   TrendingDown,
   ChevronRight,
   CheckCircle2,
+  Building2,
+  GraduationCap,
 } from "lucide-react";
 import { getCurrentUser } from "@/lib/auth/rbac";
 import { createClient } from "@/lib/supabase/server";
@@ -18,29 +20,46 @@ import { getAttentionItems, type AttentionItem } from "@/server/queries/dashboar
 
 async function getStats() {
   const supabase = createClient();
-  const [{ count: projects }, { count: users }, { count: templates }, { count: desa }] =
-    await Promise.all([
-      supabase
-        .from("projects")
-        .select("id", { count: "exact", head: true })
-        .is("deleted_at", null),
-      supabase
-        .from("users")
-        .select("id", { count: "exact", head: true })
-        .is("deleted_at", null),
-      supabase
-        .from("project_templates")
-        .select("id", { count: "exact", head: true }),
-      supabase
-        .from("desa")
-        .select("id", { count: "exact", head: true })
-        .is("deleted_at", null),
-    ]);
+  const [
+    { count: projects },
+    { count: users },
+    { count: templates },
+    { count: desa },
+    { count: organisasi },
+    { count: narasumber },
+  ] = await Promise.all([
+    supabase
+      .from("projects")
+      .select("id", { count: "exact", head: true })
+      .is("deleted_at", null),
+    supabase
+      .from("users")
+      .select("id", { count: "exact", head: true })
+      .is("deleted_at", null),
+    supabase
+      .from("project_templates")
+      .select("id", { count: "exact", head: true }),
+    supabase
+      .from("desa")
+      .select("id", { count: "exact", head: true })
+      .is("deleted_at", null),
+    supabase
+      .from("organizations")
+      .select("id", { count: "exact", head: true })
+      .is("deleted_at", null),
+    supabase
+      .from("users")
+      .select("id", { count: "exact", head: true })
+      .eq("global_role", "narasumber")
+      .is("deleted_at", null),
+  ]);
   return {
     projects: projects ?? 0,
     users: users ?? 0,
     templates: templates ?? 0,
     desa: desa ?? 0,
+    organisasi: organisasi ?? 0,
+    narasumber: narasumber ?? 0,
   };
 }
 
@@ -70,10 +89,12 @@ export default async function AtourinDashboardPage() {
         </p>
       </header>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
         <StatCard label="Projects" value={stats.projects} icon={Folder} href="/atourin/projects" />
         <StatCard label="Users" value={stats.users} icon={Users} href="/atourin/users" />
-        <StatCard label="Desa" value={stats.desa} icon={Folder} />
+        <StatCard label="Desa" value={stats.desa} icon={Folder} href="/atourin/desa" />
+        <StatCard label="Organisasi" value={stats.organisasi} icon={Building2} href="/atourin/orgs" />
+        <StatCard label="Narasumber" value={stats.narasumber} icon={GraduationCap} href="/atourin/narasumber" />
         <StatCard label="Templates" value={stats.templates} icon={Folder} href="/atourin/templates" />
       </div>
 
@@ -132,7 +153,7 @@ export default async function AtourinDashboardPage() {
 
       {/* Quick actions */}
       <section className="rounded-2xl border border-atr-outline bg-white p-6 shadow-atr-1">
-        <h2 className="mb-4 text-sm font-bold text-atr-fg">Quick actions</h2>
+        <h2 className="mb-4 text-sm font-bold text-atr-fg">Aksi Cepat</h2>
         <div className="grid gap-3 sm:grid-cols-3">
           <Link
             href="/atourin/projects/new"

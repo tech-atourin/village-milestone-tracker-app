@@ -42,6 +42,7 @@ export function DateRangePicker({
   align?: "start" | "end";
 }) {
   const [open, setOpen] = useState(false);
+  const [flipRight, setFlipRight] = useState(false);
   const ref = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -59,6 +60,16 @@ export function DateRangePicker({
       document.removeEventListener("mousedown", onDoc);
       document.removeEventListener("keydown", onKey);
     };
+  }, [open]);
+
+  // Auto-flip popover to right-0 when the trigger sits too close to the
+  // viewport's right edge. Popover is w-64 (256px) + a 16px breathing room.
+  useEffect(() => {
+    if (!open || !ref.current) return;
+    const rect = ref.current.getBoundingClientRect();
+    const POPOVER_WIDTH = 256 + 16;
+    const overflow = rect.left + POPOVER_WIDTH > window.innerWidth;
+    setFlipRight(overflow);
   }, [open]);
 
   const hasValue = Boolean(value.from || value.to);
@@ -106,7 +117,7 @@ export function DateRangePicker({
       {open && (
         <div
           className={`absolute top-full z-50 mt-1 w-64 rounded-xl border border-atr-outline bg-white p-3 shadow-atr-3 ${
-            align === "end" ? "right-0" : "left-0"
+            align === "end" || flipRight ? "right-0" : "left-0"
           }`}
         >
           <label className="block">
