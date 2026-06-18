@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import type { TopikReviewGroup } from "@/server/queries/review";
 import { reviewChecklistItem } from "@/server/actions/review";
+import { ChecklistDiscussion } from "@/components/checklist/checklist-discussion";
 
 const STATUS_PALETTE: Record<
   string,
@@ -51,10 +52,12 @@ export function TopikReviewer({
   projectId,
   groups,
   canReview,
+  currentUserId,
 }: {
   projectId: string;
   groups: TopikReviewGroup[];
   canReview: boolean;
+  currentUserId: string;
 }) {
   const [openTopik, setOpenTopik] = useState<Set<string>>(() => {
     // Default-expand any topik with pending items.
@@ -160,6 +163,7 @@ export function TopikReviewer({
                         item={item}
                         projectId={projectId}
                         canReview={canReview}
+                        currentUserId={currentUserId}
                       />
                     ))
                   )}
@@ -177,13 +181,18 @@ function ItemRow({
   item,
   projectId,
   canReview,
+  currentUserId,
 }: {
   item: TopikReviewGroup["items"][number];
   projectId: string;
   canReview: boolean;
+  currentUserId: string;
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
+  const [decidePending, setDecidePending] = useState<
+    null | "approved" | "rejected"
+  >(null);
   const [showNote, setShowNote] = useState(false);
   const [note, setNote] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -199,6 +208,7 @@ function ItemRow({
       return;
     }
     setError(null);
+    setDecidePending(decision);
     startTransition(async () => {
       const r = await reviewChecklistItem({
         checklist_progress_id: item.checklist_progress_id!,
@@ -206,6 +216,7 @@ function ItemRow({
         note: note || null,
         project_id: projectId,
       });
+      setDecidePending(null);
       if (r.error) {
         setError(r.error);
       } else {
@@ -321,10 +332,10 @@ function ItemRow({
             <button
               type="button"
               onClick={() => review("rejected")}
-              disabled={pending}
+              disabled={decidePending !== null}
               className="inline-flex h-8 items-center gap-1 rounded-md border border-atr-red/30 bg-white px-2.5 text-[11px] font-bold text-atr-red transition hover:bg-atr-red/5 disabled:opacity-50"
             >
-              {pending ? (
+              {decidePending === "rejected" ? (
                 <Loader2 className="h-3 w-3 animate-spin" />
               ) : (
                 <XCircle className="h-3 w-3" />
@@ -334,10 +345,10 @@ function ItemRow({
             <button
               type="button"
               onClick={() => review("approved")}
-              disabled={pending}
+              disabled={decidePending !== null}
               className="inline-flex h-8 items-center gap-1 rounded-md bg-atr-arti px-3 text-[11px] font-bold text-white transition hover:opacity-90 disabled:opacity-50"
             >
-              {pending ? (
+              {decidePending === "approved" ? (
                 <Loader2 className="h-3 w-3 animate-spin" />
               ) : (
                 <CheckCircle2 className="h-3 w-3" />
@@ -345,6 +356,15 @@ function ItemRow({
               Setujui
             </button>
           </div>
+        </div>
+      )}
+
+      {item.checklist_progress_id && (
+        <div className="mt-3">
+          <ChecklistDiscussion
+            checklistProgressId={item.checklist_progress_id}
+            currentUserId={currentUserId}
+          />
         </div>
       )}
     </article>

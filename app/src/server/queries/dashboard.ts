@@ -48,8 +48,8 @@ export async function getAttentionItems(): Promise<AttentionItem[]> {
       id: "criteria-queue",
       kind: "criteria",
       title: `${ncpItems.length} klaim kriteria dari ${desaWithPending} desa wisata`,
-      subtitle: "Desa wisata sudah klaim kriteria V1 Permenpar, perlu verifikasi per kriteria.",
-      href: "/atourin/klasifikasi",
+      subtitle: "Desa wisata sudah klaim kriteria V1, perlu verifikasi per kriteria.",
+      href: "/atourin/klasifikasi?v=v1",
       count: ncpItems.length,
     });
   }
@@ -65,7 +65,7 @@ export async function getAttentionItems(): Promise<AttentionItem[]> {
       kind: "criteria",
       title: `${hubSubmitted} assessment V2 Hub menunggu verifikasi`,
       subtitle: "Desa wisata sudah submit assessment V2, perlu approve/tolak.",
-      href: "/atourin/klasifikasi",
+      href: "/atourin/klasifikasi?v=v2",
       count: hubSubmitted ?? 0,
     });
   }

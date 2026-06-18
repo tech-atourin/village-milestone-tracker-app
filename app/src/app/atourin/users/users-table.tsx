@@ -3,7 +3,7 @@
 import { useMemo, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Pencil, Trash2, Loader2, Mail } from "lucide-react";
+import { Pencil, Trash2, Loader2, Mail, KeyRound, Copy, Check, X } from "lucide-react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { DataTable } from "@/components/data-table";
 import type { UserListRow } from "@/server/queries/users";
@@ -17,6 +17,7 @@ import {
   deleteUser,
   bulkDeleteUsers,
   bulkResendCredentials,
+  resetUserPassword,
 } from "@/server/actions/users";
 
 const ROLE_LABEL = {
@@ -59,7 +60,17 @@ export function UsersTable({
   const router = useRouter();
   const [editing, setEditing] = useState<UserFormInitial | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [resendingId, setResendingId] = useState<string | null>(null);
+  const [regeneratingId, setRegeneratingId] = useState<string | null>(null);
+  const [newCreds, setNewCreds] = useState<{
+    full_name: string;
+    email: string;
+    password: string;
+  } | null>(null);
+  const [copiedCreds, setCopiedCreds] = useState(false);
   const [, startDelete] = useTransition();
+  const [, startResend] = useTransition();
+  const [, startRegen] = useTransition();
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkPending, setBulkPending] = useState<null | "delete" | "resend">(
     null,
@@ -143,6 +154,66 @@ export function UsersTable({
       global_role: u.global_role as UserFormRole,
       organization_id: u.organization?.id ?? null,
     });
+  }
+
+  function onResend(u: UserListRow) {
+    if (!u.email || u.email_artificial) {
+      alert("User ini tidak punya email valid, tidak bisa kirim ulang.");
+      return;
+    }
+    if (
+      !confirm(
+        `Kirim ulang email login ke ${u.full_name} (${u.email})?\n\nPassword akan di-reset (password lama tidak berlaku lagi) dan dikirim via email.`,
+      )
+    )
+      return;
+    setResendingId(u.id);
+    startResend(async () => {
+      const r = await bulkResendCredentials([u.id]);
+      setResendingId(null);
+      if (r.failed.length > 0) {
+        alert("Gagal: " + r.failed[0].error);
+      } else {
+        alert(`Email login berhasil dikirim ke ${u.email}.`);
+      }
+    });
+  }
+
+  function onRegenerate(u: UserListRow) {
+    if (!u.email || u.email_artificial) {
+      alert("User ini tidak punya email valid, tidak bisa generate password.");
+      return;
+    }
+    if (
+      !confirm(
+        `Generate password baru untuk ${u.full_name}?\n\nPassword lama tidak akan berlaku lagi. Password baru akan ditampilkan satu kali — simpan/bagikan ke user.`,
+      )
+    )
+      return;
+    setRegeneratingId(u.id);
+    startRegen(async () => {
+      const r = await resetUserPassword(u.id);
+      setRegeneratingId(null);
+      if ("error" in r) {
+        alert("Gagal: " + r.error);
+        return;
+      }
+      setNewCreds({
+        full_name: u.full_name,
+        email: u.email ?? "",
+        password: r.password,
+      });
+      setCopiedCreds(false);
+    });
+  }
+
+  async function copyNewCreds() {
+    if (!newCreds) return;
+    await navigator.clipboard.writeText(
+      `Email: ${newCreds.email}\nPassword: ${newCreds.password}`,
+    );
+    setCopiedCreds(true);
+    setTimeout(() => setCopiedCreds(false), 1800);
   }
 
   function onDelete(u: UserListRow) {
@@ -286,6 +357,32 @@ export function UsersTable({
             </button>
             <button
               type="button"
+              onClick={() => onRegenerate(row.original)}
+              disabled={regeneratingId === row.original.id}
+              className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-atr-outline bg-white text-atr-fg-muted hover:bg-atr-bg-soft hover:text-atr-fg disabled:opacity-50"
+              title="Generate password baru (ditampilkan langsung, tidak dikirim email)"
+            >
+              {regeneratingId === row.original.id ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <KeyRound className="h-3.5 w-3.5" />
+              )}
+            </button>
+            <button
+              type="button"
+              onClick={() => onResend(row.original)}
+              disabled={resendingId === row.original.id}
+              className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-atr-outline bg-white text-atr-fg-muted hover:bg-atr-bg-soft hover:text-atr-fg disabled:opacity-50"
+              title="Kirim ulang email login (reset password + email kredensial)"
+            >
+              {resendingId === row.original.id ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <Mail className="h-3.5 w-3.5" />
+              )}
+            </button>
+            <button
+              type="button"
               onClick={() => onDelete(row.original)}
               disabled={deletingId === row.original.id}
               className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-atr-red/30 bg-atr-red/5 text-atr-red transition hover:bg-atr-red/10 disabled:opacity-50"
@@ -301,7 +398,7 @@ export function UsersTable({
         ),
       },
     ],
-    [detailHrefBase, deletingId, selectedIds, allIds, allSelected, someSelected],
+    [detailHrefBase, deletingId, resendingId, regeneratingId, selectedIds, allIds, allSelected, someSelected],
   );
 
   const orgFilterOptions = useMemo(() => {
@@ -380,6 +477,78 @@ export function UsersTable({
           },
         ]}
       />
+      {newCreds && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-atr-fg/40 p-4"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setNewCreds(null);
+          }}
+        >
+          <div className="w-full max-w-md overflow-hidden rounded-2xl border border-atr-outline bg-white shadow-2xl">
+            <header className="flex items-start justify-between border-b border-atr-outline p-5">
+              <div>
+                <div className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-atr-yellow/20 text-atr-fg">
+                  <KeyRound className="h-5 w-5" />
+                </div>
+                <h2 className="mt-2 text-lg font-bold text-atr-fg">
+                  Password baru untuk {newCreds.full_name}
+                </h2>
+                <p className="text-xs text-atr-fg-muted">
+                  Password lama sudah tidak berlaku. Simpan/bagikan password
+                  baru sekarang — tidak akan ditampilkan lagi.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setNewCreds(null)}
+                className="rounded-md p-1 text-atr-fg-muted hover:bg-atr-bg-soft hover:text-atr-fg"
+                aria-label="Tutup"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </header>
+            <div className="space-y-3 p-5">
+              <div className="rounded-2xl border border-atr-yellow/40 bg-atr-yellow/10 p-4 font-mono text-sm">
+                <div className="text-xs font-bold uppercase tracking-wide text-atr-fg-muted">
+                  Email
+                </div>
+                <div className="mt-1 break-all text-atr-fg">
+                  {newCreds.email}
+                </div>
+                <div className="mt-3 text-xs font-bold uppercase tracking-wide text-atr-fg-muted">
+                  Password baru
+                </div>
+                <div className="mt-1 break-all text-atr-fg">
+                  {newCreds.password}
+                </div>
+              </div>
+              <div className="flex items-center justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={copyNewCreds}
+                  className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-atr-outline bg-white px-3 text-sm font-bold text-atr-fg hover:bg-atr-bg-soft"
+                >
+                  {copiedCreds ? (
+                    <Check className="h-3.5 w-3.5 text-atr-arti" />
+                  ) : (
+                    <Copy className="h-3.5 w-3.5" />
+                  )}
+                  {copiedCreds ? "Tersalin" : "Salin email + password"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setNewCreds(null)}
+                  className="inline-flex h-9 items-center rounded-lg bg-atr-purple px-4 text-sm font-bold text-white hover:bg-atr-purple-600"
+                >
+                  Selesai
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
       <UserFormDialog
         open={!!editing}
         onClose={() => setEditing(null)}

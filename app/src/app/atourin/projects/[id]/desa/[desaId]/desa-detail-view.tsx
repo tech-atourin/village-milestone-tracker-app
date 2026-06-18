@@ -13,6 +13,7 @@ import {
 import { getProjectDesa } from "@/server/queries/desa";
 import { listPesertaTopik } from "@/server/queries/peserta";
 import { createClient } from "@/lib/supabase/server";
+import { getCurrentUser } from "@/lib/auth/rbac";
 import { aiProvider } from "@/lib/ai/provider";
 import type { DesaSummary } from "@/lib/ai/desa-summary";
 import type { DesaRecommendation } from "@/lib/ai/desa-recommendation";
@@ -84,6 +85,8 @@ export async function ProjectDesaDetailView({
   // NOTE: param is `desaId` in the route but it actually carries project_desa.id
   const detail = await getProjectDesa(projectId, projectDesaId);
   if (!detail) return null;
+  const currentUser = await getCurrentUser();
+  const currentUserId = currentUser?.id ?? "";
 
   const supabase = createClient();
   const [
@@ -294,6 +297,7 @@ export async function ProjectDesaDetailView({
         projectId={projectId}
         groups={topikGroups}
         canReview={scope === "atourin" || scope === "mitra"}
+        currentUserId={currentUserId}
       />
     </div>
   );

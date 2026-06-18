@@ -34,6 +34,9 @@ export function ReviewQueue({
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
+  const [decidePending, setDecidePending] = useState<
+    null | "approved" | "rejected"
+  >(null);
   const [expanded, setExpanded] = useState<string | null>(null);
   const [note, setNote] = useState("");
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -121,6 +124,7 @@ export function ReviewQueue({
       alert("Tambahkan catatan untuk reject. Peserta perlu tahu apa yang harus diperbaiki.");
       return;
     }
+    setDecidePending(decision);
     startTransition(async () => {
       const r = await reviewChecklistItem({
         checklist_progress_id: id,
@@ -128,6 +132,7 @@ export function ReviewQueue({
         note: note.trim() || null,
         project_id: projectId,
       });
+      setDecidePending(null);
       if (r.error) alert(r.error);
       else {
         setExpanded(null);
@@ -370,10 +375,10 @@ export function ReviewQueue({
                       onClick={() =>
                         decide(item.checklist_progress_id, "rejected")
                       }
-                      disabled={pending}
+                      disabled={decidePending !== null}
                       className="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg border border-atr-red/30 bg-white px-3 text-sm font-bold text-atr-red transition hover:bg-atr-red/10 disabled:opacity-50"
                     >
-                      {pending ? (
+                      {decidePending === "rejected" ? (
                         <Loader2 className="h-3.5 w-3.5 animate-spin" />
                       ) : (
                         <X className="h-3.5 w-3.5" />
@@ -385,10 +390,10 @@ export function ReviewQueue({
                       onClick={() =>
                         decide(item.checklist_progress_id, "approved")
                       }
-                      disabled={pending}
+                      disabled={decidePending !== null}
                       className="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg bg-atr-arti px-3 text-sm font-bold text-white transition hover:bg-atr-arti/90 disabled:opacity-50"
                     >
-                      {pending ? (
+                      {decidePending === "approved" ? (
                         <Loader2 className="h-3.5 w-3.5 animate-spin" />
                       ) : (
                         <Check className="h-3.5 w-3.5" />

@@ -1,6 +1,7 @@
 "use server";
 
 import { z } from "zod";
+import { revalidatePath } from "next/cache";
 import { createAdminClient } from "@/lib/supabase/server";
 import { getCurrentUser } from "@/lib/auth/rbac";
 import { notifyMany, projectReviewers } from "@/lib/notify";
@@ -126,16 +127,33 @@ export async function addChecklistComment(
         reviewers.forEach((id) => recipients.add(id));
       }
     } else {
-      // reviewer → notify peserta(s) of this project_desa + desa_wisata user(s)
+      // reviewer → notify peserta + desa_wisata user(s)
+      // Notify ALL peserta in the project (desa_id on membership may be null
+      // for project-wide peserta), plus all desa_wisata users representing
+      // this desa.
       const { data: members } = await admin
         .from("project_memberships")
-        .select("user_id, role")
+        .select("user_id, role, desa_id")
         .eq("project_id", ctx.project_id)
-        .in("role", ["peserta"])
-        .eq("desa_id", ctx.desa_id)
+        .eq("role", "peserta")
         .eq("status", "active");
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      for (const m of ((members ?? []) as any[])) recipients.add(m.user_id);
+      for (const m of ((members ?? []) as any[])) {
+        // Include peserta whose membership has no desa_id (project-wide)
+        // OR matches this desa.
+        if (!m.desa_id || m.desa_id === ctx.desa_id) {
+          recipients.add(m.user_id);
+        }
+      }
+      // Also: peserta submitter of this checklist (might not be on memberships)
+      const { data: cpSubmitter } = await admin
+        .from("checklist_progress")
+        .select("submitted_by")
+        .eq("id", parsed.data.checklist_progress_id)
+        .maybeSingle();
+      const subId = (cpSubmitter as { submitted_by: string | null } | null)
+        ?.submitted_by;
+      if (subId) recipients.add(subId);
       const { data: desaUsers } = await admin
         .from("users")
         .select("id")
@@ -146,6 +164,16 @@ export async function addChecklistComment(
         recipients.add(d.id);
     }
     recipients.delete(user.id);
+    // Revalidate routes so the updated status (and new comment) shows up
+    // on the other side immediately.
+    if (ctx.project_id) {
+      revalidatePath(`/atourin/projects/${ctx.project_id}`);
+      revalidatePath(`/mitra/projects/${ctx.project_id}`);
+      revalidatePath(`/narasumber/projects/${ctx.project_id}`);
+      revalidatePath(`/peserta/projects/${ctx.project_id}`, "layout");
+    }
+    revalidatePath(`/desa`, "layout");
+
     if (recipients.size > 0) {
       await notifyMany({
         user_ids: Array.from(recipients),

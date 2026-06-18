@@ -77,11 +77,16 @@ export async function bulkReviewChecklistItems(
       p_checklist_progress_id: id,
       p_decision: parsed.data.decision,
       p_note: parsed.data.note ?? null,
+      p_reviewer_id: guard.user.id,
     });
     if (error) failed++;
     else approved++;
   }
   revalidatePath(`/atourin/projects/${parsed.data.project_id}`);
+  revalidatePath(`/mitra/projects/${parsed.data.project_id}`);
+  revalidatePath(`/narasumber/projects/${parsed.data.project_id}`);
+  revalidatePath(`/peserta/projects/${parsed.data.project_id}`, "layout");
+  revalidatePath(`/desa`, "layout");
   return { ok: true, approved, failed };
 }
 
@@ -95,6 +100,7 @@ export async function reviewChecklistItem(input: z.input<typeof reviewSchema>) {
     p_checklist_progress_id: parsed.data.checklist_progress_id,
     p_decision: parsed.data.decision,
     p_note: parsed.data.note ?? null,
+    p_reviewer_id: guard.user.id,
   });
   if (error) return { error: error.message };
 
@@ -143,5 +149,9 @@ export async function reviewChecklistItem(input: z.input<typeof reviewSchema>) {
   }
 
   revalidatePath(`/atourin/projects/${parsed.data.project_id}`);
+  revalidatePath(`/mitra/projects/${parsed.data.project_id}`);
+  revalidatePath(`/narasumber/projects/${parsed.data.project_id}`);
+  revalidatePath(`/peserta/projects/${parsed.data.project_id}`, "layout");
+  revalidatePath(`/desa`, "layout");
   return { ok: true };
 }
