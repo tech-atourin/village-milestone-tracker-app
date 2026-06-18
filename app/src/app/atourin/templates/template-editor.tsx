@@ -121,6 +121,7 @@ export function TemplateEditor({
   }
 
   function removeItem(topikIdx: number, itemIdx: number) {
+    if (!confirm("Hapus checklist item ini?")) return;
     const next = form.topik[topikIdx].items.filter((_, i) => i !== itemIdx);
     updateTopik(topikIdx, { items: next });
   }

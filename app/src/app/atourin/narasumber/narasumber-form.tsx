@@ -165,7 +165,12 @@ export function NarasumberFormDialog({
 
   function remove() {
     if (!form.id) return;
-    if (!confirm(`Hapus narasumber "${form.full_name}"? Aksi ini bisa di-undo lewat DB.`)) return;
+    if (
+      !confirm(
+        `Hapus narasumber "${form.full_name}"?\n\nNarasumber akan di-soft-delete (data tetap tersimpan, tapi tidak muncul lagi di daftar dan tidak bisa login).`,
+      )
+    )
+      return;
     setError(null);
     setBusyAction("delete");
     startTransition(async () => {

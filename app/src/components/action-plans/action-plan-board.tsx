@@ -105,8 +105,10 @@ export function ActionPlanBoard({
     if (!confirm("Hapus rencana aksi ini?")) return;
     startTransition(async () => {
       const r = await deleteActionPlan(id);
-      if (r.error) setError(r.error);
-      else router.refresh();
+      if (r.error) {
+        setError(r.error);
+        alert(`Gagal menghapus: ${r.error}`);
+      } else router.refresh();
     });
   }
 

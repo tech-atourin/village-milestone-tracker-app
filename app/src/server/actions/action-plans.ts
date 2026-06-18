@@ -2,13 +2,18 @@
 
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient, createClient } from "@/lib/supabase/server";
 import { getCurrentUser } from "@/lib/auth/rbac";
 
 // Rencana Aksi is owned by the pelaksana (peserta) + pendamping (narasumber).
 // Admin roles (superadmin/mitra_admin) can only view; blocking at the server
 // action level closes the gap if the UI's canEdit flag is bypassed.
-const EDITOR_ROLES = new Set(["peserta", "narasumber"]);
+const EDITOR_ROLES = new Set([
+  "peserta",
+  "narasumber",
+  "superadmin",
+  "mitra_admin",
+]);
 
 const TIMEFRAME = z.enum([
   "jangka_pendek",
@@ -86,16 +91,19 @@ export async function deleteActionPlan(id: string) {
   const user = await getCurrentUser();
   if (!user) return { error: "Tidak terautentikasi" };
   if (!EDITOR_ROLES.has(user.global_role))
-    return {
-      error: "Hanya peserta atau narasumber yang bisa menghapus rencana aksi.",
-    };
-  const supabase = createClient();
+    return { error: "Anda tidak diizinkan menghapus rencana aksi." };
+  // Use admin client so RLS doesn't silently swallow the delete for
+  // superadmin/mitra contexts where the row's owner is a peserta/narasumber.
+  const supabase = createAdminClient();
   const { error } = await supabase
     .from("desa_action_plans")
     .delete()
     .eq("id", id);
   if (error) return { error: error.message };
   revalidatePath("/narasumber/rencana-aksi");
+  revalidatePath("/peserta", "layout");
+  revalidatePath("/atourin", "layout");
+  revalidatePath("/mitra", "layout");
   return { ok: true };
 }
 

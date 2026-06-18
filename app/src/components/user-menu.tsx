@@ -132,7 +132,13 @@ export function UserMenu({
               );
             })}
           </ul>
-          <form action={signOutAction} className="border-t border-atr-outline">
+          <form
+            action={signOutAction}
+            onSubmit={(e) => {
+              if (!confirm("Keluar dari akun ini?")) e.preventDefault();
+            }}
+            className="border-t border-atr-outline"
+          >
             <button
               type="submit"
               className="flex w-full items-center gap-3 px-4 py-2.5 text-sm font-bold text-atr-red transition hover:bg-atr-red/5"
