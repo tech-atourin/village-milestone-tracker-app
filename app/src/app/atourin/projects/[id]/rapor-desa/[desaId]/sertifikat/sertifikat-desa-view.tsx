@@ -67,7 +67,7 @@ export function SertifikatDesaView({
         </div>
       </div>
 
-      <article className="print-frame relative mx-auto aspect-[1.414/1] w-full max-w-[1100px] overflow-hidden border-[12px] border-double border-atr-purple/40 bg-gradient-to-br from-atr-purple-50/60 to-white p-10 shadow-atr-3">
+      <article className="print-frame relative mx-auto flex aspect-[1.414/1] w-full max-w-[1100px] flex-col overflow-hidden border-[12px] border-double border-atr-purple/40 bg-gradient-to-br from-atr-purple-50/60 to-white p-8 shadow-atr-3">
         <div className="absolute left-0 top-0 h-24 w-24 border-l-4 border-t-4 border-atr-yellow" />
         <div className="absolute right-0 top-0 h-24 w-24 border-r-4 border-t-4 border-atr-yellow" />
         <div className="absolute bottom-0 left-0 h-24 w-24 border-b-4 border-l-4 border-atr-yellow" />
@@ -106,17 +106,17 @@ export function SertifikatDesaView({
           )}
         </header>
 
-        <div className="mt-8 text-center">
+        <div className="mt-4 flex-1 text-center">
           <h1 className="text-sm font-bold uppercase tracking-[0.25em] text-atr-purple-600">
             Sertifikat Pendampingan Desa Wisata
           </h1>
-          <p className="mt-2 text-xs uppercase tracking-widest text-atr-fg-muted">
+          <p className="mt-1 text-xs uppercase tracking-widest text-atr-fg-muted">
             Diberikan kepada
           </p>
-          <h2 className="mt-4 text-4xl font-bold tracking-tight text-atr-fg">
+          <h2 className="mt-3 text-4xl font-bold tracking-tight text-atr-fg">
             {desa.name}
           </h2>
-          <p className="mt-2 text-sm text-atr-fg-muted">
+          <p className="mt-1 text-sm text-atr-fg-muted">
             {[desa.kabupaten, desa.provinsi].filter(Boolean).join(", ") || "-"}
             {desa.current_classification && (
               <>
@@ -129,7 +129,7 @@ export function SertifikatDesaView({
             )}
           </p>
 
-          <p className="mx-auto mt-8 max-w-2xl text-sm leading-relaxed text-atr-fg">
+          <p className="mx-auto mt-5 max-w-2xl text-sm leading-relaxed text-atr-fg">
             Atas {eligible ? "pencapaian dan komitmen" : "partisipasi"} dalam
             program
             <br />
@@ -138,7 +138,7 @@ export function SertifikatDesaView({
             periode {dateFmt(project.period_start)} – {dateFmt(project.period_end)}.
           </p>
 
-          <div className="mx-auto mt-6 flex max-w-md justify-center gap-6 text-center text-xs">
+          <div className="mx-auto mt-5 flex max-w-md justify-center gap-6 text-center text-xs">
             <ScoreCell label="Peserta" value={aggregate.peserta_count} />
             <ScoreCell
               label="Progress Materi"
@@ -163,22 +163,22 @@ export function SertifikatDesaView({
           </div>
         </div>
 
-        <footer className="absolute bottom-10 left-10 right-10 grid grid-cols-2 gap-10 text-center text-xs">
+        <footer className="mt-4 grid grid-cols-2 gap-10 px-6 text-center text-xs">
           <div>
             <div className="text-atr-fg-muted">Mengetahui,</div>
-            <div className="mt-12 border-t border-atr-fg pt-1 font-bold text-atr-fg">
+            <div className="mt-10 border-t border-atr-fg pt-1 font-bold text-atr-fg">
               {project.organization?.name ?? "Mitra Penyelenggara"}
             </div>
           </div>
           <div>
             <div className="text-atr-fg-muted">Atourin Mentor</div>
-            <div className="mt-12 border-t border-atr-fg pt-1 font-bold text-atr-fg">
+            <div className="mt-10 border-t border-atr-fg pt-1 font-bold text-atr-fg">
               Tim Atourin
             </div>
           </div>
         </footer>
 
-        <div className="absolute bottom-2 left-0 right-0 text-center text-[9px] uppercase tracking-widest text-atr-fg-muted">
+        <div className="mt-3 text-center text-[9px] uppercase tracking-widest text-atr-fg-muted">
           Diterbitkan {dateFmt(new Date().toISOString())} · ID{" "}
           {desa.id?.slice(0, 8) ?? "-"}-{project.id?.slice(0, 8) ?? "-"}
         </div>

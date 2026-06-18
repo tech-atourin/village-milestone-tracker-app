@@ -166,7 +166,7 @@ export function RaporEntryTable({
                           <FileText className="h-3 w-3" />
                         </Link>
                         <Link
-                          href={`/atourin/projects/${projectId}/sertifikat/${r.user_id}`}
+                          href={`/atourin/projects/${projectId}/rapor/${r.user_id}/sertifikat`}
                           target="_blank"
                           className="inline-flex h-8 items-center gap-1 rounded-md border border-atr-yellow/40 bg-atr-yellow/10 px-2 text-xs font-bold text-atr-fg transition hover:bg-atr-yellow/20"
                           title="Sertifikat"
