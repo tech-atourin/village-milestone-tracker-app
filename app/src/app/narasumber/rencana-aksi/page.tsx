@@ -18,11 +18,14 @@ export default async function NarasumberRencanaAksiPage() {
     })),
   );
 
-  // Get plans across all narasumber's projects
+  // Get plans across all narasumber's projects, scoped to their desa
+  const allowedProjectDesaIds = new Set(allDesa.map((d) => d.project_desa_id));
   const allPlans = await Promise.all(
     projects.map((p) => listActionPlans({ projectId: p.id })),
   );
-  const rows = allPlans.flat();
+  const rows = allPlans
+    .flat()
+    .filter((r) => allowedProjectDesaIds.has(r.project_desa_id));
 
   return (
     <div className="space-y-6">

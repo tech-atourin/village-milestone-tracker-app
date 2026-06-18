@@ -34,6 +34,7 @@ export async function listProjects(): Promise<ProjectListRow[]> {
 
 export type ProjectDetail = ProjectListRow & {
   enabled_modules: Record<string, boolean>;
+  total_pendampingan_days: number | null;
   topik_count: number;
   checklist_count: number;
   desa_count: number;
@@ -45,7 +46,7 @@ export async function getProject(id: string): Promise<ProjectDetail | null> {
   const { data: project, error } = await supabase
     .from("projects")
     .select(
-      "id, name, description, status, period_start, period_end, created_at, enabled_modules, organization:organizations(id,name), template:project_templates(id,name)",
+      "id, name, description, status, period_start, period_end, total_pendampingan_days, created_at, enabled_modules, organization:organizations(id,name), template:project_templates(id,name)",
     )
     .eq("id", id)
     .is("deleted_at", null)
@@ -90,6 +91,9 @@ export async function getProject(id: string): Promise<ProjectDetail | null> {
     enabled_modules:
       (project as unknown as { enabled_modules: Record<string, boolean> })
         .enabled_modules ?? {},
+    total_pendampingan_days:
+      (project as unknown as { total_pendampingan_days: number | null })
+        .total_pendampingan_days ?? null,
     topik_count: topik ?? 0,
     checklist_count: checklist,
     desa_count: desa ?? 0,

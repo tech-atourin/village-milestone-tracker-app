@@ -118,7 +118,7 @@ export async function ProjectDesaDetailView({
           (r) =>
             r.status === "verified" ||
             (r.materi && r.materi.trim().length > 5) ||
-            (r.aktivitas && r.aktivitas.trim().length > 5),
+            (Array.isArray(r.aktivitas) && r.aktivitas.length > 0),
         ).length;
       }),
     // Action plans that have moved past "rencana" (started)

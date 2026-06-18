@@ -81,11 +81,13 @@ export function GformsTab({
   gforms,
   testResults,
   narasumberRatings,
+  hideKuisionerNarasumber = false,
 }: {
   projectId: string;
   gforms: GformRow[];
   testResults: TestResultRow[];
   narasumberRatings: NarasumberRatingRow[];
+  hideKuisionerNarasumber?: boolean;
 }) {
   const counts = useMemo(() => {
     const out: Record<ChipKey, number> = {
@@ -102,11 +104,13 @@ export function GformsTab({
     return out;
   }, [testResults, narasumberRatings.length]);
 
+  const chipKeys: ChipKey[] = hideKuisionerNarasumber
+    ? ["pre_test", "post_test", "survey_kepuasan"]
+    : ["pre_test", "post_test", "survey_kepuasan", "kuisioner_narasumber"];
+
   // Default to first chip with data (else Pre-test).
   const initialChip: ChipKey =
-    (["pre_test", "post_test", "survey_kepuasan", "kuisioner_narasumber"] as ChipKey[]).find(
-      (k) => counts[k] > 0,
-    ) ?? "pre_test";
+    chipKeys.find((k) => counts[k] > 0) ?? "pre_test";
   const [active, setActive] = useState<ChipKey>(initialChip);
 
   return (
@@ -119,7 +123,7 @@ export function GformsTab({
         </header>
 
         <nav className="flex flex-wrap gap-2">
-          {(Object.keys(CHIP_LABEL) as ChipKey[]).map((k) => {
+          {chipKeys.map((k) => {
             const Icon = CHIP_ICON[k];
             const isActive = active === k;
             return (

@@ -11,6 +11,7 @@ const updateProjectSchema = z.object({
   description: z.string().max(2000).optional().nullable(),
   period_start: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().nullable().or(z.literal("")),
   period_end: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().nullable().or(z.literal("")),
+  total_pendampingan_days: z.number().int().min(1).max(60).optional(),
   status: z.enum(["draft", "active", "completed", "archived"]),
   enabled_modules: z.object({
     desa_baseline: z.boolean(),
@@ -34,6 +35,7 @@ export async function updateProject(input: z.input<typeof updateProjectSchema>) 
       description: d.description ?? null,
       period_start: d.period_start || null,
       period_end: d.period_end || null,
+      total_pendampingan_days: d.total_pendampingan_days ?? 5,
       status: d.status,
       enabled_modules: d.enabled_modules,
     })

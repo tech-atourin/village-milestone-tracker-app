@@ -5,13 +5,14 @@ import { notFound, redirect } from "next/navigation";
 import { ArrowLeft, ClipboardCheck } from "lucide-react";
 import { getCurrentUser } from "@/lib/auth/rbac";
 import { createAdminClient } from "@/lib/supabase/server";
-import { listReviewQueue } from "@/server/queries/review";
-import { ReviewQueue } from "@/app/atourin/projects/[id]/review-queue";
+import { EvidenceTab } from "@/app/atourin/projects/[id]/evidence-tab";
 
 export default async function NarasumberReviewPage({
   params,
+  searchParams,
 }: {
   params: { id: string };
+  searchParams: { topik?: string; desa?: string };
 }) {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
@@ -36,8 +37,6 @@ export default async function NarasumberReviewPage({
     .maybeSingle();
   if (!project) notFound();
 
-  const queue = await listReviewQueue(params.id, "submitted");
-
   return (
     <div className="space-y-6">
       <Link
@@ -58,12 +57,16 @@ export default async function NarasumberReviewPage({
         </h1>
         <p className="text-sm text-atr-fg-muted">
           Sebagai narasumber project ini, Anda bisa approve / reject bukti
-          checklist yang disubmit peserta. Reviewer juga berlaku untuk admin
-          mitra & superadmin.
+          checklist yang disubmit peserta. Tab Direktori Bukti tersedia sebagai
+          pendukung saat review.
         </p>
       </header>
 
-      <ReviewQueue projectId={params.id} items={queue} currentUserId={user.id} />
+      <EvidenceTab
+        projectId={params.id}
+        filterTopikId={searchParams.topik}
+        filterDesaId={searchParams.desa}
+      />
     </div>
   );
 }

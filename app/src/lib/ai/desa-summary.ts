@@ -152,16 +152,20 @@ export async function assembleContext(projectDesaId: string): Promise<string> {
         `  Hari ${s.day_number ?? "?"} (${s.session_date ?? "-"}) · ${s.materi ?? "-"} · narasumber: ${s.narasumber?.full_name ?? "-"}`,
       );
       if (s.maksud_tujuan) lines.push(`    Tujuan: ${s.maksud_tujuan}`);
-      if (s.aktivitas) lines.push(`    Aktivitas: ${s.aktivitas}`);
-      if (s.output_sesi) lines.push(`    Output: ${s.output_sesi}`);
-      if (s.tindak_lanjut) lines.push(`    Tindak lanjut: ${s.tindak_lanjut}`);
+      if (Array.isArray(s.aktivitas) && s.aktivitas.length > 0)
+        lines.push(`    Aktivitas: ${s.aktivitas.join("; ")}`);
+      if (Array.isArray(s.output_sesi) && s.output_sesi.length > 0)
+        lines.push(`    Output: ${s.output_sesi.join("; ")}`);
+      if (Array.isArray(s.tindak_lanjut) && s.tindak_lanjut.length > 0)
+        lines.push(`    Tindak lanjut: ${s.tindak_lanjut.join("; ")}`);
       if (Array.isArray(s.kondisi_sebelum) && s.kondisi_sebelum.length > 0) {
         lines.push(`    Kondisi sebelum: ${s.kondisi_sebelum.join("; ")}`);
       }
       if (Array.isArray(s.kondisi_setelah) && s.kondisi_setelah.length > 0) {
         lines.push(`    Kondisi setelah: ${s.kondisi_setelah.join("; ")}`);
       }
-      if (s.rekomendasi) lines.push(`    Rekomendasi: ${s.rekomendasi}`);
+      if (Array.isArray(s.rekomendasi) && s.rekomendasi.length > 0)
+        lines.push(`    Rekomendasi: ${s.rekomendasi.join("; ")}`);
     }
   } else {
     lines.push("\nLaporan narasumber: belum ada sesi tercatat");

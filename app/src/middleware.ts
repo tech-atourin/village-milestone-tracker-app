@@ -30,7 +30,7 @@ const SCOPE_PREFIXES = {
   superadmin: "/atourin",
   mitra_admin: "/mitra",
   peserta: "/peserta",
-  narasumber: "/peserta",
+  narasumber: "/narasumber",
   desa_wisata: "/desa",
 } as const;
 

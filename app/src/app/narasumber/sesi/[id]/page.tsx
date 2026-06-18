@@ -94,7 +94,7 @@ export default async function SesiDetailPage({
                 {(data.start_time || data.end_time) && (
                   <span className="inline-flex items-center gap-1">
                     <Clock className="h-3 w-3" />
-                    {data.start_time ?? "-"} – {data.end_time ?? "-"}
+                    {(data.start_time ?? "").slice(0, 5) || "-"} – {(data.end_time ?? "").slice(0, 5) || "-"}
                   </span>
                 )}
                 <span className="inline-flex items-center gap-1">

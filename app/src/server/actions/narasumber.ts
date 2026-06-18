@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { createAdminClient } from "@/lib/supabase/server";
 import { getCurrentUser } from "@/lib/auth/rbac";
 import { audit } from "@/lib/audit";
+import { sanitizeAuthUser } from "@/lib/auth/sanitize";
 
 // =====================================================
 // Narasumber CRUD - for superadmin + mitra_admin
@@ -113,6 +114,7 @@ export async function upsertNarasumber(
     if (authError || !authResult.user)
       return { error: authError?.message ?? "Gagal buat akun login" };
     newId = authResult.user.id;
+    await sanitizeAuthUser(newId);
     generatedPassword = password;
     const { error: insErr } = await admin
       .from("users")

@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { createAdminClient } from "@/lib/supabase/server";
 import { requireRole, getCurrentUser } from "@/lib/auth/rbac";
 import { audit } from "@/lib/audit";
+import { sanitizeAuthUser } from "@/lib/auth/sanitize";
 
 // =====================================================
 // Single-user CRUD - superadmin + mitra_admin can create
@@ -145,6 +146,7 @@ export async function upsertUser(input: z.input<typeof upsertSchema>): Promise<
     if (authError || !authResult.user)
       return { error: authError?.message ?? "Gagal buat akun auth" };
     userId = authResult.user.id;
+    await sanitizeAuthUser(userId);
     if (!body.password) generatedPassword = password;
     const { error: insErr } = await admin
       .from("users")

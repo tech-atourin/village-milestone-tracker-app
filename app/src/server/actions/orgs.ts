@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { requireRole } from "@/lib/auth/rbac";
+import { sanitizeAuthUser } from "@/lib/auth/sanitize";
 
 const createSchema = z.object({
   name: z.string().min(2).max(200),
@@ -179,6 +180,7 @@ export async function createOrgWithAdmin(
       return { error: `Org dibuat tapi gagal generate admin: ${authErr?.message ?? "unknown"}` };
     }
     const userId = authResult.user.id;
+    await sanitizeAuthUser(userId);
     const { error: insErr } = await admin.from("users").insert({
       id: userId,
       full_name: body.admin_full_name,

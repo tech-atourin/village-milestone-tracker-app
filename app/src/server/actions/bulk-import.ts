@@ -10,6 +10,7 @@ import {
   type BulkRowResult,
 } from "@/lib/excel/bulk-import";
 import { invitationHtml } from "@/lib/email/invitation-template";
+import { sanitizeAuthUser } from "@/lib/auth/sanitize";
 
 // =====================================================
 // Generate Excel template
@@ -482,6 +483,9 @@ export async function commitBulkImport(
       errors.push(`${row.full_name} (${email}): ${authError?.message ?? "auth create gagal"}`);
       continue;
     }
+    // Coalesce NULL token columns left by admin.createUser so the new user
+    // can actually log in (GoTrue rejects signInWithPassword otherwise).
+    await sanitizeAuthUser(authResult.user.id);
 
     // 4. Insert vmt.users row
     const userPayload: Record<string, unknown> = {

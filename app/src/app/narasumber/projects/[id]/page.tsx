@@ -161,7 +161,7 @@ export default async function NarasumberProjectDetailPage({
       </nav>
 
       {activeTab === "overview" && (
-        <OverviewTab project={project} projectId={project.id} />
+        <OverviewTab project={project} projectId={project.id} hideNarasumberInternals />
       )}
       {activeTab === "summary" && (
         <SummaryTab projectId={project.id} scope="narasumber" />
@@ -299,6 +299,7 @@ async function GformsAndResultsLoader({ projectId }: { projectId: string }) {
       gforms={gforms}
       testResults={testResults}
       narasumberRatings={narasumberRatings}
+      hideKuisionerNarasumber
     />
   );
 }

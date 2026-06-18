@@ -25,9 +25,11 @@ type Project = {
 export async function OverviewTab({
   project,
   projectId,
+  hideNarasumberInternals = false,
 }: {
   project: Project;
   projectId: string;
+  hideNarasumberInternals?: boolean;
 }) {
   const data = await getProjectAnalytics(projectId);
 
@@ -159,7 +161,7 @@ export async function OverviewTab({
         })}
       </div>
 
-      <AnalyticsCharts data={data} />
+      <AnalyticsCharts data={data} hideNarasumberInternals={hideNarasumberInternals} />
     </div>
   );
 }

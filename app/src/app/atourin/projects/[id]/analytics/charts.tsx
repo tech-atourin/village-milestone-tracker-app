@@ -47,7 +47,13 @@ const STATUS_COLOR_AP = {
   ditunda: YELLOW,
 } as const;
 
-export function AnalyticsCharts({ data }: { data: ProjectAnalytics }) {
+export function AnalyticsCharts({
+  data,
+  hideNarasumberInternals = false,
+}: {
+  data: ProjectAnalytics;
+  hideNarasumberInternals?: boolean;
+}) {
   const genderData = [
     { name: "Laki-laki", value: data.peserta_gender.L, color: PURPLE },
     { name: "Perempuan", value: data.peserta_gender.P, color: YELLOW },
@@ -363,7 +369,8 @@ export function AnalyticsCharts({ data }: { data: ProjectAnalytics }) {
       </div>
 
       {/* Rating distribution + Pre/Post growth per materi, side-by-side */}
-      <div className="grid gap-4 lg:grid-cols-2">
+      <div className={`grid gap-4 ${hideNarasumberInternals ? "" : "lg:grid-cols-2"}`}>
+        {!hideNarasumberInternals && (
         <section className="rounded-2xl border border-atr-outline bg-white p-6 shadow-atr-1">
           <header className="mb-4 flex items-center justify-between gap-2">
             <div className="inline-flex items-center gap-2">
@@ -414,6 +421,7 @@ export function AnalyticsCharts({ data }: { data: ProjectAnalytics }) {
             </div>
           )}
         </section>
+        )}
 
         <section className="rounded-2xl border border-atr-outline bg-white p-6 shadow-atr-1">
           <header className="mb-4 flex items-center gap-2">
@@ -496,7 +504,7 @@ export function AnalyticsCharts({ data }: { data: ProjectAnalytics }) {
       </div>
 
       {/* Rencana aksi + sesi status */}
-      <div className="grid gap-4 lg:grid-cols-2">
+      <div className={`grid gap-4 ${hideNarasumberInternals ? "" : "lg:grid-cols-2"}`}>
         <section className="rounded-2xl border border-atr-outline bg-white p-6 shadow-atr-1">
           <header className="mb-4 flex items-center gap-2">
             <h3 className="text-sm font-bold uppercase tracking-wide text-atr-fg">
@@ -538,6 +546,7 @@ export function AnalyticsCharts({ data }: { data: ProjectAnalytics }) {
           )}
         </section>
 
+        {!hideNarasumberInternals && (
         <section className="rounded-2xl border border-atr-outline bg-white p-6 shadow-atr-1">
           <header className="mb-4 flex items-center gap-2">
             <h3 className="text-sm font-bold uppercase tracking-wide text-atr-fg">
@@ -554,6 +563,7 @@ export function AnalyticsCharts({ data }: { data: ProjectAnalytics }) {
             <strong className="text-atr-fg">{data.attendance_avg_pct}%</strong>
           </div>
         </section>
+        )}
       </div>
 
       {/* Top desa */}

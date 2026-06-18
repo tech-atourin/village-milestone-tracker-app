@@ -21,6 +21,12 @@ const createProjectSchema = z.object({
     .regex(/^\d{4}-\d{2}-\d{2}$/, "Format tanggal tidak valid (YYYY-MM-DD)")
     .optional()
     .nullable(),
+  total_pendampingan_days: z
+    .number()
+    .int()
+    .min(1, "Minimal 1 hari")
+    .max(60, "Maksimal 60 hari")
+    .default(5),
   enabled_modules: z
     .object({
       desa_baseline: z.boolean().default(true),
@@ -90,6 +96,14 @@ export async function createProjectAction(
   if (error) {
     console.error("createProject RPC error:", error);
     return { error: error.message };
+  }
+
+  // RPC tidak punya parameter total_pendampingan_days → patch via UPDATE
+  if (projectId && data.total_pendampingan_days) {
+    await supabase
+      .from("projects")
+      .update({ total_pendampingan_days: data.total_pendampingan_days })
+      .eq("id", projectId as string);
   }
 
   revalidatePath("/atourin/projects");

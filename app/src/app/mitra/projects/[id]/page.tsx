@@ -204,6 +204,7 @@ export default async function MitraProjectDetailPage({
             description: project.description,
             period_start: project.period_start,
             period_end: project.period_end,
+            total_pendampingan_days: project.total_pendampingan_days,
             status: project.status,
             enabled_modules: project.enabled_modules,
           }}
@@ -281,7 +282,7 @@ async function NarasumberTabLoader({ projectId }: { projectId: string }) {
   // Same admin-client trick as Peserta tab: mitra anon role can't read other
   // narasumber rows through RLS, so we go through admin.
   const admin = createAdminClient();
-  const [assignments, { data: candData }] = await Promise.all([
+  const [assignments, { data: candData }, { data: pdData }] = await Promise.all([
     loadNarasumberAssignments(projectId),
     admin
       .from("users")
@@ -292,14 +293,23 @@ async function NarasumberTabLoader({ projectId }: { projectId: string }) {
       .eq("global_role", "narasumber")
       .order("full_name", { ascending: true })
       .limit(500),
+    admin
+      .from("project_desa")
+      .select("desa_id, desa:desa(id, name)")
+      .eq("project_id", projectId),
   ]);
   const candidates = (candData ?? []) as unknown as UserListRow[];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const projectDesa = ((pdData ?? []) as any[])
+    .map((r) => ({ id: r.desa_id as string, name: r.desa?.name ?? "-" }))
+    .sort((a, b) => a.name.localeCompare(b.name));
   return (
     <NarasumberTab
       projectId={projectId}
       assignments={assignments}
       candidates={candidates}
       narasumberDetailBase="/mitra/narasumber"
+      projectDesa={projectDesa}
     />
   );
 }

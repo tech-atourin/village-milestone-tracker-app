@@ -3,18 +3,10 @@ export const metadata = { title: "Notifikasi" };
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { ArrowLeft, Bell, Inbox } from "lucide-react";
-import { getCurrentUser } from "@/lib/auth/rbac";
+import { getCurrentUser, scopeHomePath } from "@/lib/auth/rbac";
 import { createAdminClient } from "@/lib/supabase/server";
 import { listUserNotifications } from "@/server/queries/notifications";
 import { NotificationsClient } from "./notifications-client";
-
-const HOME_BY_ROLE: Record<string, string> = {
-  superadmin: "/atourin/dashboard",
-  mitra_admin: "/mitra/dashboard",
-  narasumber: "/narasumber",
-  peserta: "/peserta/home",
-  desa_wisata: "/desa",
-};
 
 export default async function NotificationsPage() {
   const user = await getCurrentUser();
@@ -80,7 +72,7 @@ export default async function NotificationsPage() {
     }
   }
 
-  const homeHref = HOME_BY_ROLE[user.global_role] ?? "/";
+  const homeHref = scopeHomePath(user.global_role);
 
   return (
     <div className="mx-auto max-w-3xl space-y-3">

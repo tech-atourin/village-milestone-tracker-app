@@ -15,6 +15,7 @@ type Project = {
   description: string | null;
   period_start: string | null;
   period_end: string | null;
+  total_pendampingan_days: number | null;
   status: "draft" | "active" | "completed" | "archived";
   enabled_modules: Record<string, boolean>;
 };
@@ -35,6 +36,9 @@ export function SettingsTab({ project }: { project: Project }) {
   const [description, setDescription] = useState(project.description ?? "");
   const [periodStart, setPeriodStart] = useState(project.period_start ?? "");
   const [periodEnd, setPeriodEnd] = useState(project.period_end ?? "");
+  const [totalDays, setTotalDays] = useState<number>(
+    project.total_pendampingan_days ?? 5,
+  );
   const [status, setStatus] = useState(project.status);
   const [modules, setModules] = useState<Record<string, boolean>>(() => ({
     desa_baseline: project.enabled_modules.desa_baseline ?? true,
@@ -54,6 +58,7 @@ export function SettingsTab({ project }: { project: Project }) {
         description,
         period_start: periodStart,
         period_end: periodEnd,
+        total_pendampingan_days: totalDays,
         status,
         enabled_modules: {
           desa_baseline: modules.desa_baseline,
@@ -126,6 +131,20 @@ export function SettingsTab({ project }: { project: Project }) {
                 onChange={(e) => setPeriodEnd(e.target.value)}
                 className={inputCls}
               />
+            </Field>
+            <Field label="Total hari pendampingan">
+              <input
+                type="number"
+                min={1}
+                max={60}
+                value={totalDays}
+                onChange={(e) => setTotalDays(Number(e.target.value) || 1)}
+                className={inputCls}
+              />
+              <p className="mt-1 text-[11px] text-atr-fg-muted">
+                Jumlah hari kunjungan narasumber per desa. Dipakai untuk
+                pelabelan Hari 1, Hari 2, dst di tab Sesi Pendampingan.
+              </p>
             </Field>
           </div>
           <Field label="Status">

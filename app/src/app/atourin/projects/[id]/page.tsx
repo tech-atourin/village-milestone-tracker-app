@@ -190,6 +190,7 @@ export default async function ProjectDetailPage({
             description: project.description,
             period_start: project.period_start,
             period_end: project.period_end,
+            total_pendampingan_days: project.total_pendampingan_days,
             status: project.status,
             enabled_modules: project.enabled_modules,
           }}
@@ -224,16 +225,21 @@ async function PesertaTabLoader({ projectId }: { projectId: string }) {
 }
 
 async function NarasumberTabLoader({ projectId }: { projectId: string }) {
-  const [assignments, candidates] = await Promise.all([
+  const [assignments, candidates, projectDesaRows] = await Promise.all([
     loadNarasumberAssignments(projectId),
     listUsers({ role: "narasumber" }),
+    listProjectDesa(projectId),
   ]);
+  const projectDesa = projectDesaRows
+    .map((d) => ({ id: d.desa.id, name: d.desa.name }))
+    .sort((a, b) => a.name.localeCompare(b.name));
   return (
     <NarasumberTab
       projectId={projectId}
       assignments={assignments}
       candidates={candidates}
       narasumberDetailBase="/atourin/narasumber"
+      projectDesa={projectDesa}
     />
   );
 }

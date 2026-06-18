@@ -31,7 +31,7 @@ export async function loadNarasumberAssignments(
     supabase
       .from("project_memberships")
       .select(
-        "id, user:users!project_memberships_user_id_fkey(id, full_name, email)",
+        "id, desa_id, user:users!project_memberships_user_id_fkey(id, full_name, email)",
       )
       .eq("project_id", projectId)
       .eq("role", "narasumber")
@@ -77,6 +77,7 @@ export async function loadNarasumberAssignments(
     user: { id: string; full_name: string; email: string | null };
     membership_id: string | null;
     desa: Map<string, string>;
+    assigned_desa_ids: Set<string>;
     sessions_count: number;
     rating_sum: number;
     rating_count: number;
@@ -86,7 +87,12 @@ export async function loadNarasumberAssignments(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   for (const m of (memberships ?? []) as any[]) {
     if (!m.user?.id) continue;
-    byId.set(m.user.id, {
+    const existing = byId.get(m.user.id);
+    if (existing) {
+      if (m.desa_id) existing.assigned_desa_ids.add(m.desa_id);
+      continue;
+    }
+    const bucket: Bucket = {
       user: {
         id: m.user.id,
         full_name: m.user.full_name,
@@ -94,10 +100,13 @@ export async function loadNarasumberAssignments(
       },
       membership_id: m.id,
       desa: new Map(),
+      assigned_desa_ids: new Set<string>(),
       sessions_count: 0,
       rating_sum: 0,
       rating_count: 0,
-    });
+    };
+    if (m.desa_id) bucket.assigned_desa_ids.add(m.desa_id);
+    byId.set(m.user.id, bucket);
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -114,6 +123,7 @@ export async function loadNarasumberAssignments(
         },
         membership_id: null,
         desa: new Map<string, string>(),
+        assigned_desa_ids: new Set<string>(),
         sessions_count: 0,
         rating_sum: 0,
         rating_count: 0,
@@ -144,6 +154,7 @@ export async function loadNarasumberAssignments(
       membership_id: b.membership_id,
       user: b.user,
       desa: Array.from(b.desa.entries()).map(([id, name]) => ({ id, name })),
+      assigned_desa_ids: Array.from(b.assigned_desa_ids),
       sessions_count: b.sessions_count,
       avg_rating: b.rating_count > 0 ? b.rating_sum / b.rating_count : null,
       rating_count: b.rating_count,

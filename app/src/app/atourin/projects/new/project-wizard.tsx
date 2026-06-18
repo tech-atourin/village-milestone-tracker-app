@@ -31,6 +31,7 @@ type State = {
   description: string;
   period_start: string;
   period_end: string;
+  total_pendampingan_days: number;
   template_id: string | null;
   organization_id: string;
   enabled_modules: {
@@ -64,6 +65,7 @@ export function ProjectWizard({
     description: "",
     period_start: "",
     period_end: "",
+    total_pendampingan_days: 5,
     template_id: null,
     organization_id: defaultOrganizationId ?? "",
     enabled_modules: {
@@ -108,6 +110,7 @@ export function ProjectWizard({
         template_id: state.template_id,
         period_start: state.period_start || null,
         period_end: state.period_end || null,
+        total_pendampingan_days: state.total_pendampingan_days,
         enabled_modules: state.enabled_modules,
         publish: !asDraft,
       });
@@ -220,6 +223,27 @@ export function ProjectWizard({
                   }
                   className="h-11 w-full rounded-lg border border-atr-outline px-3 text-sm outline-none transition focus:border-atr-purple focus:ring-2 focus:ring-atr-purple/15"
                 />
+              </Field>
+              <Field
+                label="Total hari pendampingan"
+                error={fieldErrors.total_pendampingan_days}
+              >
+                <input
+                  type="number"
+                  min={1}
+                  max={60}
+                  value={state.total_pendampingan_days}
+                  onChange={(e) =>
+                    setState({
+                      ...state,
+                      total_pendampingan_days: Number(e.target.value) || 1,
+                    })
+                  }
+                  className="h-11 w-full rounded-lg border border-atr-outline px-3 text-sm outline-none transition focus:border-atr-purple focus:ring-2 focus:ring-atr-purple/15"
+                />
+                <p className="mt-1 text-[11px] text-atr-fg-muted">
+                  Jumlah hari kunjungan narasumber per desa (Hari 1, Hari 2, ...).
+                </p>
               </Field>
             </div>
           </div>

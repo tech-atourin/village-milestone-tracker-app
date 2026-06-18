@@ -1,7 +1,7 @@
 export const metadata = { title: "Sesi Pendampingan" };
 
 import Link from "next/link";
-import { Plus, CalendarDays } from "lucide-react";
+import { Plus, CalendarDays, Pencil } from "lucide-react";
 import { getCurrentUser } from "@/lib/auth/rbac";
 import { listNarasumberSessions } from "@/server/queries/pendampingan";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -67,6 +67,7 @@ export default async function SesiListPage() {
                 <th className="px-4 py-3">Project</th>
                 <th className="px-4 py-3">Materi</th>
                 <th className="px-4 py-3">Status</th>
+                <th className="px-4 py-3 w-20">Aksi</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-atr-outline">
@@ -89,8 +90,17 @@ export default async function SesiListPage() {
                   <td className="px-4 py-3 text-atr-fg-muted">
                     {s.project_name}
                   </td>
-                  <td className="px-4 py-3 line-clamp-1 max-w-xs text-xs text-atr-fg">
-                    {s.materi ?? "-"}
+                  <td className="max-w-xs px-4 py-3 text-xs text-atr-fg">
+                    <span
+                      className="block truncate"
+                      title={s.materi ?? undefined}
+                    >
+                      {s.materi
+                        ? s.materi.length > 70
+                          ? s.materi.slice(0, 70) + "…"
+                          : s.materi
+                        : "-"}
+                    </span>
                   </td>
                   <td className="px-4 py-3">
                     <span
@@ -98,6 +108,16 @@ export default async function SesiListPage() {
                     >
                       {STATUS_LABEL[s.status]}
                     </span>
+                  </td>
+                  <td className="px-4 py-3">
+                    <Link
+                      href={`/narasumber/sesi/${s.id}`}
+                      className="inline-flex h-8 items-center gap-1 rounded-md border border-atr-outline bg-white px-2.5 text-xs font-bold text-atr-fg hover:bg-atr-bg-soft"
+                      title="Edit sesi"
+                    >
+                      <Pencil className="h-3 w-3" />
+                      Edit
+                    </Link>
                   </td>
                 </tr>
               ))}

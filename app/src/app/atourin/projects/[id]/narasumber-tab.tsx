@@ -16,6 +16,7 @@ import {
 import {
   addProjectMember,
   removeProjectMember,
+  setNarasumberDesa,
 } from "@/server/actions/memberships";
 import type { UserListRow } from "@/server/queries/users";
 
@@ -23,21 +24,26 @@ export type NarasumberAssignment = {
   membership_id: string | null;
   user: { id: string; full_name: string; email: string | null };
   desa: Array<{ id: string; name: string }>;
+  assigned_desa_ids: string[];
   sessions_count: number;
   avg_rating: number | null;
   rating_count: number;
 };
+
+export type ProjectDesaOption = { id: string; name: string };
 
 export function NarasumberTab({
   projectId,
   assignments,
   candidates,
   narasumberDetailBase,
+  projectDesa,
 }: {
   projectId: string;
   assignments: NarasumberAssignment[];
   candidates: UserListRow[];
   narasumberDetailBase: "/atourin/narasumber" | "/mitra/narasumber";
+  projectDesa: ProjectDesaOption[];
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -47,6 +53,7 @@ export function NarasumberTab({
   const [error, setError] = useState<string | null>(null);
   const [listSearch, setListSearch] = useState("");
   const [desaFilter, setDesaFilter] = useState("");
+  const [editing, setEditing] = useState<NarasumberAssignment | null>(null);
 
   const desaOptions = useMemo(() => {
     const map = new Map<string, string>();
@@ -84,22 +91,28 @@ export function NarasumberTab({
   function add() {
     if (!selUser) return;
     setError(null);
-    startTransition(async () => {
-      const r = await addProjectMember({
-        project_id: projectId,
-        user_id: selUser,
-        role: "narasumber",
-        desa_id: null,
-      });
-      if (r.error) setError(r.error);
-      else {
-        setShowAdd(false);
-        setSelUser(null);
-        setQ("");
-        router.refresh();
-      }
+    const candidate = candidates.find((c) => c.id === selUser);
+    if (!candidate) return;
+    setShowAdd(false);
+    setQ("");
+    // Open the Pilih Desa dialog so admin assigns desa right away.
+    // Pass an "empty assignment" so dialog starts unchecked.
+    setEditing({
+      membership_id: null,
+      user: {
+        id: candidate.id,
+        full_name: candidate.full_name,
+        email: candidate.email ?? null,
+      },
+      desa: [],
+      assigned_desa_ids: [],
+      sessions_count: 0,
+      avg_rating: null,
+      rating_count: 0,
     });
+    setSelUser(null);
   }
+  void addProjectMember; // kept for other call sites; narasumber now uses setNarasumberDesa
 
   function remove(membershipId: string | null) {
     if (!membershipId) return;
@@ -342,33 +355,180 @@ export function NarasumberTab({
                 </span>
               </div>
 
-              {a.desa.length > 0 ? (
-                <div className="mt-3">
+              <div className="mt-3 flex items-start justify-between gap-2">
+                <div className="min-w-0 flex-1">
                   <div className="text-[10px] font-bold uppercase tracking-wide text-atr-fg-muted">
                     Mendampingi
                   </div>
                   <div className="mt-1 flex flex-wrap gap-1">
-                    {a.desa.map((d) => (
-                      <span
-                        key={d.id}
-                        className="inline-flex items-center gap-1 rounded-full bg-atr-purple-50 px-2 py-0.5 text-[10px] font-bold text-atr-purple-600"
-                      >
-                        <MapPin className="h-2.5 w-2.5" />
-                        {d.name}
+                    {a.assigned_desa_ids.length > 0 ? (
+                      a.assigned_desa_ids.map((id) => {
+                        const d = projectDesa.find((x) => x.id === id);
+                        if (!d) return null;
+                        return (
+                          <span
+                            key={id}
+                            className="inline-flex items-center gap-1 rounded-full bg-atr-purple-50 px-2 py-0.5 text-[10px] font-bold text-atr-purple-600"
+                          >
+                            <MapPin className="h-2.5 w-2.5" />
+                            {d.name}
+                          </span>
+                        );
+                      })
+                    ) : (
+                      <span className="text-[11px] italic text-atr-fg-muted">
+                        Belum di-assign ke desa manapun di project ini.
                       </span>
-                    ))}
+                    )}
                   </div>
                 </div>
-              ) : (
-                <p className="mt-3 text-[11px] italic text-atr-fg-muted">
-                  Belum ada sesi tercatat untuk desa di project ini.
-                </p>
-              )}
+                <button
+                  type="button"
+                  onClick={() => setEditing(a)}
+                  className="inline-flex h-7 shrink-0 items-center rounded-md border border-atr-outline bg-white px-2 text-[11px] font-bold text-atr-fg hover:bg-atr-bg-soft"
+                >
+                  Pilih Desa
+                </button>
+              </div>
             </article>
           ))}
           </div>
         </>
       )}
+
+      {editing && (
+        <AssignDesaDialog
+          projectId={projectId}
+          assignment={editing}
+          projectDesa={projectDesa}
+          onClose={() => setEditing(null)}
+        />
+      )}
+    </div>
+  );
+}
+
+function AssignDesaDialog({
+  projectId,
+  assignment,
+  projectDesa,
+  onClose,
+}: {
+  projectId: string;
+  assignment: NarasumberAssignment;
+  projectDesa: ProjectDesaOption[];
+  onClose: () => void;
+}) {
+  const router = useRouter();
+  const [selected, setSelected] = useState<Set<string>>(
+    new Set(assignment.assigned_desa_ids),
+  );
+  const [pending, startTransition] = useTransition();
+  const [error, setError] = useState<string | null>(null);
+
+  function toggle(id: string) {
+    setSelected((s) => {
+      const next = new Set(s);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  function save() {
+    setError(null);
+    startTransition(async () => {
+      const r = await setNarasumberDesa({
+        project_id: projectId,
+        user_id: assignment.user.id,
+        desa_ids: Array.from(selected),
+      });
+      if ("error" in r && r.error) {
+        setError(r.error);
+        return;
+      }
+      onClose();
+      router.refresh();
+    });
+  }
+
+  return (
+    <div
+      role="dialog"
+      aria-modal="true"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-atr-fg/40 p-4"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
+      <div className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-2xl border border-atr-outline bg-white p-5 shadow-2xl">
+        <header className="mb-3 flex items-start justify-between">
+          <div>
+            <h2 className="text-base font-bold text-atr-fg">
+              Pilih desa yang didampingi
+            </h2>
+            <p className="text-xs text-atr-fg-muted">{assignment.user.full_name}</p>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-md p-1 text-atr-fg-muted hover:bg-atr-bg-soft hover:text-atr-fg"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </header>
+        <p className="mb-3 text-[11px] text-atr-fg-muted">
+          Centang desa-desa yang akan didampingi narasumber ini. Kalau dikosongkan
+          semua, narasumber dilepas dari project ini.
+        </p>
+        {projectDesa.length === 0 ? (
+          <p className="rounded-lg border border-dashed border-atr-outline bg-atr-bg-soft p-4 text-center text-xs italic text-atr-fg-muted">
+            Project belum punya desa. Tambahkan desa di tab Desa dulu.
+          </p>
+        ) : (
+          <ul className="space-y-1.5">
+            {projectDesa.map((d) => {
+              const on = selected.has(d.id);
+              return (
+                <li key={d.id}>
+                  <label className="flex cursor-pointer items-center gap-2 rounded-lg border border-atr-outline px-3 py-2 hover:bg-atr-bg-soft">
+                    <input
+                      type="checkbox"
+                      checked={on}
+                      onChange={() => toggle(d.id)}
+                      className="h-4 w-4 accent-atr-purple"
+                    />
+                    <span className="text-sm text-atr-fg">{d.name}</span>
+                  </label>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+        {error && (
+          <div className="mt-3 rounded-lg border border-atr-red/30 bg-atr-red/10 px-3 py-2 text-xs text-atr-red">
+            {error}
+          </div>
+        )}
+        <footer className="mt-4 flex items-center justify-end gap-2">
+          <button
+            type="button"
+            onClick={onClose}
+            className="inline-flex h-9 items-center rounded-lg border border-atr-outline bg-white px-3 text-sm font-bold text-atr-fg hover:bg-atr-bg-soft"
+          >
+            Batal
+          </button>
+          <button
+            type="button"
+            onClick={save}
+            disabled={pending}
+            className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-atr-purple px-4 text-sm font-bold text-white hover:bg-atr-purple-600 disabled:opacity-50"
+          >
+            {pending && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+            Simpan
+          </button>
+        </footer>
+      </div>
     </div>
   );
 }
