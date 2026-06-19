@@ -85,7 +85,7 @@ export default async function AtourinDashboardPage() {
           Selamat datang, {user?.full_name ?? "Atourin"}.
         </h1>
         <p className="text-sm text-atr-fg-muted">
-          Ringkasan project pendampingan + item yang butuh perhatian Anda.
+          Ringkasan project pendampingan dan item yang butuh perhatian Anda.
         </p>
       </header>
 

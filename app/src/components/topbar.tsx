@@ -60,15 +60,19 @@ export async function Topbar({
 
       <div className="flex items-center gap-3">
         <NotificationBell unreadCount={unreadCount} />
-        <UserMenu
-          variant="topbar-down"
-          user={{
-            full_name: user.full_name,
-            email: user.email,
-            role_label: ROLE_LABELS[user.global_role],
-            avatar_url: user.avatar_url,
-          }}
-        />
+        {/* UserMenu disembunyikan di mobile — akses akun ada di drawer
+            "Lainnya" pada bottom nav. */}
+        <div className="hidden lg:block">
+          <UserMenu
+            variant="topbar-down"
+            user={{
+              full_name: user.full_name,
+              email: user.email,
+              role_label: ROLE_LABELS[user.global_role],
+              avatar_url: user.avatar_url,
+            }}
+          />
+        </div>
       </div>
     </header>
   );

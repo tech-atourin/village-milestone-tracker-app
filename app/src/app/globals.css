@@ -122,12 +122,23 @@
   }
 
   /* Long unbroken strings (URLs, hashes, emails) commonly cause mobile
-     horizontal overflow inside cards. Allow them to wrap. */
+     horizontal overflow inside cards. Allow them to wrap on word
+     boundaries first, only break mid-word as last resort. */
   p,
   span,
-  td,
   div {
-    overflow-wrap: anywhere;
+    overflow-wrap: break-word;
+  }
+
+  /* Table cells: do NOT per-character wrap. Headers single line, cells
+     wrap on word boundaries. Tables that don't fit overflow their wrapper
+     which has overflow-x-auto, giving a horizontal scroll instead. */
+  th {
+    white-space: nowrap;
+  }
+  td {
+    overflow-wrap: normal;
+    word-break: normal;
   }
 
   /* Drop the lingering mouse-click outline, keep keyboard ring */
