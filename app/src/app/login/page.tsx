@@ -19,15 +19,15 @@ const FEATURES = [
   },
   {
     icon: Users,
-    title: "Multi-tenant siap pakai",
+    title: "Siap pakai oleh semua stakeholder",
     description:
-      "Kelola banyak project paralel Kemenpar, BUMN, Pemda, dan swasta tanpa rebuild.",
+      "Kelola banyak project paralel Kementerian, BUMN, Pemda, dan swasta tanpa repot.",
   },
   {
     icon: ShieldCheck,
-    title: "Aman & terisolasi",
+    title: "Multi-role platform",
     description:
-      "Row-level security per project, audit log lengkap untuk compliance pemerintah.",
+      "Dapat digunakan untuk pemilik program, peserta, dan narasumber sekaligus",
   },
 ];
 
@@ -106,7 +106,7 @@ export default function LoginPage() {
             </span>
             <span>Sistem internal Atourin & mitra terdaftar</span>
           </div>
-          <div>© {year} Atourin · vmt.atourin.com · v0.1</div>
+          <div>© {year} Atourin · v0.1</div>
         </div>
       </section>
 

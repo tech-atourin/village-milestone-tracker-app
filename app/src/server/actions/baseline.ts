@@ -21,7 +21,24 @@ export async function saveBaseline(input: SaveBaselineInput) {
   const parsed = saveSchema.safeParse(input);
   if (!parsed.success) return { error: "Input tidak valid" };
 
-  const supabase = createClient();
+  // Desa wisata role tidak punya RLS write di desa_baseline_data, jadi
+  // verifikasi ownership manual (representing_desa_id === project_desa.desa_id)
+  // dan tulis via admin client. Peserta tetap pakai cookie client (RLS).
+  const isDesaRole = user.global_role === "desa_wisata";
+  let supabase = createClient() as ReturnType<typeof createAdminClient>;
+  if (isDesaRole) {
+    const admin = createAdminClient();
+    const { data: pd } = await admin
+      .from("project_desa")
+      .select("desa_id")
+      .eq("id", parsed.data.project_desa_id)
+      .maybeSingle();
+    const ownedDesaId = (pd as { desa_id: string } | null)?.desa_id;
+    if (!ownedDesaId || ownedDesaId !== user.representing_desa_id) {
+      return { error: "Anda tidak berhak mengedit baseline desa ini" };
+    }
+    supabase = admin;
+  }
 
   // Upsert latest baseline row for this project_desa
   const { data: existing } = await supabase
@@ -114,5 +131,7 @@ export async function saveBaseline(input: SaveBaselineInput) {
   }
 
   revalidatePath(`/peserta/projects/${parsed.data.project_desa_id}`);
+  revalidatePath(`/desa/profil`);
+  revalidatePath(`/desa/profil/edit`);
   return { ok: true };
 }

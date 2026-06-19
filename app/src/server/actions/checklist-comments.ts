@@ -154,14 +154,10 @@ export async function addChecklistComment(
       const subId = (cpSubmitter as { submitted_by: string | null } | null)
         ?.submitted_by;
       if (subId) recipients.add(subId);
-      const { data: desaUsers } = await admin
-        .from("users")
-        .select("id")
-        .eq("representing_desa_id", ctx.desa_id)
-        .eq("global_role", "desa_wisata")
-        .is("deleted_at", null);
-      for (const d of ((desaUsers ?? []) as Array<{ id: string }>))
-        recipients.add(d.id);
+      // Note: desa_wisata role tidak di-notify untuk checklist project — mereka
+      // tidak punya akses ke halaman review checklist (cuma assessment + rapor).
+      // Cuma peserta + desa role lain yang relevan. Untuk komentar V1/V2
+      // assessment, lihat assessment-comments.ts.
     }
     recipients.delete(user.id);
     // Revalidate routes so the updated status (and new comment) shows up

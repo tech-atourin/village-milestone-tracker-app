@@ -57,7 +57,7 @@ export default async function SesiListPage() {
           description="Mulai catat sesi pertama dengan tombol di atas."
         />
       ) : (
-        <div className="overflow-hidden rounded-2xl border border-atr-outline bg-white shadow-atr-1">
+        <div className="overflow-x-auto rounded-2xl border border-atr-outline bg-white shadow-atr-1">
           <table className="w-full text-sm">
             <thead className="bg-atr-bg-soft text-left text-xs font-bold uppercase tracking-wide text-atr-fg-muted">
               <tr>

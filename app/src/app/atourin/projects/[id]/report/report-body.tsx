@@ -265,6 +265,7 @@ export async function ReportBody({
         <h2 className="mb-3 text-xs font-bold uppercase tracking-wide text-atr-fg-muted">
           Performa per Desa
         </h2>
+        <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-atr-outline text-xs text-atr-fg-muted">
@@ -289,6 +290,7 @@ export async function ReportBody({
             ))}
           </tbody>
         </table>
+        </div>
       </section>
 
       {/* Kuisioner Narasumber */}
@@ -304,6 +306,7 @@ export async function ReportBody({
             </strong>{" "}
             dari {ratingArr.length} penilaian.
           </p>
+          <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-atr-outline text-xs text-atr-fg-muted">
@@ -326,6 +329,7 @@ export async function ReportBody({
               ))}
             </tbody>
           </table>
+          </div>
         </section>
       )}
 

@@ -315,6 +315,7 @@ export function RaporView({
             Belum ada hasil pre/post test per materi untuk peserta ini.
           </p>
         ) : (
+          <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-atr-outline text-xs text-atr-fg-muted">
@@ -354,6 +355,7 @@ export function RaporView({
               })}
             </tbody>
           </table>
+          </div>
         )}
       </section>
 
@@ -363,6 +365,7 @@ export function RaporView({
           <h2 className="mb-4 text-sm font-bold uppercase tracking-wide text-atr-fg-muted">
             Sesi Pendampingan &amp; Narasumber
           </h2>
+          <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-atr-outline text-xs text-atr-fg-muted">
@@ -385,6 +388,7 @@ export function RaporView({
               ))}
             </tbody>
           </table>
+          </div>
         </section>
       )}
 

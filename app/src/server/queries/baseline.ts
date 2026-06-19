@@ -1,6 +1,6 @@
 import "server-only";
 
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createAdminClient } from "@/lib/supabase/server";
 import type { BaselineSchemaRow } from "@/lib/baseline/types";
 
 export async function getDefaultBaselineSchema(): Promise<BaselineSchemaRow | null> {
@@ -15,8 +15,11 @@ export async function getDefaultBaselineSchema(): Promise<BaselineSchemaRow | nu
   return data as unknown as BaselineSchemaRow | null;
 }
 
-export async function getBaselineData(projectDesaId: string) {
-  const supabase = createClient();
+export async function getBaselineData(
+  projectDesaId: string,
+  opts?: { asAdmin?: boolean },
+) {
+  const supabase = opts?.asAdmin ? createAdminClient() : createClient();
   const { data } = await supabase
     .from("desa_baseline_data")
     .select("id, schema_version, data, submitted_at, updated_at")

@@ -364,7 +364,7 @@ function FormResultsTable({
         dari {filtered.length} hasil
       </p>
 
-      <div className="overflow-hidden rounded-lg border border-atr-outline">
+      <div className="overflow-x-auto rounded-lg border border-atr-outline">
         <table className="w-full text-sm">
           <thead className="bg-atr-bg-soft text-left text-xs font-bold uppercase tracking-wide text-atr-fg-muted">
             <tr>
@@ -628,7 +628,7 @@ function NarasumberRatingTable({ rows }: { rows: NarasumberRatingRow[] }) {
         dari {filtered.length} penilaian
       </p>
 
-      <div className="overflow-hidden rounded-lg border border-atr-outline">
+      <div className="overflow-x-auto rounded-lg border border-atr-outline">
         <table className="w-full text-sm">
           <thead className="bg-atr-bg-soft text-left text-xs font-bold uppercase tracking-wide text-atr-fg-muted">
             <tr>

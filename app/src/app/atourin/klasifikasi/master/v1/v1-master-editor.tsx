@@ -105,7 +105,7 @@ export function V1MasterEditor({
           Belum ada kriteria di tier ini.
         </div>
       ) : (
-        <div className="overflow-hidden rounded-2xl border border-atr-outline bg-white">
+        <div className="overflow-x-auto rounded-2xl border border-atr-outline bg-white">
           <table className="w-full text-sm">
             <thead className="bg-atr-bg-soft text-left text-[10px] uppercase tracking-wide text-atr-fg-muted">
               <tr>

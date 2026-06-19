@@ -14,6 +14,7 @@ import {
   MessageSquare,
 } from "lucide-react";
 import { submitChecklistItem } from "@/server/actions/checklist";
+import { queueMutation } from "@/lib/offline/queue";
 import type { ChecklistItemRow } from "@/server/queries/peserta";
 
 const STATUS = {
@@ -52,6 +53,9 @@ export function ChecklistItemList({
   const [, startTransition] = useTransition();
   // Track which item is submitting so only its button spins (not all of them).
   const [busyId, setBusyId] = useState<string | null>(null);
+  // Locally mark items that were queued offline so UI reflects pending state
+  // immediately even though the server hasn't received them yet.
+  const [queuedIds, setQueuedIds] = useState<Set<string>>(new Set());
 
   function submit(item: ChecklistItemRow) {
     if (
@@ -68,6 +72,30 @@ export function ChecklistItemList({
     )
       return;
     setBusyId(item.project_checklist_item_id);
+
+    // Offline path: persist to queue, mark optimistically.
+    if (typeof navigator !== "undefined" && !navigator.onLine) {
+      (async () => {
+        try {
+          await queueMutation("submit_checklist", {
+            project_desa_id: projectDesaId,
+            project_topik_id: projectTopikId,
+            project_checklist_item_id: item.project_checklist_item_id,
+          });
+          setQueuedIds((s) => {
+            const n = new Set(s);
+            n.add(item.project_checklist_item_id);
+            return n;
+          });
+        } catch (e) {
+          alert((e as Error).message);
+        } finally {
+          setBusyId(null);
+        }
+      })();
+      return;
+    }
+
     startTransition(async () => {
       const r = await submitChecklistItem({
         project_desa_id: projectDesaId,
@@ -91,11 +119,13 @@ export function ChecklistItemList({
   return (
     <ul className="space-y-3">
       {items.map((item) => {
-        const cfg = STATUS[item.status];
+        const isQueued = queuedIds.has(item.project_checklist_item_id);
+        const effectiveStatus = isQueued ? "submitted" : item.status;
+        const cfg = STATUS[effectiveStatus];
         const Icon = cfg.icon;
-        const isPending = item.status === "submitted";
-        const isApproved = item.status === "approved";
-        const isRejected = item.status === "rejected";
+        const isPending = effectiveStatus === "submitted";
+        const isApproved = effectiveStatus === "approved";
+        const isRejected = effectiveStatus === "rejected";
         return (
           <li
             key={item.project_checklist_item_id}
@@ -138,6 +168,14 @@ export function ChecklistItemList({
                       <span className="inline-flex items-center gap-1 rounded-full bg-atr-purple-50 px-2 py-0.5 text-[10px] font-bold text-atr-purple-600">
                         <Paperclip className="h-2.5 w-2.5" />
                         {item.evidence_count} bukti
+                      </span>
+                    )}
+                    {isQueued && (
+                      <span
+                        className="inline-flex items-center gap-1 rounded-full bg-atr-yellow/15 px-2 py-0.5 text-[10px] font-bold text-atr-fg"
+                        title="Tersimpan offline, akan disinkronkan saat ada sinyal"
+                      >
+                        Tersimpan offline
                       </span>
                     )}
                     {item.has_unanswered_review && (

@@ -6,10 +6,12 @@
 // else — full offline sync (background queue) is Phase 2+.
 // =====================================================
 
-const CACHE = "vmt-v1";
+const CACHE = "vmt-v2";
 const SHELL = [
   "/manifest.json",
   "/logo/vmt/vmt-app-icon.svg",
+  "/logo/vmt/vmt-app-icon-192.png",
+  "/logo/vmt/vmt-app-icon-512.png",
   "/logo/vmt/vmt-mark.svg",
   "/logo/vmt/vmt-wordmark-onpurple.svg",
   "/fonts/Product-Sans-Regular.ttf",

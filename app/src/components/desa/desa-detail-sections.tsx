@@ -1222,7 +1222,7 @@ function RepeaterTable({
   cols: RepeaterCol[];
 }) {
   return (
-    <div className="overflow-hidden rounded-lg border border-atr-outline">
+    <div className="overflow-x-auto rounded-lg border border-atr-outline">
       <table className="w-full text-xs">
         <thead className="bg-atr-bg-soft text-left text-[10px] uppercase tracking-wide text-atr-fg-muted">
           <tr>

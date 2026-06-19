@@ -216,7 +216,7 @@ export function NarasumberDetailView({
                       <div className="mb-2 text-[10px] font-bold uppercase tracking-wide text-atr-fg-muted">
                         Materi yang Disampaikan
                       </div>
-                      <div className="overflow-hidden rounded-lg border border-atr-outline">
+                      <div className="overflow-x-auto rounded-lg border border-atr-outline">
                         <table className="w-full text-xs">
                           <thead className="bg-atr-bg-soft text-left text-[10px] uppercase tracking-wide text-atr-fg-muted">
                             <tr>

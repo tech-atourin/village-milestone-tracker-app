@@ -297,6 +297,7 @@ export function RaporDesaPrintable({
               dari {narasumber.rating_count} penilaian.
             </span>
           </div>
+          <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-atr-outline text-xs text-atr-fg-muted">
@@ -326,6 +327,7 @@ export function RaporDesaPrintable({
               ))}
             </tbody>
           </table>
+          </div>
         </section>
       )}
 
@@ -407,7 +409,7 @@ export function RaporDesaPrintable({
           <Users className="h-3.5 w-3.5" />
           Perwakilan Peserta ({peserta.length})
         </h2>
-        <div className="overflow-hidden rounded-2xl border border-atr-outline">
+        <div className="overflow-x-auto rounded-2xl border border-atr-outline">
           <table className="w-full text-sm">
             <thead className="bg-atr-bg-soft text-left text-xs font-bold uppercase tracking-wide text-atr-fg-muted">
               <tr>

@@ -115,6 +115,19 @@
     line-height: 1.4;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    /* Prevent any element wider than viewport from causing horizontal page
+       scroll. Tables/dialogs that genuinely need horizontal scroll must use
+       their own overflow-x-auto wrapper. */
+    overflow-x: hidden;
+  }
+
+  /* Long unbroken strings (URLs, hashes, emails) commonly cause mobile
+     horizontal overflow inside cards. Allow them to wrap. */
+  p,
+  span,
+  td,
+  div {
+    overflow-wrap: anywhere;
   }
 
   /* Drop the lingering mouse-click outline, keep keyboard ring */

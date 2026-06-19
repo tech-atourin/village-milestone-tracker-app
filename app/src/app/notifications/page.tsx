@@ -12,7 +12,34 @@ export default async function NotificationsPage() {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
   // Load up to 200. Bell still only loads 15.
-  const items = await listUserNotifications(user.id, 200);
+  let items = await listUserNotifications(user.id, 200);
+
+  // Desa wisata role tidak punya akses ke halaman review checklist project
+  // (cuma assessment + rapor). Filter notifikasi yang tidak actionable.
+  if (user.global_role === "desa_wisata") {
+    const allowedTemplates = new Set([
+      "criteria_submitted",
+      "criteria_verified",
+      "criteria_rejected",
+      "project_invitation",
+    ]);
+    items = items.filter((n) => {
+      if (allowedTemplates.has(n.template_key)) return true;
+      // comment_added: hanya kalau payload-nya assessment (desa_id present,
+      // no project_id — checklist comment punya project_id)
+      if (n.template_key === "comment_added") {
+        return (
+          !n.payload?.project_id &&
+          (n.payload?.desa_id ||
+            (typeof n.payload?.context_title === "string" &&
+              /assessment|kriteria|klasifikasi/i.test(
+                n.payload.context_title as string,
+              )))
+        );
+      }
+      return false;
+    });
+  }
 
   // Enrich payload.project_desa_id for peserta when missing — legacy rows
   // and certain notify call sites don't include it, which breaks the

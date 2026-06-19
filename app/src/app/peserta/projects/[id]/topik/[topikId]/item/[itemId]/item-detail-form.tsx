@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { uploadEvidence, deleteEvidence } from "@/server/actions/evidence";
 import { submitChecklistItem } from "@/server/actions/checklist";
+import { queueMutation } from "@/lib/offline/queue";
 import { compressIfImage } from "@/lib/image-compress";
 import { CountBadge } from "@/components/ui/count-badge";
 import { ChecklistDiscussion } from "@/components/checklist/checklist-discussion";
@@ -90,6 +91,7 @@ export function ItemDetailForm({
     total: number;
   } | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [queuedNotice, setQueuedNotice] = useState<string | null>(null);
 
   const status = existingProgress?.status ?? "not_started";
   const statusCfg = STATUS_BAR[status];
@@ -123,6 +125,58 @@ export function ItemDetailForm({
     const list = Array.from(files);
     if (list.length === 0) return;
     setError(null);
+    setQueuedNotice(null);
+
+    // Offline path: compress, base64, push everything to one queue item.
+    // On reconnect, queue handler will ensure progress row + upload per file.
+    if (typeof navigator !== "undefined" && !navigator.onLine) {
+      setProgress({ current: 0, total: list.length });
+      try {
+        const queuedFiles: Array<{
+          filename: string;
+          mime_type: string;
+          base64: string;
+        }> = [];
+        for (let i = 0; i < list.length; i++) {
+          setProgress({ current: i + 1, total: list.length });
+          const compressed = await compressIfImage(list[i]);
+          if (compressed.size > 50 * 1024 * 1024) {
+            setError(`${list[i].name}: terlalu besar (maks 50 MB)`);
+            continue;
+          }
+          const buf = await compressed.arrayBuffer();
+          const bytes = new Uint8Array(buf);
+          let binary = "";
+          for (let j = 0; j < bytes.length; j++)
+            binary += String.fromCharCode(bytes[j]);
+          queuedFiles.push({
+            filename: compressed.name,
+            mime_type: compressed.type || "application/octet-stream",
+            base64: btoa(binary),
+          });
+        }
+        if (queuedFiles.length > 0) {
+          await queueMutation("submit_with_evidence", {
+            project_desa_id: projectDesaId,
+            project_topik_id: projectTopikId,
+            project_checklist_item_id: checklistItemId,
+            existing_checklist_progress_id: existingProgress?.id ?? null,
+            caption: caption.trim() || null,
+            files: queuedFiles,
+          });
+          setQueuedNotice(
+            `${queuedFiles.length} file tersimpan offline. Akan otomatis diupload saat ada sinyal.`,
+          );
+          setCaption("");
+        }
+      } catch (e) {
+        setError((e as Error).message);
+      } finally {
+        setProgress(null);
+      }
+      return;
+    }
+
     setProgress({ current: 0, total: list.length });
     startTransition(async () => {
       try {
@@ -343,6 +397,11 @@ export function ItemDetailForm({
         {error && (
           <div className="rounded-lg border border-atr-red/30 bg-atr-red/10 p-3 text-xs text-atr-red">
             {error}
+          </div>
+        )}
+        {queuedNotice && (
+          <div className="rounded-lg border border-atr-yellow/40 bg-atr-yellow/10 p-3 text-xs text-atr-fg">
+            {queuedNotice}
           </div>
         )}
       </section>

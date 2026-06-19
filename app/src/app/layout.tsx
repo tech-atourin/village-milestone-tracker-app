@@ -3,6 +3,7 @@ import { Suspense } from "react";
 import "./globals.css";
 import { ServiceWorkerRegister } from "@/components/sw-register";
 import { OfflineIndicator } from "@/components/offline-indicator";
+import { OfflineHandlersInit } from "@/components/offline-handlers-init";
 import { RouteProgress } from "@/components/route-progress";
 
 export const metadata: Metadata = {
@@ -41,6 +42,7 @@ export default function RootLayout({
         </Suspense>
         {children}
         <OfflineIndicator />
+        <OfflineHandlersInit />
         <ServiceWorkerRegister />
       </body>
     </html>

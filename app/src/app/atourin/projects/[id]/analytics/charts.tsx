@@ -578,7 +578,7 @@ export function AnalyticsCharts({
               Top 5 Desa berdasarkan Progress Checklist
             </h3>
           </header>
-          <div className="overflow-hidden rounded-lg border border-atr-outline">
+          <div className="overflow-x-auto rounded-lg border border-atr-outline">
             <table className="w-full text-sm">
               <thead className="bg-atr-bg-soft text-left text-xs font-bold uppercase tracking-wide text-atr-fg-muted">
                 <tr>
