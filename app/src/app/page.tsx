@@ -18,10 +18,13 @@ import {
 import { getCurrentUser, scopeHomePath } from "@/lib/auth/rbac";
 
 export const metadata = {
-  title: "VMT — Platform Manajemen Program Pendampingan",
+  title: "Village Milestone Tracker — Platform Manajemen Program Pendampingan",
   description:
     "Village Milestone Tracker by Atourin. Platform multi-tenant untuk Pemerintah, BUMN/Swasta, dan NGO dalam mengelola program pelatihan, pendampingan, dan klasifikasi desa wisata secara terukur.",
 };
+
+const WA_HREF =
+  "https://wa.me/6281220401113?text=Halo%20tim%20Atourin%2C%20saya%20tertarik%20dengan%20Village%20Milestone%20Tracker.";
 
 const AUDIENCES = [
   {
@@ -49,7 +52,7 @@ const FEATURES = [
     icon: ClipboardCheck,
     title: "Project & checklist terstruktur",
     description:
-      "Template materi, topik, dan checklist siap pakai. Peserta mengisi, narasumber mengulas, admin memverifikasi - semua ter-audit.",
+      "Template materi, topik, dan checklist siap pakai. Peserta mengisi, narasumber mengulas, admin memverifikasi, semua ter-audit.",
   },
   {
     icon: BarChart3,
@@ -61,19 +64,19 @@ const FEATURES = [
     icon: Users,
     title: "Multi-role bawaan",
     description:
-      "Superadmin, mitra organisasi, peserta program, narasumber, dan desa wisata - masing-masing dengan dashboard sendiri.",
+      "Superadmin, mitra organisasi, peserta program, narasumber, dan desa wisata. Masing-masing punya dashboard sendiri sesuai perannya.",
   },
   {
     icon: Sparkles,
     title: "AI insight & rekomendasi",
     description:
-      "Ringkasan otomatis program, SWOT per desa, rekomendasi rencana aksi - mempercepat pengambilan keputusan.",
+      "Ringkasan otomatis program, SWOT per desa, dan rekomendasi rencana aksi untuk mempercepat pengambilan keputusan.",
   },
   {
     icon: Wifi,
     title: "Siap untuk lapangan",
     description:
-      "PWA installable, app shell offline, indikator sinkronisasi - dirancang untuk dipakai di lokasi dengan sinyal terbatas.",
+      "App installable, support offline mode, dan indikator sinkronisasi. Dirancang untuk dipakai di lokasi dengan sinyal terbatas.",
   },
   {
     icon: ShieldCheck,
@@ -103,7 +106,7 @@ const ROLE_HIGHLIGHTS = [
   {
     label: "Narasumber",
     items: [
-      "Catat sesi pendampingan + daily report ADWI",
+      "Catat sesi pendampingan + daily report",
       "Atensi terhadap peserta, rencana aksi tindak lanjut",
       "Kuisioner dari peserta jadi indikator performa",
     ],
@@ -111,7 +114,7 @@ const ROLE_HIGHLIGHTS = [
   {
     label: "Desa wisata",
     items: [
-      "Self-assessment Permenpar + assessment Jadesta",
+      "Assessment klasifikasi desa wisata nasional",
       "Profil desa kolaboratif dengan peserta program",
       "Rapor desa & sertifikat hasil pendampingan",
     ],
@@ -129,14 +132,16 @@ export default async function LandingPage() {
           <div className="flex items-center gap-2.5">
             <Image
               src="/logo/vmt/vmt-app-icon.svg"
-              alt="VMT"
+              alt="Village Milestone Tracker"
               width={36}
               height={36}
               className="rounded-lg shadow-atr-1"
               priority
             />
             <div className="leading-tight">
-              <div className="text-sm font-bold tracking-tight">VMT</div>
+              <div className="text-sm font-bold tracking-tight">
+                Village Milestone Tracker
+              </div>
               <div className="text-[10px] uppercase tracking-wider text-atr-fg-muted">
                 by Atourin
               </div>
@@ -188,13 +193,14 @@ export default async function LandingPage() {
               <span className="text-atr-yellow">dengan tertib.</span>
             </h1>
             <p className="max-w-xl text-base leading-relaxed text-white/85">
-              VMT dirancang untuk{" "}
+              Village Milestone Tracker dirancang untuk{" "}
               <strong className="font-bold text-white">Pemerintah</strong>,{" "}
               <strong className="font-bold text-white">BUMN/Swasta</strong>, dan{" "}
               <strong className="font-bold text-white">NGO</strong> yang
-              menjalankan program pendampingan komunitas - dari kelas pelatihan,
-              klasifikasi desa wisata, hingga rapor capacity building peserta -
-              dalam satu sistem multi-tenant yang akuntabel.
+              menjalankan program pendampingan komunitas. Mulai dari kelas
+              pelatihan, klasifikasi desa wisata, hingga rapor capacity building
+              peserta, semua terkelola dalam satu sistem multi-tenant yang
+              akuntabel.
             </p>
             <div className="flex flex-wrap items-center gap-3 pt-2">
               <Link
@@ -205,7 +211,9 @@ export default async function LandingPage() {
                 <ArrowRight className="h-4 w-4" />
               </Link>
               <a
-                href="mailto:halo@atourin.com?subject=Demo%20VMT"
+                href={WA_HREF}
+                target="_blank"
+                rel="noopener noreferrer"
                 className="inline-flex h-11 items-center rounded-lg border border-white/30 bg-white/5 px-5 text-sm font-bold text-white backdrop-blur transition hover:bg-white/15"
               >
                 Hubungi tim Atourin
@@ -218,7 +226,7 @@ export default async function LandingPage() {
               </div>
               <div className="inline-flex items-center gap-1.5">
                 <Smartphone className="h-3.5 w-3.5 text-atr-yellow" />
-                Installable PWA, siap lapangan
+                Support offline mode, siap di lapangan
               </div>
               <div className="inline-flex items-center gap-1.5">
                 <ShieldCheck className="h-3.5 w-3.5 text-atr-yellow" />
@@ -265,7 +273,7 @@ export default async function LandingPage() {
               <div className="mt-4 flex items-center gap-2 rounded-lg bg-white/10 p-3 text-[11px] text-white/85">
                 <Sparkles className="h-3.5 w-3.5 shrink-0 text-atr-yellow" />
                 <span>
-                  &quot;Program berjalan stabil. 3 desa siap promosi tier Maju.&quot;
+                  &quot;Program berjalan stabil. 3 desa telah menyelesaikan checklist 100%.&quot;
                   <span className="ml-1 text-white/55">AI Insight</span>
                 </span>
               </div>
@@ -284,9 +292,10 @@ export default async function LandingPage() {
               Penyelenggara program pendampingan berbasis komunitas
             </h2>
             <p className="mt-2 text-sm leading-relaxed text-atr-fg-muted">
-              Apapun bentuk programnya - pelatihan, pendampingan, klasifikasi,
-              hibah - selama menyentuh komunitas desa, VMT memberi kerangka
-              dokumentasi & pengukuran yang sama.
+              Apapun bentuk programnya, baik pelatihan, pendampingan,
+              klasifikasi, maupun hibah, selama menyentuh komunitas desa,
+              Village Milestone Tracker memberi kerangka dokumentasi dan
+              pengukuran yang sama.
             </p>
           </div>
           <div className="grid gap-4 sm:grid-cols-3">
@@ -357,8 +366,8 @@ export default async function LandingPage() {
               Tiap pihak punya ruang & tanggung jawabnya
             </h2>
             <p className="mt-2 text-sm leading-relaxed text-atr-fg-muted">
-              VMT memetakan alur kerja per peran sehingga setiap pihak fokus
-              pada apa yang menjadi tugasnya - tanpa kehilangan benang merah.
+              Village Milestone Tracker memetakan alur kerja per peran sehingga
+              setiap pihak fokus pada tugasnya tanpa kehilangan benang merah.
             </p>
           </div>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -388,7 +397,7 @@ export default async function LandingPage() {
       </section>
 
       <section className="py-16">
-        <div className="mx-auto max-w-4xl px-5">
+        <div className="mx-auto max-w-6xl px-5">
           <div className="relative overflow-hidden rounded-3xl bg-atr-purple-gradient p-10 text-white shadow-atr-3 sm:p-14">
             <div
               className="pointer-events-none absolute inset-0 opacity-40"
@@ -403,8 +412,9 @@ export default async function LandingPage() {
                   Siap menjalankan program lebih akuntabel?
                 </h2>
                 <p className="mt-2 max-w-md text-sm leading-relaxed text-white/85">
-                  Akun VMT dibuat oleh tim Atourin atau admin organisasi mitra.
-                  Hubungi kami untuk demo atau pendaftaran organisasi Anda.
+                  Akun Village Milestone Tracker dibuat oleh tim Atourin atau
+                  admin organisasi mitra. Hubungi kami untuk demo atau
+                  pendaftaran organisasi Anda.
                 </p>
               </div>
               <div className="flex flex-col gap-2 sm:items-end">
@@ -412,11 +422,13 @@ export default async function LandingPage() {
                   href="/login"
                   className="inline-flex h-11 items-center justify-center gap-1.5 rounded-lg bg-white px-5 text-sm font-bold text-atr-purple-700 shadow-atr-1 transition hover:bg-atr-yellow hover:text-atr-fg"
                 >
-                  Masuk ke VMT
+                  Masuk ke akun
                   <ArrowRight className="h-4 w-4" />
                 </Link>
                 <a
-                  href="mailto:halo@atourin.com?subject=Demo%20VMT"
+                  href={WA_HREF}
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="inline-flex h-11 items-center justify-center rounded-lg border border-white/30 bg-white/5 px-5 text-sm font-bold text-white backdrop-blur transition hover:bg-white/15"
                 >
                   Jadwalkan demo
@@ -443,8 +455,13 @@ export default async function LandingPage() {
             <Link href="/login" className="hover:text-atr-fg">
               Masuk
             </Link>
-            <a href="mailto:halo@atourin.com" className="hover:text-atr-fg">
-              halo@atourin.com
+            <a
+              href={WA_HREF}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:text-atr-fg"
+            >
+              Hubungi via WhatsApp
             </a>
           </div>
         </div>
