@@ -105,18 +105,14 @@ export default async function SesiDetailPage({
             </div>
             <span
               className={`inline-flex shrink-0 rounded-full px-3 py-1 text-xs font-bold ${
-                data.status === "verified"
+                data.status === "submitted" || data.status === "verified"
                   ? "bg-atr-arti/15 text-atr-arti"
-                  : data.status === "submitted"
-                    ? "bg-atr-yellow/20 text-atr-fg"
-                    : "bg-atr-bg-soft text-atr-fg-muted"
+                  : "bg-atr-bg-soft text-atr-fg-muted"
               }`}
             >
-              {data.status === "verified"
-                ? "Terverifikasi"
-                : data.status === "submitted"
-                  ? "Submitted"
-                  : "Draft"}
+              {data.status === "submitted" || data.status === "verified"
+                ? "Submitted"
+                : "Draft"}
             </span>
           </div>
         </div>

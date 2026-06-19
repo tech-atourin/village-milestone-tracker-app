@@ -554,8 +554,12 @@ export function AnalyticsCharts({
             </h3>
           </header>
           <div className="space-y-3">
-            <SesiBar label="Verified" value={data.sessions_verified} total={data.sessions_total} color={ARTI} />
-            <SesiBar label="Submitted" value={data.sessions_submitted} total={data.sessions_total} color={YELLOW} />
+            <SesiBar
+              label="Submitted"
+              value={data.sessions_submitted + data.sessions_verified}
+              total={data.sessions_total}
+              color={ARTI}
+            />
             <SesiBar label="Draft" value={data.sessions_draft} total={data.sessions_total} color={MUTED} />
           </div>
           <div className="mt-5 rounded-lg border border-atr-outline bg-atr-bg-soft p-3 text-xs text-atr-fg-muted">

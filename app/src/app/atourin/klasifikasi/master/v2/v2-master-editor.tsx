@@ -122,6 +122,22 @@ export function V2MasterEditor({
   const [openPillars, setOpenPillars] = useState<Record<string, boolean>>({});
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
+  const [tierFilter, setTierFilter] = useState<Tier | "all">("all");
+
+  // Counts per tier across all pillars
+  const tierCounts: Record<Tier | "all", number> = {
+    all: 0,
+    rintisan: 0,
+    berkembang: 0,
+    maju: 0,
+    mandiri: 0,
+  };
+  for (const p of pillars) {
+    for (const q of p.questions) {
+      tierCounts.all++;
+      tierCounts[q.tier ?? "rintisan"]++;
+    }
+  }
 
   function togglePillar(key: string) {
     setOpenPillars((p) => ({ ...p, [key]: !p[key] }));
@@ -312,16 +328,30 @@ export function V2MasterEditor({
       </div>
 
       <div className="rounded-2xl border border-atr-purple/30 bg-atr-purple-50/40 p-3 text-[11px] text-atr-fg-muted">
-        💡 Setiap pertanyaan harus dimasukkan ke salah satu kategori tier:
+        💡 Setiap pertanyaan dimasukkan ke salah satu tier:
         <b className="text-atr-fg"> Rintisan → Berkembang → Maju → Mandiri</b>.
         Desa wisata baru naik ke tier berikutnya kalau semua pertanyaan di tier
         sebelumnya sudah dijawab &amp; diapprove reviewer.
       </div>
 
-      <div className="flex items-center justify-between">
-        <h2 className="text-sm font-bold uppercase tracking-wide text-atr-purple">
-          Pillar &amp; Pertanyaan
-        </h2>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <nav className="flex flex-wrap gap-1.5">
+          <TierChip
+            active={tierFilter === "all"}
+            onClick={() => setTierFilter("all")}
+            label="Semua"
+            count={tierCounts.all}
+          />
+          {TIERS.map((t) => (
+            <TierChip
+              key={t}
+              active={tierFilter === t}
+              onClick={() => setTierFilter(t)}
+              label={TIER_LABEL[t]}
+              count={tierCounts[t]}
+            />
+          ))}
+        </nav>
         <button
           type="button"
           onClick={addPillar}
@@ -343,6 +373,7 @@ export function V2MasterEditor({
               key={p.key + pIdx}
               pillar={p}
               open={openPillars[p.key] ?? true}
+              tierFilter={tierFilter}
               onToggle={() => togglePillar(p.key)}
               onChange={(patch) => updatePillar(pIdx, patch)}
               onRemove={() => removePillar(pIdx)}
@@ -391,6 +422,7 @@ export function V2MasterEditor({
 function PillarCard({
   pillar,
   open,
+  tierFilter,
   onToggle,
   onChange,
   onRemove,
@@ -400,6 +432,7 @@ function PillarCard({
 }: {
   pillar: Pillar;
   open: boolean;
+  tierFilter: Tier | "all";
   onToggle: () => void;
   onChange: (patch: Partial<Pillar>) => void;
   onRemove: () => void;
@@ -458,7 +491,7 @@ function PillarCard({
             />
           </Field>
 
-          {TIERS.map((tier) => (
+          {(tierFilter === "all" ? TIERS : [tierFilter]).map((tier) => (
             <div key={tier} className="space-y-2 rounded-xl border border-atr-outline bg-atr-bg-soft/30 p-3">
               <div className="flex items-center justify-between">
                 <div className="inline-flex items-center gap-2">
@@ -640,6 +673,39 @@ function QuestionCard({
         </div>
       )}
     </div>
+  );
+}
+
+function TierChip({
+  active,
+  onClick,
+  label,
+  count,
+}: {
+  active: boolean;
+  onClick: () => void;
+  label: string;
+  count: number;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`inline-flex h-9 items-center gap-1.5 rounded-full px-3 text-xs font-bold transition ${
+        active
+          ? "bg-atr-purple text-white"
+          : "border border-atr-outline bg-white text-atr-fg-muted hover:bg-atr-bg-soft"
+      }`}
+    >
+      {label}
+      <span
+        className={`inline-flex h-5 min-w-[20px] items-center justify-center rounded-full px-1 text-[10px] ${
+          active ? "bg-white/25" : "bg-atr-bg-soft"
+        }`}
+      >
+        {count}
+      </span>
+    </button>
   );
 }
 

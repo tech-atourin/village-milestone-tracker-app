@@ -20,13 +20,13 @@ import { EmptyState } from "@/components/ui/empty-state";
 
 const STATUS_BADGE: Record<string, string> = {
   draft: "bg-atr-bg-soft text-atr-fg-muted",
-  submitted: "bg-atr-yellow/20 text-atr-fg",
+  submitted: "bg-atr-arti/15 text-atr-arti",
   verified: "bg-atr-arti/15 text-atr-arti",
 };
 const STATUS_LABEL: Record<string, string> = {
   draft: "Draft",
   submitted: "Submitted",
-  verified: "Verified",
+  verified: "Submitted",
 };
 
 function fmtDate(s: string) {

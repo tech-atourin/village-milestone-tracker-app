@@ -219,9 +219,9 @@ async function loadProjectSummary(projectId: string): Promise<{
     strengths.push(
       `Rata-rata peningkatan post-test +${avgDelta} poin - pelatihan efektif.`,
     );
-  if (analytics.sessions_verified > 0)
+  if (analytics.sessions_submitted + analytics.sessions_verified > 0)
     strengths.push(
-      `${analytics.sessions_verified} sesi pendampingan sudah terverifikasi.`,
+      `${analytics.sessions_submitted + analytics.sessions_verified} sesi pendampingan sudah submitted oleh narasumber.`,
     );
   if (ratingAvg != null && ratingAvg >= 4)
     strengths.push(
@@ -296,7 +296,7 @@ async function loadProjectSummary(projectId: string): Promise<{
         ? ` dan ${narasumberIds.size} narasumber.`
         : "."),
     analytics.sessions_total > 0
-      ? `Sudah ada ${analytics.sessions_total} sesi pendampingan tercatat (${analytics.sessions_verified} verified).`
+      ? `Sudah ada ${analytics.sessions_total} sesi pendampingan tercatat (${analytics.sessions_submitted + analytics.sessions_verified} sudah submitted).`
       : "Belum ada sesi pendampingan tercatat.",
     avgDelta != null
       ? `Rata-rata pre-test ${Math.round(preAvg!)} → post-test ${Math.round(postAvg!)} (Δ ${avgDelta > 0 ? "+" : ""}${avgDelta}).`

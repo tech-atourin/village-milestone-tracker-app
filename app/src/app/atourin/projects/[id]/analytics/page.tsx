@@ -52,7 +52,7 @@ export default async function ProjectAnalyticsPage({
           icon={CalendarDays}
           label="Sesi Pendampingan"
           value={data.sessions_total}
-          hint={`${data.sessions_verified} verified · ${data.sessions_draft} draft`}
+          hint={`${data.sessions_submitted + data.sessions_verified} submitted · ${data.sessions_draft} draft`}
         />
         <Stat
           icon={ListChecks}

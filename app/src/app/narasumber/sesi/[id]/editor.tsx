@@ -243,7 +243,12 @@ export function SesiDetailEditor({
   }
 
   function doSubmit() {
-    if (!confirm("Submit sesi ini untuk verifikasi? Setelah ini status berubah ke 'Submitted'.")) return;
+    if (
+      !confirm(
+        "Submit laporan sesi ini? Setelah submit, laporan dianggap final dan tidak bisa diedit lagi.",
+      )
+    )
+      return;
     startTransition(async () => {
       const r = await submitSession(data.id);
       if (r.error) setError(r.error);
@@ -323,7 +328,7 @@ export function SesiDetailEditor({
                 className="inline-flex h-10 items-center gap-2 rounded-lg bg-atr-arti px-4 text-sm font-bold text-white hover:opacity-90 disabled:opacity-50"
               >
                 <Send className="h-4 w-4" />
-                Submit untuk verifikasi
+                Submit laporan (final)
               </button>
             </div>
           )}

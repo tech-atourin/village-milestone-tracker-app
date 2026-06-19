@@ -95,7 +95,7 @@ export async function OverviewTab({
       value: data.sessions_total,
       hint:
         data.sessions_total > 0
-          ? `${data.sessions_verified} verified · ${data.sessions_draft} draft`
+          ? `${data.sessions_submitted + data.sessions_verified} submitted · ${data.sessions_draft} draft`
           : "belum ada sesi",
       icon: CalendarDays,
       tint: "bg-atr-purple-50",

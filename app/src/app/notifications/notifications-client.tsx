@@ -75,9 +75,12 @@ function linkFor(
   switch (template_key) {
     case "checklist_submitted":
     case "evidence_submitted":
-      // Reviewer goes to project review queue
-      if (projectId && (scope === "atourin" || scope === "mitra" || scope === "narasumber"))
-        return `/${scope}/projects/${projectId}?tab=review`;
+      // Reviewer goes to project review queue.
+      // Narasumber: dedicated /review page; atourin/mitra: tab=evidence
+      if (projectId && scope === "narasumber")
+        return `/narasumber/projects/${projectId}/review`;
+      if (projectId && (scope === "atourin" || scope === "mitra"))
+        return `/${scope}/projects/${projectId}?tab=evidence`;
       return projectId ? `/${scope}/projects/${projectId}` : null;
     case "checklist_approved":
     case "checklist_rejected":
@@ -98,11 +101,10 @@ function linkFor(
     case "comment_added":
       // Checklist discussion (payload has project_id) → project review queue
       if (projectId && scope === "peserta") return pesertaProjectHref;
-      if (
-        projectId &&
-        (scope === "atourin" || scope === "mitra" || scope === "narasumber")
-      )
-        return `/${scope}/projects/${projectId}?tab=review`;
+      if (projectId && scope === "narasumber")
+        return `/narasumber/projects/${projectId}/review`;
+      if (projectId && (scope === "atourin" || scope === "mitra"))
+        return `/${scope}/projects/${projectId}?tab=evidence`;
       // V1 assessment comment → klasifikasi review / desa self-assessment
       if (scope === "desa") return "/desa/self-assessment";
       if (desaId && (scope === "atourin" || scope === "mitra"))
