@@ -86,16 +86,22 @@ const TEMPLATES: Record<
 
 // =====================================================
 // notifyMany - fan-out helper that sends the same template to
-// multiple users (deduplicated). Channel defaults to in_app + email
-// when applicable. Failures are isolated per recipient.
+// multiple users (deduplicated). Channel defaults to in_app only
+// (email sementara dimatikan, lihat NOTIFY_EMAIL_DISABLED).
+// Failures are isolated per recipient.
 // =====================================================
+const NOTIFY_EMAIL_DISABLED = true;
+
 export async function notifyMany(opts: {
   user_ids: string[];
   template_key: NotifyTemplateKey;
   payload: Record<string, unknown>;
   channels?: Array<"in_app" | "email">;
 }): Promise<void> {
-  const channels = opts.channels ?? ["in_app", "email"];
+  const requested = opts.channels ?? ["in_app", "email"];
+  const channels = NOTIFY_EMAIL_DISABLED
+    ? requested.filter((c) => c !== "email")
+    : requested;
   const unique = Array.from(new Set(opts.user_ids.filter(Boolean)));
   for (const uid of unique) {
     for (const ch of channels) {
@@ -209,7 +215,10 @@ export async function notify(input: NotifyPayload): Promise<void> {
   } | null;
   if (!u) return;
 
-  // EMAIL channel - via Google Workspace SMTP (nodemailer)
+  // EMAIL channel - via Google Workspace SMTP (nodemailer).
+  // Sementara dimatikan global lewat NOTIFY_EMAIL_DISABLED — skip kirim
+  // dan jangan mark pending biar log bersih.
+  if (input.channel === "email" && NOTIFY_EMAIL_DISABLED) return;
   if (input.channel === "email") {
     const smtpUser = process.env.SMTP_USER;
     const smtpPass = process.env.SMTP_PASSWORD;
