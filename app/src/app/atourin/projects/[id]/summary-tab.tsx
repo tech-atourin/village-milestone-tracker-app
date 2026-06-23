@@ -33,6 +33,7 @@ async function loadProjectSummary(projectId: string): Promise<{
   project_name: string;
   total_desa: number;
   total_peserta: number;
+  peserta_attendance: { offline: number; online: number };
   avg_delta_test: number | null;
   pre_avg: number | null;
   post_avg: number | null;
@@ -313,6 +314,7 @@ async function loadProjectSummary(projectId: string): Promise<{
     project_name: analytics.project.name,
     total_desa: desaCount,
     total_peserta: analytics.peserta_total,
+    peserta_attendance: analytics.peserta_attendance,
     avg_delta_test: avgDelta,
     pre_avg: preAvg,
     post_avg: postAvg,
@@ -369,9 +371,10 @@ export async function SummaryTab({
             label="Total Peserta"
             value={summary.total_peserta}
             hint={
-              summary.pre_avg != null
-                ? `Avg pre/post ${Math.round(summary.pre_avg!)} / ${Math.round(summary.post_avg!)}`
-                : "Belum ada test result"
+              `${summary.peserta_attendance?.offline ?? 0} offline · ${summary.peserta_attendance?.online ?? 0} online` +
+              (summary.pre_avg != null
+                ? ` · Pre/Post ${Math.round(summary.pre_avg!)}/${Math.round(summary.post_avg!)}`
+                : "")
             }
           />
           <MiniStat

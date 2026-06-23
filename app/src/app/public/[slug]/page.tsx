@@ -13,7 +13,9 @@ import {
 import { createAdminClient } from "@/lib/supabase/server";
 import { CountBadge } from "@/components/ui/count-badge";
 
-export const revalidate = 300; // 5 min ISR
+// Revalidate setiap 60 detik supaya angka KPI tidak terlalu stale relatif
+// ke dashboard internal. Sebelumnya 300 detik bikin public lag 5 menit.
+export const revalidate = 60;
 
 type TierKey = "unclassified" | "rintisan" | "berkembang" | "maju" | "mandiri";
 
@@ -29,6 +31,8 @@ type SummaryResponse = {
   stats: {
     desa_count: number;
     peserta_count: number;
+    peserta_offline: number;
+    peserta_online: number;
     narasumber_count: number;
     session_count: number;
     evidence_count: number;
@@ -151,30 +155,68 @@ async function fetchSummary(slug: string): Promise<SummaryResponse | null> {
     }
   }
 
-  // 5) memberships (peserta + narasumber)
+  // 5) memberships (peserta + narasumber). Pakai FK hint eksplisit
+  // (!project_memberships_user_id_fkey) karena project_memberships punya
+  // dua FK ke users (user_id + invited_by) — embed implisit jadi ambigu
+  // dan bikin query return 0 rows diam-diam. Sinkron dengan analytics.
   const { data: memberRows } = await supabase
     .from("project_memberships")
-    .select("user_id, role, status, user:users(id, full_name, kategori_narasumber, kompetensi)")
+    .select(
+      "user_id, role, status, user:users!project_memberships_user_id_fkey(id, full_name, kategori_narasumber, kompetensi)",
+    )
     .eq("project_id", projectId)
     .eq("status", "active");
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const members = (memberRows ?? []) as any[];
-  const pesertaCount = members.filter((m) => m.role === "peserta").length;
-  const narasumberRows = members.filter((m) => m.role === "narasumber");
-  const narasumberCount = narasumberRows.length;
-  // dedupe by user_id
-  const seen = new Set<string>();
-  const narasumber = [] as SummaryResponse["narasumber"];
-  for (const m of narasumberRows) {
-    if (!m.user || seen.has(m.user.id)) continue;
-    seen.add(m.user.id);
-    narasumber.push({
-      id: m.user.id,
-      full_name: m.user.full_name,
-      kategori: m.user.kategori_narasumber ?? null,
-      kompetensi: m.user.kompetensi ?? null,
-    });
+  const pesertaList = members.filter((m) => m.role === "peserta");
+  const pesertaCount = pesertaList.length;
+  const pesertaOffline = pesertaList.filter(
+    (m) => (m.attendance_mode ?? "offline") === "offline",
+  ).length;
+  const pesertaOnline = pesertaList.filter(
+    (m) => m.attendance_mode === "online",
+  ).length;
+  const narasumberMembers = members.filter((m) => m.role === "narasumber");
+
+  // Narasumber count = union of memberships AND anyone running a session
+  // di project ini (sama dengan project-analytics). Roster di card juga
+  // diisi dari union ini supaya konsisten dengan dashboard internal.
+  const narasumberIds = new Set<string>();
+  const narasumberById = new Map<string, SummaryResponse["narasumber"][number]>();
+  for (const m of narasumberMembers) {
+    if (!m.user_id) continue;
+    narasumberIds.add(m.user_id);
+    if (m.user && !narasumberById.has(m.user.id)) {
+      narasumberById.set(m.user.id, {
+        id: m.user.id,
+        full_name: m.user.full_name,
+        kategori: m.user.kategori_narasumber ?? null,
+        kompetensi: m.user.kompetensi ?? null,
+      });
+    }
   }
+  // Sessions → derive narasumber yang aktif tapi belum di-attach via membership.
+  const { data: sessionNs } = await supabase
+    .from("pendampingan_sessions")
+    .select(
+      "narasumber_id, narasumber:users!pendampingan_sessions_narasumber_id_fkey(id, full_name, kategori_narasumber, kompetensi)",
+    )
+    .eq("project_id", projectId);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  for (const s of ((sessionNs ?? []) as any[])) {
+    if (!s.narasumber_id) continue;
+    narasumberIds.add(s.narasumber_id);
+    if (s.narasumber && !narasumberById.has(s.narasumber.id)) {
+      narasumberById.set(s.narasumber.id, {
+        id: s.narasumber.id,
+        full_name: s.narasumber.full_name,
+        kategori: s.narasumber.kategori_narasumber ?? null,
+        kompetensi: s.narasumber.kompetensi ?? null,
+      });
+    }
+  }
+  const narasumberCount = narasumberIds.size;
+  const narasumber = Array.from(narasumberById.values());
 
   // 6) pendampingan session count + evidence count
   let sessionCount = 0;
@@ -257,6 +299,8 @@ async function fetchSummary(slug: string): Promise<SummaryResponse | null> {
     stats: {
       desa_count: pdList.length,
       peserta_count: pesertaCount,
+      peserta_offline: pesertaOffline,
+      peserta_online: pesertaOnline,
       narasumber_count: narasumberCount,
       session_count: sessionCount,
       evidence_count: evidenceCount,
@@ -369,6 +413,11 @@ export default async function PublicDashboardPage({
             label="Peserta dampingan"
             value={summary.stats.peserta_count.toString()}
             icon={GraduationCap}
+            hint={
+              summary.stats.peserta_count > 0
+                ? `${summary.stats.peserta_offline} offline · ${summary.stats.peserta_online} online`
+                : undefined
+            }
           />
           <Kpi
             label="Narasumber"
@@ -585,10 +634,12 @@ function Kpi({
   label,
   value,
   icon: Icon,
+  hint,
 }: {
   label: string;
   value: string;
   icon: React.ComponentType<{ className?: string }>;
+  hint?: string;
 }) {
   return (
     <div className="rounded-2xl border border-atr-outline bg-white p-4 shadow-atr-1">
@@ -599,6 +650,9 @@ function Kpi({
       <div className="mt-1 text-2xl font-bold tracking-tight text-atr-fg">
         {value}
       </div>
+      {hint && (
+        <div className="mt-1 text-[11px] text-atr-fg-muted">{hint}</div>
+      )}
     </div>
   );
 }

@@ -227,7 +227,16 @@ export function RaporEntryTable({
                     )}
                   </td>
                   <td className="px-4 py-3 text-atr-fg-muted">
-                    {r.desa_name ?? "-"}
+                    <div>{r.desa_name ?? "-"}</div>
+                    <span
+                      className={`mt-1 inline-flex rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${
+                        r.attendance_mode === "online"
+                          ? "border-atr-yellow/40 bg-atr-yellow/20 text-atr-fg"
+                          : "border-atr-arti/30 bg-atr-arti/15 text-atr-arti"
+                      }`}
+                    >
+                      {r.attendance_mode === "online" ? "Online" : "Offline"}
+                    </span>
                   </td>
                   <td className="px-4 py-3">
                     <ScoreInput

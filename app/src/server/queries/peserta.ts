@@ -410,3 +410,273 @@ export async function listChecklistItems(
     }),
   };
 }
+
+// =====================================================
+// Training projects (pelaku_pariwisata) for a peserta.
+// Project tanpa afiliasi desa. Return list dengan info ringkas + skor pre/post
+// dari rapor_peserta. Peserta UI tidak punya checklist progress di sini (modul
+// dijalankan via sesi narasumber + pre/post test). Tampilan: read-only.
+// =====================================================
+export type PesertaTraining = {
+  membership_id: string;
+  project_id: string;
+  project_name: string;
+  project_description: string | null;
+  period_start: string | null;
+  period_end: string | null;
+  status: string;
+  attendance_mode: "offline" | "online";
+  pre_test_score: number | null;
+  post_test_score: number | null;
+  improvement_percent: number | null;
+  topik_count: number;
+};
+
+export async function listPesertaTraining(
+  userId: string,
+): Promise<PesertaTraining[]> {
+  const supabase = createClient();
+  const { data: m } = await supabase
+    .from("project_memberships")
+    .select(
+      "id, project_id, attendance_mode, project:projects!inner(id, name, description, period_start, period_end, status, program_type, deleted_at)",
+    )
+    .eq("user_id", userId)
+    .eq("role", "peserta")
+    .eq("status", "active");
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const rows = ((m ?? []) as any[]).filter(
+    (r) =>
+      r.project &&
+      r.project.deleted_at === null &&
+      r.project.program_type === "pelaku_pariwisata",
+  );
+  if (rows.length === 0) return [];
+
+  const projectIds = Array.from(
+    new Set(rows.map((r) => r.project.id as string)),
+  );
+  const [{ data: rapors }, { data: topiks }] = await Promise.all([
+    supabase
+      .from("rapor_peserta")
+      .select("project_id, pre_test_score, post_test_score, improvement_percent")
+      .eq("user_id", userId)
+      .in("project_id", projectIds),
+    supabase
+      .from("project_topik")
+      .select("project_id")
+      .in("project_id", projectIds),
+  ]);
+
+  const raporMap = new Map<
+    string,
+    {
+      pre_test_score: number | null;
+      post_test_score: number | null;
+      improvement_percent: number | null;
+    }
+  >();
+  for (const r of (rapors ?? []) as Array<{
+    project_id: string;
+    pre_test_score: number | null;
+    post_test_score: number | null;
+    improvement_percent: number | null;
+  }>) {
+    raporMap.set(r.project_id, r);
+  }
+  const topikCountMap = new Map<string, number>();
+  for (const t of (topiks ?? []) as Array<{ project_id: string }>) {
+    topikCountMap.set(t.project_id, (topikCountMap.get(t.project_id) ?? 0) + 1);
+  }
+
+  return rows.map((r) => {
+    const rap = raporMap.get(r.project.id);
+    return {
+      membership_id: r.id as string,
+      project_id: r.project.id as string,
+      project_name: r.project.name as string,
+      project_description: (r.project.description as string) ?? null,
+      period_start: (r.project.period_start as string) ?? null,
+      period_end: (r.project.period_end as string) ?? null,
+      status: r.project.status as string,
+      attendance_mode: (r.attendance_mode ?? "offline") as "offline" | "online",
+      pre_test_score: rap?.pre_test_score ?? null,
+      post_test_score: rap?.post_test_score ?? null,
+      improvement_percent: rap?.improvement_percent ?? null,
+      topik_count: topikCountMap.get(r.project.id as string) ?? 0,
+    };
+  });
+}
+
+// Detail satu training project (untuk halaman /peserta/training/[projectId]).
+// Mencakup project info, daftar topik + checklist items (read-only), test
+// results per topik, dan sesi pendampingan yang pernah dilewati (offline).
+export type PesertaTrainingDetail = {
+  project: {
+    id: string;
+    name: string;
+    description: string | null;
+    period_start: string | null;
+    period_end: string | null;
+    status: string;
+    organization_name: string | null;
+  };
+  membership: {
+    attendance_mode: "offline" | "online";
+  };
+  topik: Array<{
+    id: string;
+    name: string;
+    description: string | null;
+    sort_order: number;
+    items: Array<{ id: string; title: string; description: string | null }>;
+  }>;
+  materi_scores: Array<{
+    topik_id: string;
+    topik_name: string;
+    pre: number | null;
+    post: number | null;
+  }>;
+  sessions: Array<{
+    id: string;
+    day_number: number;
+    session_date: string;
+    materi: string | null;
+    narasumber_name: string | null;
+  }>;
+};
+
+export async function getPesertaTrainingDetail(
+  userId: string,
+  projectId: string,
+): Promise<PesertaTrainingDetail | null> {
+  const supabase = createClient();
+  const { data: membership } = await supabase
+    .from("project_memberships")
+    .select("attendance_mode")
+    .eq("user_id", userId)
+    .eq("project_id", projectId)
+    .eq("role", "peserta")
+    .eq("status", "active")
+    .maybeSingle();
+  if (!membership) return null;
+
+  const { data: proj } = await supabase
+    .from("projects")
+    .select(
+      "id, name, description, period_start, period_end, status, organization:organizations(name)",
+    )
+    .eq("id", projectId)
+    .maybeSingle();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const project = proj as any;
+  if (!project) return null;
+
+  const { data: topikRows } = await supabase
+    .from("project_topik")
+    .select(
+      "id, name, description, sort_order, checklist_items:project_checklist_item(id, title, description, sort_order)",
+    )
+    .eq("project_id", projectId)
+    .order("sort_order", { ascending: true });
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const topik = ((topikRows ?? []) as any[]).map((t) => ({
+    id: t.id,
+    name: t.name,
+    description: t.description ?? null,
+    sort_order: t.sort_order,
+    items: ((t.checklist_items ?? []) as Array<{
+      id: string;
+      title: string;
+      description: string | null;
+      sort_order: number;
+    }>)
+      .sort((a, b) => a.sort_order - b.sort_order)
+      .map((it) => ({ id: it.id, title: it.title, description: it.description })),
+  }));
+
+  // Per-materi test results
+  const { data: trs } = await supabase
+    .from("peserta_test_results")
+    .select(
+      "score, project_topik_id, project_topik:project_topik(name, sort_order), gform:project_gforms!inner(form_type, project_id)",
+    )
+    .eq("user_id", userId)
+    .eq("gform.project_id", projectId)
+    .not("project_topik_id", "is", null);
+  type MatRow = {
+    name: string;
+    sort_order: number;
+    pre: number | null;
+    post: number | null;
+  };
+  const matMap = new Map<string, MatRow>();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  for (const r of (trs ?? []) as any[]) {
+    const id = r.project_topik_id as string;
+    if (!id) continue;
+    const cur =
+      matMap.get(id) ??
+      ({
+        name: r.project_topik?.name ?? "-",
+        sort_order: r.project_topik?.sort_order ?? 0,
+        pre: null,
+        post: null,
+      } as MatRow);
+    const score = Number(r.score);
+    if (r.gform?.form_type === "pre_test") cur.pre = score;
+    else if (r.gform?.form_type === "post_test") cur.post = score;
+    matMap.set(id, cur);
+  }
+  const materi_scores = Array.from(matMap.entries())
+    .map(([topik_id, v]) => ({
+      topik_id,
+      topik_name: v.name,
+      pre: v.pre,
+      post: v.post,
+    }))
+    .sort((a, b) => {
+      const sa = matMap.get(a.topik_id)?.sort_order ?? 0;
+      const sb = matMap.get(b.topik_id)?.sort_order ?? 0;
+      return sa - sb;
+    });
+
+  // Sessions: kalau peserta offline, kemungkinan ikut sesi (attendance).
+  // Tampilkan SEMUA sesi project (sebagai materi yang dibawakan narasumber).
+  const { data: sessRows } = await supabase
+    .from("pendampingan_sessions")
+    .select(
+      "id, day_number, session_date, materi, narasumber:users!pendampingan_sessions_narasumber_id_fkey(full_name)",
+    )
+    .eq("project_id", projectId)
+    .order("session_date", { ascending: true });
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const sessions = ((sessRows ?? []) as any[]).map((s) => ({
+    id: s.id as string,
+    day_number: s.day_number as number,
+    session_date: s.session_date as string,
+    materi: (s.materi as string) ?? null,
+    narasumber_name: (s.narasumber?.full_name as string) ?? null,
+  }));
+
+  return {
+    project: {
+      id: project.id,
+      name: project.name,
+      description: project.description ?? null,
+      period_start: project.period_start ?? null,
+      period_end: project.period_end ?? null,
+      status: project.status,
+      organization_name: project.organization?.name ?? null,
+    },
+    membership: {
+      attendance_mode:
+        ((membership as { attendance_mode: string }).attendance_mode ??
+          "offline") as "offline" | "online",
+    },
+    topik,
+    materi_scores,
+    sessions,
+  };
+}

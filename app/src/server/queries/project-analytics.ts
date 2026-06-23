@@ -11,6 +11,8 @@ export type ProjectAnalytics = {
   // Demografi peserta
   peserta_total: number;
   peserta_gender: { L: number; P: number; unknown: number };
+  // Breakdown mode kehadiran (offline = full kegiatan, online = pre/post test only)
+  peserta_attendance: { offline: number; online: number };
   // Klasifikasi tier desa (post-mapping)
   desa_total: number;
   desa_by_tier: Record<"rintisan" | "berkembang" | "maju" | "mandiri" | "unclassified", number>;
@@ -127,7 +129,9 @@ export async function getProjectAnalytics(
   // Peserta
   const { data: memberships } = await supabase
     .from("project_memberships")
-    .select("user_id, role, desa_id, user:users!project_memberships_user_id_fkey(gender)")
+    .select(
+      "user_id, role, desa_id, attendance_mode, user:users!project_memberships_user_id_fkey(gender)",
+    )
     .eq("project_id", projectId)
     .eq("status", "active");
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -135,11 +139,14 @@ export async function getProjectAnalytics(
     (m) => m.role === "peserta",
   );
   const gender = { L: 0, P: 0, unknown: 0 };
+  const attendance = { offline: 0, online: 0 };
   for (const p of peserta) {
     const g = p.user?.gender;
     if (g === "L") gender.L++;
     else if (g === "P") gender.P++;
     else gender.unknown++;
+    if (p.attendance_mode === "online") attendance.online++;
+    else attendance.offline++;
   }
 
   // Desa attached
@@ -583,6 +590,7 @@ export async function getProjectAnalytics(
     },
     peserta_total: peserta.length,
     peserta_gender: gender,
+    peserta_attendance: attendance,
     desa_total: desaRows.length,
     desa_by_tier: tierCounts,
     materi_by_kompetensi,

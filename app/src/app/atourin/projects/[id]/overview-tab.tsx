@@ -73,7 +73,7 @@ export async function OverviewTab({
       value: data.peserta_total,
       hint:
         data.peserta_total > 0
-          ? `${data.peserta_gender.L} L · ${data.peserta_gender.P} P`
+          ? `${data.peserta_attendance?.offline ?? 0} offline · ${data.peserta_attendance?.online ?? 0} online · ${data.peserta_gender.L} L · ${data.peserta_gender.P} P`
           : "belum ada peserta",
       icon: Users,
       tint: "bg-atr-purple-light/50",

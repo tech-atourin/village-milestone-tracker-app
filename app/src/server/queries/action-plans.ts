@@ -6,7 +6,7 @@ export type ActionPlanRow = {
   id: string;
   project_id: string;
   project_name: string;
-  project_desa_id: string;
+  project_desa_id: string | null;
   desa_name: string;
   timeframe: "jangka_pendek" | "jangka_menengah" | "jangka_panjang";
   title: string;
@@ -48,8 +48,8 @@ export async function listActionPlans(opts: {
     id: r.id,
     project_id: r.project_id,
     project_name: r.project?.name ?? "-",
-    project_desa_id: r.project_desa_id,
-    desa_name: r.project_desa?.desa?.name ?? "-",
+    project_desa_id: r.project_desa_id ?? null,
+    desa_name: r.project_desa?.desa?.name ?? (r.project_desa_id ? "-" : "Tanpa desa"),
     timeframe: r.timeframe,
     title: r.title,
     description: r.description,
@@ -74,7 +74,7 @@ export async function listActionPlans(opts: {
     const pdIds = new Set(
       (pds ?? []).map((r) => (r as { id: string }).id),
     );
-    rows = rows.filter((r) => pdIds.has(r.project_desa_id));
+    rows = rows.filter((r) => r.project_desa_id != null && pdIds.has(r.project_desa_id));
   }
   return rows;
 }

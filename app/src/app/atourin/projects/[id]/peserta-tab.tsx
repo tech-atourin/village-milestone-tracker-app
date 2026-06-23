@@ -22,12 +22,14 @@ export function PesertaTab({
   candidates,
   desa,
   raporBasePath = "/atourin",
+  programType = "desa_based",
 }: {
   projectId: string;
   members: ProjectMemberRow[];
   candidates: UserListRow[];
   desa: ProjectDesaRow[];
   raporBasePath?: string;
+  programType?: "desa_based" | "pelaku_pariwisata";
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -35,7 +37,9 @@ export function PesertaTab({
   const [q, setQ] = useState("");
   const [selUser, setSelUser] = useState<string | null>(null);
   const [selDesa, setSelDesa] = useState<string>("");
+  const [selMode, setSelMode] = useState<"offline" | "online">("offline");
   const [error, setError] = useState<string | null>(null);
+  const isDesaBased = programType === "desa_based";
 
   // Guard against rows whose embedded user couldn't be read (RLS) - never crash.
   // Also restrict the displayed list to actual peserta - narasumber lives in
@@ -67,12 +71,14 @@ export function PesertaTab({
         user_id: selUser,
         role: "peserta",
         desa_id: selDesa || null,
+        attendance_mode: selMode,
       });
       if (r.error) setError(r.error);
       else {
         setShowAdd(false);
         setSelUser(null);
         setSelDesa("");
+        setSelMode("offline");
         setQ("");
         router.refresh();
       }
@@ -114,10 +120,21 @@ export function PesertaTab({
       </div>
 
       <div className="rounded-lg border border-atr-purple/30 bg-atr-purple-50/50 px-3.5 py-2.5 text-xs text-atr-fg">
-        💡 <strong>Peserta itu perorangan.</strong> Satu desa wisata bisa
-        diwakili banyak peserta (pengurus Pokdarwis, BUMDes, narahubung).
-        Tambahkan masing-masing dengan role <em>peserta</em> + pilih desa yang
-        sama untuk kolaborasi pendampingan.
+        {isDesaBased ? (
+          <>
+            💡 <strong>Peserta itu perorangan.</strong> Satu desa wisata bisa
+            diwakili banyak peserta (pengurus Pokdarwis, BUMDes, narahubung).
+            Tambahkan masing-masing dengan role <em>peserta</em> + pilih desa
+            yang sama untuk kolaborasi pendampingan.
+          </>
+        ) : (
+          <>
+            💡 <strong>Project Pelaku Pariwisata.</strong> Peserta personal
+            tanpa afiliasi desa. Tandai mode kehadiran tiap peserta:{" "}
+            <em>offline</em> (full kegiatan sampai rencana aksi) atau{" "}
+            <em>online</em> (hanya pre-test, materi, dan post-test).
+          </>
+        )}
       </div>
 
       {showAdd && (
@@ -176,7 +193,7 @@ export function PesertaTab({
             )}
           </ul>
 
-          {selUser && (
+          {selUser && isDesaBased && (
             <label className="flex flex-col gap-1.5">
               <span className="text-xs font-bold text-atr-fg">
                 Desa diwakili
@@ -193,6 +210,50 @@ export function PesertaTab({
                   </option>
                 ))}
               </select>
+            </label>
+          )}
+          {selUser && (
+            <label className="flex flex-col gap-1.5">
+              <span className="text-xs font-bold text-atr-fg">
+                Mode kehadiran
+              </span>
+              <div className="grid grid-cols-2 gap-2">
+                {(
+                  [
+                    {
+                      key: "offline" as const,
+                      label: "Offline",
+                      desc: "Full kegiatan + rencana aksi",
+                    },
+                    {
+                      key: "online" as const,
+                      label: "Online",
+                      desc: "Hanya pre/post test",
+                    },
+                  ]
+                ).map((opt) => {
+                  const active = selMode === opt.key;
+                  return (
+                    <button
+                      key={opt.key}
+                      type="button"
+                      onClick={() => setSelMode(opt.key)}
+                      className={`rounded-lg border p-2.5 text-left transition ${
+                        active
+                          ? "border-atr-purple bg-atr-purple-50 ring-2 ring-atr-purple/30"
+                          : "border-atr-outline bg-white hover:bg-atr-bg-soft"
+                      }`}
+                    >
+                      <div className="text-sm font-bold text-atr-fg">
+                        {opt.label}
+                      </div>
+                      <div className="text-[11px] text-atr-fg-muted">
+                        {opt.desc}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
             </label>
           )}
 
@@ -217,7 +278,7 @@ export function PesertaTab({
             <button
               type="button"
               onClick={add}
-              disabled={pending || !selUser || !selDesa}
+              disabled={pending || !selUser || (isDesaBased && !selDesa)}
               className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-atr-purple px-3 text-sm font-bold text-white transition hover:bg-atr-purple-600 disabled:opacity-50"
             >
               {pending && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
@@ -240,6 +301,7 @@ export function PesertaTab({
           members={activeMembers}
           onRemove={remove}
           raporBasePath={raporBasePath}
+          programType={programType}
         />
       )}
     </div>
@@ -254,25 +316,30 @@ function MembersTable({
   members,
   onRemove,
   raporBasePath = "/atourin",
+  programType = "desa_based",
 }: {
   projectId: string;
   members: ProjectMemberRow[];
   onRemove: (id: string) => void;
   raporBasePath?: string;
+  programType?: "desa_based" | "pelaku_pariwisata";
 }) {
   const rows = members.map((m) => ({
     ...m,
     full_name: m.user.full_name,
     email: m.user.email ?? "",
     desa_name: m.desa?.name ?? "-",
+    attendance_mode: m.attendance_mode ?? "offline",
   }));
   type Row = (typeof rows)[number];
+
+  const isDesaBased = programType === "desa_based";
 
   const desaOptions = Array.from(
     new Set(rows.map((r) => r.desa_name).filter((n) => n && n !== "-")),
   ).map((n) => ({ value: n, label: n }));
 
-  const columns: MembersColumnDef<Row, unknown>[] = [
+  const baseColumns: MembersColumnDef<Row, unknown>[] = [
     {
       accessorKey: "full_name",
       header: "Nama",
@@ -283,7 +350,33 @@ function MembersTable({
         </div>
       ),
     },
-    { accessorKey: "desa_name", header: "Desa" },
+  ];
+  const desaColumn: MembersColumnDef<Row, unknown> = {
+    accessorKey: "desa_name",
+    header: "Desa",
+  };
+  const modeColumn: MembersColumnDef<Row, unknown> = {
+    accessorKey: "attendance_mode",
+    header: "Mode",
+    cell: ({ row }) => {
+      const m = row.original.attendance_mode;
+      const cfg =
+        m === "online"
+          ? "bg-atr-yellow/20 text-atr-fg border-atr-yellow/40"
+          : "bg-atr-arti/15 text-atr-arti border-atr-arti/30";
+      return (
+        <span
+          className={`inline-flex rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${cfg}`}
+        >
+          {m === "online" ? "Online" : "Offline"}
+        </span>
+      );
+    },
+  };
+  const columns: MembersColumnDef<Row, unknown>[] = [
+    ...baseColumns,
+    ...(isDesaBased ? [desaColumn] : []),
+    modeColumn,
     {
       accessorKey: "invited_at",
       header: "Diundang",

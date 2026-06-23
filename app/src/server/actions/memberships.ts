@@ -10,6 +10,8 @@ const addMemberSchema = z.object({
   user_id: z.string().uuid(),
   role: z.enum(["peserta", "pendamping", "narasumber", "mitra_admin"]),
   desa_id: z.string().uuid().optional().nullable(),
+  // Berlaku saat role=peserta. Offline=full kegiatan, online=pre/post test only.
+  attendance_mode: z.enum(["offline", "online"]).optional(),
 });
 
 export type AddMemberInput = z.input<typeof addMemberSchema>;
@@ -26,6 +28,7 @@ export async function addProjectMember(input: AddMemberInput) {
     user_id: parsed.data.user_id,
     role: parsed.data.role,
     desa_id: parsed.data.desa_id ?? null,
+    attendance_mode: parsed.data.attendance_mode ?? "offline",
     status: "active",
   });
   if (error) {

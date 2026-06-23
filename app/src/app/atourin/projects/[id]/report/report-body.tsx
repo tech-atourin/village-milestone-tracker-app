@@ -261,6 +261,9 @@ export async function ReportBody({
         </div>
       </section>
 
+      {/* Performa per Desa: hanya untuk project tipe desa_based. Project
+          pelaku_pariwisata tidak punya desa, skip section ini. */}
+      {project.program_type === "desa_based" && (
       <section className="mb-10">
         <h2 className="mb-3 text-xs font-bold uppercase tracking-wide text-atr-fg-muted">
           Performa per Desa
@@ -292,6 +295,7 @@ export async function ReportBody({
         </table>
         </div>
       </section>
+      )}
 
       {/* Kuisioner Narasumber */}
       {ratingArr.length > 0 && (

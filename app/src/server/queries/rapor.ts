@@ -7,6 +7,7 @@ export type RaporRow = {
   full_name: string;
   email: string | null;
   desa_name: string | null;
+  attendance_mode: "offline" | "online";
   pre_test_score: number | null;
   post_test_score: number | null;
   attendance: number | null;
@@ -22,7 +23,7 @@ export async function listProjectRapor(projectId: string): Promise<RaporRow[]> {
   const { data: members } = await supabase
     .from("project_memberships")
     .select(
-      "user_id, user:users!project_memberships_user_id_fkey(id, full_name, email), desa:desa(name)",
+      "user_id, attendance_mode, user:users!project_memberships_user_id_fkey(id, full_name, email), desa:desa(name)",
     )
     .eq("project_id", projectId)
     .eq("role", "peserta")
@@ -34,6 +35,7 @@ export async function listProjectRapor(projectId: string): Promise<RaporRow[]> {
     full_name: r.user?.full_name ?? "-",
     email: r.user?.email ?? null,
     desa_name: r.desa?.name ?? null,
+    attendance_mode: (r.attendance_mode ?? "offline") as "offline" | "online",
   }));
 
   if (memberRows.length === 0) return [];

@@ -12,6 +12,7 @@ export function SesiBaruForm({ projects }: { projects: ProjectScope[] }) {
   const [error, setError] = useState<string | null>(null);
   const [projectId, setProjectId] = useState(projects[0]?.id ?? "");
   const project = projects.find((p) => p.id === projectId);
+  const isDesaBased = (project?.program_type ?? "desa_based") === "desa_based";
   const [projectDesaId, setProjectDesaId] = useState(
     project?.desa[0]?.project_desa_id ?? "",
   );
@@ -26,7 +27,8 @@ export function SesiBaruForm({ projects }: { projects: ProjectScope[] }) {
   function changeProject(id: string) {
     setProjectId(id);
     const p = projects.find((x) => x.id === id);
-    setProjectDesaId(p?.desa[0]?.project_desa_id ?? "");
+    const desaBased = (p?.program_type ?? "desa_based") === "desa_based";
+    setProjectDesaId(desaBased ? p?.desa[0]?.project_desa_id ?? "" : "");
   }
 
   function submit() {
@@ -34,7 +36,7 @@ export function SesiBaruForm({ projects }: { projects: ProjectScope[] }) {
     startTransition(async () => {
       const r = await createSession({
         project_id: projectId,
-        project_desa_id: projectDesaId,
+        project_desa_id: isDesaBased ? projectDesaId : null,
         day_number: dayNumber,
         session_date: sessionDate,
         start_time: startTime || null,
@@ -62,19 +64,26 @@ export function SesiBaruForm({ projects }: { projects: ProjectScope[] }) {
         </select>
       </Field>
 
-      <Field label="Desa yang dikunjungi" required>
-        <select
-          value={projectDesaId}
-          onChange={(e) => setProjectDesaId(e.target.value)}
-          className={inputCls}
-        >
-          {(project?.desa ?? []).map((d) => (
-            <option key={d.project_desa_id} value={d.project_desa_id}>
-              {d.desa_name}
-            </option>
-          ))}
-        </select>
-      </Field>
+      {isDesaBased ? (
+        <Field label="Desa yang dikunjungi" required>
+          <select
+            value={projectDesaId}
+            onChange={(e) => setProjectDesaId(e.target.value)}
+            className={inputCls}
+          >
+            {(project?.desa ?? []).map((d) => (
+              <option key={d.project_desa_id} value={d.project_desa_id}>
+                {d.desa_name}
+              </option>
+            ))}
+          </select>
+        </Field>
+      ) : (
+        <div className="rounded-lg border border-atr-purple/30 bg-atr-purple-50/40 px-3 py-2 text-xs text-atr-fg">
+          Project ini bertipe <strong>Pelaku Pariwisata</strong> — sesi
+          pendampingan langsung untuk seluruh peserta project, tidak per-desa.
+        </div>
+      )}
 
       <div className="grid gap-4 sm:grid-cols-3">
         <Field label="Hari ke-" required>

@@ -9,6 +9,9 @@ import { requireRole, getCurrentUser } from "@/lib/auth/rbac";
 const createProjectSchema = z.object({
   name: z.string().min(2, "Nama project minimal 2 karakter").max(200),
   description: z.string().max(2000).optional().nullable(),
+  program_type: z
+    .enum(["desa_based", "pelaku_pariwisata"])
+    .default("desa_based"),
   organization_id: z.string().uuid("Pilih organisasi mitra"),
   template_id: z.string().uuid().optional().nullable(),
   period_start: z
@@ -98,12 +101,19 @@ export async function createProjectAction(
     return { error: error.message };
   }
 
-  // RPC tidak punya parameter total_pendampingan_days → patch via UPDATE
-  if (projectId && data.total_pendampingan_days) {
-    await supabase
-      .from("projects")
-      .update({ total_pendampingan_days: data.total_pendampingan_days })
-      .eq("id", projectId as string);
+  // RPC tidak punya parameter total_pendampingan_days + program_type →
+  // patch via UPDATE setelah project dibuat.
+  if (projectId) {
+    const patch: Record<string, unknown> = {};
+    if (data.total_pendampingan_days)
+      patch.total_pendampingan_days = data.total_pendampingan_days;
+    if (data.program_type) patch.program_type = data.program_type;
+    if (Object.keys(patch).length > 0) {
+      await supabase
+        .from("projects")
+        .update(patch)
+        .eq("id", projectId as string);
+    }
   }
 
   revalidatePath("/atourin/projects");

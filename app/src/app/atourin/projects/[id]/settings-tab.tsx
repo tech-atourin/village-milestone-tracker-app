@@ -8,6 +8,10 @@ import {
   archiveProject,
   deleteProject,
 } from "@/server/actions/project-edit";
+import {
+  ExtraLogosManager,
+  type ExtraLogo,
+} from "./extra-logos-manager";
 
 type Project = {
   id: string;
@@ -28,7 +32,13 @@ const MODULES = [
   ["public_dashboard", "Shareable link (untuk mitra/sponsor)"],
 ] as const;
 
-export function SettingsTab({ project }: { project: Project }) {
+export function SettingsTab({
+  project,
+  extraLogos = [],
+}: {
+  project: Project;
+  extraLogos?: ExtraLogo[];
+}) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
@@ -163,6 +173,10 @@ export function SettingsTab({ project }: { project: Project }) {
           </Field>
         </div>
       </section>
+
+      <hr className="border-atr-outline" />
+      <ExtraLogosManager projectId={project.id} initialLogos={extraLogos} />
+      <hr className="border-atr-outline" />
 
       {error && (
         <div className="rounded-lg border border-atr-red/30 bg-atr-red/10 px-4 py-3 text-sm text-atr-red">

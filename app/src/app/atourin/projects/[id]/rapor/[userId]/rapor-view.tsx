@@ -34,7 +34,7 @@ export async function loadRapor(projectId: string, userId: string) {
 
   const { data: membership } = await supabase
     .from("project_memberships")
-    .select("desa:desa(name, kabupaten, provinsi)")
+    .select("attendance_mode, desa:desa(name, kabupaten, provinsi)")
     .eq("project_id", projectId)
     .eq("user_id", userId)
     .eq("role", "peserta")
@@ -175,6 +175,9 @@ export function RaporView({
   };
 }) {
   const { project, user, rapor, membership, narasumber, materi_scores } = data;
+  const attendanceMode: "offline" | "online" =
+    membership?.attendance_mode === "online" ? "online" : "offline";
+  const isOnline = attendanceMode === "online";
 
   // Fall back to per-materi averages when the aggregate is not stored.
   const pre =
@@ -199,6 +202,21 @@ export function RaporView({
           `,
         }}
       />
+
+      {isOnline && (
+        <section className="mb-4 flex items-start gap-2.5 rounded-lg border border-atr-yellow/40 bg-atr-yellow/15 p-3 text-xs text-atr-fg">
+          <span className="text-base leading-none">🟡</span>
+          <div>
+            <div className="font-bold">Peserta Online</div>
+            <div className="mt-0.5 text-atr-fg-muted">
+              Peserta mengikuti pelatihan via online. Hasil rapor mencakup
+              pre-test, materi, dan post-test saja. Implementasi rencana aksi
+              dan sesi pendampingan lapangan tidak diikuti, sehingga bagian
+              tersebut ditampilkan dengan keterangan N/A.
+            </div>
+          </div>
+        </section>
+      )}
 
       <div className="no-print mb-6 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-atr-outline bg-atr-bg-soft p-3 text-xs text-atr-fg-muted">
         <a
@@ -226,14 +244,29 @@ export function RaporView({
           <div className="text-xs font-bold uppercase tracking-wide text-atr-purple">
             Rapor Peserta Pendampingan
           </div>
-          <h1 className="mt-1 text-2xl font-bold text-atr-fg">
-            {user.full_name}
-          </h1>
+          <div className="mt-1 flex flex-wrap items-center gap-2">
+            <h1 className="text-2xl font-bold text-atr-fg">{user.full_name}</h1>
+            <span
+              className={`inline-flex rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${
+                isOnline
+                  ? "border-atr-yellow/40 bg-atr-yellow/20 text-atr-fg"
+                  : "border-atr-arti/30 bg-atr-arti/15 text-atr-arti"
+              }`}
+            >
+              {isOnline ? "Online" : "Offline"}
+            </span>
+          </div>
           <p className="mt-1 text-sm text-atr-fg-muted">
-            {membership?.desa?.name ?? "-"} ·{" "}
-            {[membership?.desa?.kabupaten, membership?.desa?.provinsi]
-              .filter(Boolean)
-              .join(", ")}
+            {membership?.desa?.name ??
+              (isOnline ? "Peserta personal (online)" : "Peserta personal")}
+            {membership?.desa?.kabupaten || membership?.desa?.provinsi ? (
+              <>
+                {" · "}
+                {[membership?.desa?.kabupaten, membership?.desa?.provinsi]
+                  .filter(Boolean)
+                  .join(", ")}
+              </>
+            ) : null}
           </p>
         </div>
         <div className="flex items-center gap-3">
@@ -359,8 +392,21 @@ export function RaporView({
         )}
       </section>
 
-      {/* Sesi & Narasumber yang mendampingi peserta ini */}
-      {narasumber.length > 0 && (
+      {/* Sesi Pendampingan section: untuk peserta Online cukup tampilkan
+          banner N/A, karena mereka tidak ikut sesi lapangan. */}
+      {isOnline && (
+        <section className="mb-8 rounded-2xl border border-dashed border-atr-outline bg-atr-bg-soft/50 p-6 text-sm text-atr-fg-muted">
+          <div className="font-bold text-atr-fg">
+            Sesi Pendampingan &amp; Narasumber
+          </div>
+          <p className="mt-1">
+            N/A — peserta mengikuti pelatihan via online dan tidak hadir di
+            sesi pendampingan lapangan.
+          </p>
+        </section>
+      )}
+      {/* Sesi & Narasumber yang mendampingi peserta ini (offline only) */}
+      {!isOnline && narasumber.length > 0 && (
         <section className="mb-8 rounded-2xl border border-atr-outline p-6">
           <h2 className="mb-4 text-sm font-bold uppercase tracking-wide text-atr-fg-muted">
             Sesi Pendampingan &amp; Narasumber

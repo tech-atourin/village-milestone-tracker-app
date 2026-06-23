@@ -28,6 +28,7 @@ import {
 import { SummaryTab } from "./summary-tab";
 import { ActionPlanBoard } from "@/components/action-plans/action-plan-board";
 import { listActionPlans } from "@/server/queries/action-plans";
+import { listProjectLogoUrls } from "@/server/actions/project-logos";
 
 async function getPublicState(projectId: string) {
   const supabase = createClient();
@@ -60,10 +61,10 @@ const STATUS_LABEL = {
   archived: "Arsip",
 } as const;
 
-const TABS = [
+const ALL_TABS = [
   { key: "overview", label: "Ringkasan" },
   { key: "summary", label: "Analisis" },
-  { key: "desa", label: "Desa" },
+  { key: "desa", label: "Desa", desaOnly: true },
   { key: "topik", label: "Topik" },
   { key: "peserta", label: "Peserta" },
   { key: "narasumber", label: "Narasumber" },
@@ -94,6 +95,12 @@ export default async function ProjectDetailPage({
 
   const publicState = await getPublicState(params.id);
   const activeTab = searchParams.tab ?? "overview";
+  const isDesaBased = project.program_type === "desa_based";
+  // Pelaku pariwisata: project tidak terkait desa wisata, jadi tab Desa dan
+  // Rencana Aksi (yang per-desa) disembunyikan.
+  const TABS = ALL_TABS.filter(
+    (t) => isDesaBased || !("desaOnly" in t && t.desaOnly),
+  );
 
   return (
     <div className="space-y-6">
@@ -167,7 +174,12 @@ export default async function ProjectDetailPage({
       )}
       {activeTab === "desa" && <DesaTabLoader projectId={project.id} />}
       {activeTab === "topik" && <TopikTabLoader projectId={project.id} />}
-      {activeTab === "peserta" && <PesertaTabLoader projectId={project.id} />}
+      {activeTab === "peserta" && (
+        <PesertaTabLoader
+          projectId={project.id}
+          programType={project.program_type}
+        />
+      )}
       {activeTab === "narasumber" && (
         <NarasumberTabLoader projectId={project.id} />
       )}
@@ -183,7 +195,7 @@ export default async function ProjectDetailPage({
       )}
       {activeTab === "gforms" && <GformsAndResultsLoader projectId={project.id} />}
       {activeTab === "settings" && (
-        <SettingsTab
+        <SettingsTabLoader
           project={{
             id: project.id,
             name: project.name,
@@ -200,6 +212,24 @@ export default async function ProjectDetailPage({
   );
 }
 
+async function SettingsTabLoader({
+  project,
+}: {
+  project: {
+    id: string;
+    name: string;
+    description: string | null;
+    period_start: string | null;
+    period_end: string | null;
+    total_pendampingan_days: number | null;
+    status: "draft" | "active" | "completed" | "archived";
+    enabled_modules: Record<string, boolean>;
+  };
+}) {
+  const extraLogos = await listProjectLogoUrls(project.id);
+  return <SettingsTab project={project} extraLogos={extraLogos} />;
+}
+
 async function DesaTabLoader({ projectId }: { projectId: string }) {
   const [attached, all] = await Promise.all([
     listProjectDesa(projectId),
@@ -208,7 +238,13 @@ async function DesaTabLoader({ projectId }: { projectId: string }) {
   return <DesaTab projectId={projectId} attached={attached} allDesa={all} />;
 }
 
-async function PesertaTabLoader({ projectId }: { projectId: string }) {
+async function PesertaTabLoader({
+  projectId,
+  programType,
+}: {
+  projectId: string;
+  programType: "desa_based" | "pelaku_pariwisata";
+}) {
   const [members, candidates, desa] = await Promise.all([
     listProjectMembers(projectId),
     listUsers(),
@@ -220,6 +256,7 @@ async function PesertaTabLoader({ projectId }: { projectId: string }) {
       members={members}
       candidates={candidates}
       desa={desa}
+      programType={programType}
     />
   );
 }

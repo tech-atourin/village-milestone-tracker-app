@@ -25,7 +25,7 @@ export default async function NarasumberRencanaAksiPage() {
   );
   const rows = allPlans
     .flat()
-    .filter((r) => allowedProjectDesaIds.has(r.project_desa_id));
+    .filter((r) => r.project_desa_id != null && allowedProjectDesaIds.has(r.project_desa_id));
 
   return (
     <div className="space-y-6">

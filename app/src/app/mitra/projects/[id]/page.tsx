@@ -29,6 +29,7 @@ import { OverviewTab } from "@/app/atourin/projects/[id]/overview-tab";
 import { SummaryTab } from "@/app/atourin/projects/[id]/summary-tab";
 import { ActionPlanBoard } from "@/components/action-plans/action-plan-board";
 import { listActionPlans } from "@/server/queries/action-plans";
+import { listProjectLogoUrls } from "@/server/actions/project-logos";
 
 async function getPublicState(projectId: string) {
   const supabase = createClient();
@@ -61,10 +62,10 @@ const STATUS_LABEL = {
   archived: "Arsip",
 } as const;
 
-const TABS = [
+const ALL_TABS = [
   { key: "overview", label: "Ringkasan" },
   { key: "summary", label: "Analisis" },
-  { key: "desa", label: "Desa" },
+  { key: "desa", label: "Desa", desaOnly: true },
   { key: "topik", label: "Topik" },
   { key: "peserta", label: "Peserta" },
   { key: "narasumber", label: "Narasumber" },
@@ -102,6 +103,10 @@ export default async function MitraProjectDetailPage({
 
   const publicState = await getPublicState(params.id);
   const activeTab = searchParams.tab ?? "overview";
+  const isDesaBased = project.program_type === "desa_based";
+  const TABS = ALL_TABS.filter(
+    (t) => isDesaBased || !("desaOnly" in t && t.desaOnly),
+  );
 
   return (
     <div className="space-y-6">
@@ -180,6 +185,7 @@ export default async function MitraProjectDetailPage({
         <PesertaTabLoader
           projectId={project.id}
           organizationId={user.organization_id ?? null}
+          programType={project.program_type}
         />
       )}
       {activeTab === "narasumber" && (
@@ -197,18 +203,7 @@ export default async function MitraProjectDetailPage({
       )}
       {activeTab === "gforms" && <GformsAndResultsLoader projectId={project.id} />}
       {activeTab === "settings" && (
-        <SettingsTab
-          project={{
-            id: project.id,
-            name: project.name,
-            description: project.description,
-            period_start: project.period_start,
-            period_end: project.period_end,
-            total_pendampingan_days: project.total_pendampingan_days,
-            status: project.status,
-            enabled_modules: project.enabled_modules,
-          }}
-        />
+        <MitraSettingsLoader project={project} />
       )}
     </div>
   );
@@ -232,9 +227,11 @@ async function DesaTabLoader({ projectId }: { projectId: string }) {
 async function PesertaTabLoader({
   projectId,
   organizationId,
+  programType,
 }: {
   projectId: string;
   organizationId: string | null;
+  programType: "desa_based" | "pelaku_pariwisata";
 }) {
   // Mitra anon role can't read other users' rows under RLS, which makes the
   // embedded user join null and crashes the client. Use the admin client and
@@ -244,7 +241,7 @@ async function PesertaTabLoader({
     admin
       .from("project_memberships")
       .select(
-        "id, role, status, invited_at, user:users!project_memberships_user_id_fkey(id, full_name, email), desa:desa(id, name)",
+        "id, role, status, invited_at, attendance_mode, user:users!project_memberships_user_id_fkey(id, full_name, email), desa:desa(id, name)",
       )
       .eq("project_id", projectId)
       .order("invited_at", { ascending: false }),
@@ -274,6 +271,7 @@ async function PesertaTabLoader({
       candidates={candidates}
       desa={desa}
       raporBasePath="/mitra"
+      programType={programType}
     />
   );
 }
@@ -450,3 +448,28 @@ async function GformsAndResultsLoader({ projectId }: { projectId: string }) {
   );
 }
 
+
+async function MitraSettingsLoader({
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  project,
+}: {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  project: any;
+}) {
+  const extraLogos = await listProjectLogoUrls(project.id);
+  return (
+    <SettingsTab
+      project={{
+        id: project.id,
+        name: project.name,
+        description: project.description,
+        period_start: project.period_start,
+        period_end: project.period_end,
+        total_pendampingan_days: project.total_pendampingan_days,
+        status: project.status,
+        enabled_modules: project.enabled_modules,
+      }}
+      extraLogos={extraLogos}
+    />
+  );
+}

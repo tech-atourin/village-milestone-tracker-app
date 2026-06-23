@@ -46,6 +46,7 @@ export type ProjectScope = {
   id: string;
   name: string;
   total_pendampingan_days: number;
+  program_type: "desa_based" | "pelaku_pariwisata";
   desa: Array<{ project_desa_id: string; desa_id: string; desa_name: string }>;
 };
 
@@ -56,7 +57,7 @@ export async function listNarasumberProjects(
   const { data: m } = await supabase
     .from("project_memberships")
     .select(
-      "project_id, desa_id, project:projects(id, name, total_pendampingan_days)",
+      "project_id, desa_id, project:projects(id, name, total_pendampingan_days, program_type)",
     )
     .eq("user_id", narasumberId)
     .eq("role", "narasumber")
@@ -137,6 +138,9 @@ export async function listNarasumberProjects(
       id: entry.project.id,
       name: entry.project.name,
       total_pendampingan_days: entry.project.total_pendampingan_days,
+      program_type:
+        ((entry.project as { program_type?: string }).program_type ??
+          "desa_based") as "desa_based" | "pelaku_pariwisata",
       desa: filtered,
     });
   });

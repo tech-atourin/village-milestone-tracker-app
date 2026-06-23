@@ -26,9 +26,12 @@ const STEPS = [
   { key: "review", label: "Review & Publish", icon: ClipboardCheck },
 ] as const;
 
+type ProgramType = "desa_based" | "pelaku_pariwisata";
+
 type State = {
   name: string;
   description: string;
+  program_type: ProgramType;
   period_start: string;
   period_end: string;
   total_pendampingan_days: number;
@@ -63,6 +66,7 @@ export function ProjectWizard({
   const [state, setState] = useState<State>({
     name: "",
     description: "",
+    program_type: "desa_based",
     period_start: "",
     period_end: "",
     total_pendampingan_days: 5,
@@ -106,6 +110,7 @@ export function ProjectWizard({
       const result = await createProjectAction({
         name: state.name.trim(),
         description: state.description.trim() || null,
+        program_type: state.program_type,
         organization_id: state.organization_id,
         template_id: state.template_id,
         period_start: state.period_start || null,
@@ -191,6 +196,48 @@ export function ProjectWizard({
                 className="h-11 w-full rounded-lg border border-atr-outline px-3 text-sm outline-none transition focus:border-atr-purple focus:ring-2 focus:ring-atr-purple/15"
                 placeholder="Pendampingan ADWI 2026 Batch 1"
               />
+            </Field>
+            <Field label="Jenis Program" required>
+              <div className="grid gap-2 sm:grid-cols-2">
+                {(
+                  [
+                    {
+                      key: "desa_based",
+                      title: "Pendampingan Desa Wisata",
+                      desc: "Project berbasis desa: ada tab Desa, klasifikasi nasional, rapor desa, dan rencana aksi per desa.",
+                    },
+                    {
+                      key: "pelaku_pariwisata",
+                      title: "Pelaku Pariwisata",
+                      desc: "Pelatihan personal/perorangan tanpa afiliasi desa. Tab Desa tidak tampil. Peserta bisa hadir offline atau online.",
+                    },
+                  ] as const
+                ).map((opt) => {
+                  const active = state.program_type === opt.key;
+                  return (
+                    <button
+                      key={opt.key}
+                      type="button"
+                      onClick={() =>
+                        setState({ ...state, program_type: opt.key })
+                      }
+                      className={cn(
+                        "rounded-xl border p-3 text-left transition",
+                        active
+                          ? "border-atr-purple bg-atr-purple-50 ring-2 ring-atr-purple/30"
+                          : "border-atr-outline bg-white hover:bg-atr-bg-soft",
+                      )}
+                    >
+                      <div className="text-sm font-bold text-atr-fg">
+                        {opt.title}
+                      </div>
+                      <div className="mt-0.5 text-xs text-atr-fg-muted">
+                        {opt.desc}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
             </Field>
             <Field label="Deskripsi" error={fieldErrors.description}>
               <textarea

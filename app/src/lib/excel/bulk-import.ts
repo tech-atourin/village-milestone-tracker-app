@@ -65,6 +65,11 @@ export const bulkRowSchema = z
     role: z
       .enum(["peserta", "mitra_admin", "narasumber"])
       .default("peserta"),
+    // Per-peserta attendance mode (kosong = default "offline").
+    attendance_mode: z
+      .enum(["offline", "online"])
+      .optional()
+      .or(z.literal("")),
     // Narasumber-only extras (ignored for other roles)
     kategori_narasumber: z.string().optional().or(z.literal("")),
     kompetensi: z.string().optional().or(z.literal("")),
@@ -119,6 +124,10 @@ const COLUMN_ALIASES: Record<string, string> = {
   desa_name: "desa_name",
   desa: "desa_name",
   role: "role",
+  attendance_mode: "attendance_mode",
+  mode: "attendance_mode",
+  kehadiran: "attendance_mode",
+  attendance: "attendance_mode",
   // Narasumber extras
   kategori_narasumber: "kategori_narasumber",
   kategori: "kategori_narasumber",

@@ -7,10 +7,12 @@ export function SertifikatView({
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   data,
   backHref,
+  extraLogos = [],
 }: {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   data: any;
   backHref?: string;
+  extraLogos?: Array<{ path: string; label: string; signed_url: string }>;
 }) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const project = data.project as any;
@@ -89,25 +91,39 @@ export function SertifikatView({
               </div>
             </div>
           </div>
-          {project.organization?.logo_url ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={project.organization.logo_url}
-              alt={project.organization.name}
-              className="h-14 w-auto"
-            />
-          ) : (
-            <div className="text-right text-xs text-atr-fg-muted">
-              <div className="font-bold text-atr-fg">
-                {project.organization?.name ?? "Atourin"}
+          <div className="flex items-center gap-4">
+            {extraLogos.map((logo) => (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                key={logo.path}
+                src={logo.signed_url}
+                alt={logo.label}
+                title={logo.label}
+                className="h-14 w-auto object-contain"
+              />
+            ))}
+            {project.organization?.logo_url ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={project.organization.logo_url}
+                alt={project.organization.name}
+                className="h-14 w-auto object-contain"
+              />
+            ) : extraLogos.length === 0 ? (
+              <div className="text-right text-xs text-atr-fg-muted">
+                <div className="font-bold text-atr-fg">
+                  {project.organization?.name ?? "Atourin"}
+                </div>
               </div>
-            </div>
-          )}
+            ) : null}
+          </div>
         </header>
 
         <div className="mt-4 flex-1 text-center">
           <h1 className="text-sm font-bold uppercase tracking-[0.25em] text-atr-purple-600">
-            Sertifikat Penghargaan
+            {membership?.attendance_mode === "online"
+              ? "Sertifikat Penyelesaian — Peserta Online"
+              : "Sertifikat Penghargaan"}
           </h1>
           <p className="mt-1 text-xs uppercase tracking-widest text-atr-fg-muted">
             Diberikan kepada
@@ -116,7 +132,10 @@ export function SertifikatView({
             {user.full_name}
           </h2>
           <p className="mt-1 text-sm text-atr-fg-muted">
-            {membership?.desa?.name ?? "-"}
+            {membership?.desa?.name ??
+              (membership?.attendance_mode === "online"
+                ? "Peserta online"
+                : "Peserta")}
             {membership?.desa?.kabupaten &&
               ` · ${membership.desa.kabupaten}, ${membership.desa.provinsi}`}
           </p>

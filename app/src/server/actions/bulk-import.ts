@@ -37,6 +37,7 @@ export async function generateTemplateBase64(
     "birthdate",
     "desa_name",
     "role",
+    "attendance_mode",
   ];
   const pesertaSample = [
     "Eko Haryanto",
@@ -47,6 +48,7 @@ export async function generateTemplateBase64(
     "12/05/1985",
     "Wanurejo",
     "peserta",
+    "offline",
   ];
   const pesertaGuidance = [
     "Wajib diisi: nama lengkap",
@@ -57,6 +59,7 @@ export async function generateTemplateBase64(
     "DD/MM/YYYY atau YYYY-MM-DD, opsional",
     "Nama desa yang sudah terdaftar, atau biarkan kosong untuk peserta non-desa",
     "peserta | mitra_admin | narasumber - default peserta",
+    "offline (full kegiatan) | online (pre/post test only). Default offline. Cuma berlaku saat import ke dalam project.",
   ];
 
   const narasumberHeaders = [
@@ -266,6 +269,11 @@ const commitSchema = z.object({
       birthdate: z.string().optional().nullable(),
       desa_name: z.string().optional().nullable(),
       role: z.enum(["peserta", "mitra_admin", "narasumber"]),
+      // Berlaku saat project_id != null + role=peserta. "offline" / "online".
+      attendance_mode: z
+        .enum(["offline", "online"])
+        .optional()
+        .nullable(),
     }),
   ),
   project_id: z.string().uuid().optional().nullable(),
@@ -386,6 +394,7 @@ export async function commitBulkImport(
     userId: string,
     role: string,
     desaName: string | null | undefined,
+    attendanceMode: "offline" | "online" | null | undefined,
   ) {
     if (!projectId) return;
     const desaId =
@@ -400,6 +409,8 @@ export async function commitBulkImport(
         user_id: userId,
         role,
         desa_id: desaId,
+        attendance_mode:
+          role === "peserta" ? attendanceMode ?? "offline" : "offline",
         status: "active",
       },
       { onConflict: "project_id,user_id,role" },
@@ -450,7 +461,7 @@ export async function commitBulkImport(
     if (existing) {
       skipped++;
       const existingId = (existing as { id: string }).id;
-      await attachToProject(existingId, row.role, row.desa_name);
+      await attachToProject(existingId, row.role, row.desa_name, row.attendance_mode);
       // Backfill representing_desa_id for peserta if it was missing
       if (row.role === "peserta") {
         const desaId = resolveDesaId(row.desa_name);
@@ -522,7 +533,7 @@ export async function commitBulkImport(
     }
 
     created++;
-    await attachToProject(authResult.user.id, row.role, row.desa_name);
+    await attachToProject(authResult.user.id, row.role, row.desa_name, row.attendance_mode);
     if (row.role === "peserta") {
       const desaId = resolveDesaId(row.desa_name);
       if (desaId)

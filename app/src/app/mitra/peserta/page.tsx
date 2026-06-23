@@ -12,6 +12,7 @@ type Row = {
   full_name: string;
   email: string | null;
   desa_name: string | null;
+  attendance_mode: "offline" | "online";
   project_id: string;
   project_name: string;
 };
@@ -25,7 +26,7 @@ async function loadPeserta(projectIds: string[]): Promise<Row[]> {
   const { data } = await admin
     .from("project_memberships")
     .select(
-      "user_id, project_id, user:users!project_memberships_user_id_fkey(full_name, email), desa:desa(name), project:projects(name)",
+      "user_id, project_id, attendance_mode, user:users!project_memberships_user_id_fkey(full_name, email), desa:desa(name), project:projects(name)",
     )
     .in("project_id", projectIds)
     .eq("role", "peserta")
@@ -38,6 +39,7 @@ async function loadPeserta(projectIds: string[]): Promise<Row[]> {
     full_name: r.user?.full_name ?? "-",
     email: r.user?.email ?? null,
     desa_name: r.desa?.name ?? null,
+    attendance_mode: (r.attendance_mode ?? "offline") as "offline" | "online",
     project_id: r.project_id,
     project_name: r.project?.name ?? "-",
   }));
@@ -94,6 +96,7 @@ export default async function MitraPesertaPage() {
                 <th className="px-4 py-3">Nama</th>
                 <th className="px-4 py-3">Email</th>
                 <th className="px-4 py-3">Desa</th>
+                <th className="px-4 py-3">Mode</th>
                 <th className="px-4 py-3">Project</th>
               </tr>
             </thead>
@@ -115,6 +118,17 @@ export default async function MitraPesertaPage() {
                     ) : (
                       <span className="text-atr-fg-muted">-</span>
                     )}
+                  </td>
+                  <td className="px-4 py-3">
+                    <span
+                      className={`inline-flex rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${
+                        r.attendance_mode === "online"
+                          ? "border-atr-yellow/40 bg-atr-yellow/20 text-atr-fg"
+                          : "border-atr-arti/30 bg-atr-arti/15 text-atr-arti"
+                      }`}
+                    >
+                      {r.attendance_mode === "online" ? "Online" : "Offline"}
+                    </span>
                   </td>
                   <td className="px-4 py-3">
                     <Link

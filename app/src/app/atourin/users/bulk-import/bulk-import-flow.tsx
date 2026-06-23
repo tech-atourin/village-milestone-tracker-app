@@ -107,6 +107,12 @@ export function BulkImportFlow({
       birthdate: r.data!.normalized_birthdate,
       desa_name: r.data!.desa_name || null,
       role: r.data!.role,
+      attendance_mode:
+        r.data!.attendance_mode === "online"
+          ? ("online" as const)
+          : r.data!.attendance_mode === "offline"
+            ? ("offline" as const)
+            : null,
     }));
 
     startTransition(async () => {
@@ -163,7 +169,8 @@ export function BulkImportFlow({
             </span>
             <span className="text-xs text-atr-fg-muted">
               .xlsx · kolom: full_name, email, phone, nik, gender, birthdate,
-              desa_name, role
+              desa_name, role, attendance_mode (offline/online, opsional —
+              default offline)
             </span>
             <input
               type="file"

@@ -10,7 +10,8 @@ import { sanitizeAuthUser } from "@/lib/auth/sanitize";
 
 const createSchema = z.object({
   project_id: z.string().uuid(),
-  project_desa_id: z.string().uuid(),
+  // Boleh null untuk project pelaku_pariwisata (tanpa afiliasi desa).
+  project_desa_id: z.string().uuid().nullable().optional(),
   day_number: z.number().int().min(1).max(60),
   session_date: z.string().min(8),
   start_time: z.string().optional().nullable(),
@@ -26,7 +27,12 @@ export async function createSession(input: z.input<typeof createSchema>) {
   const supabase = createClient();
   const { data, error } = await supabase
     .from("pendampingan_sessions")
-    .insert({ ...parsed.data, narasumber_id: user.id, status: "draft" })
+    .insert({
+      ...parsed.data,
+      project_desa_id: parsed.data.project_desa_id ?? null,
+      narasumber_id: user.id,
+      status: "draft",
+    })
     .select("id")
     .single();
   if (error) return { error: error.message };
