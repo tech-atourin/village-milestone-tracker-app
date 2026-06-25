@@ -400,7 +400,7 @@ export function RaporView({
             Sesi Pendampingan &amp; Narasumber
           </div>
           <p className="mt-1">
-            N/A — peserta mengikuti pelatihan via online dan tidak hadir di
+            N/A - peserta mengikuti pelatihan via online dan tidak hadir di
             sesi pendampingan lapangan.
           </p>
         </section>

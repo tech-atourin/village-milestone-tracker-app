@@ -98,7 +98,7 @@ export default async function DesaProfilEditPage() {
         </h1>
         <p className="mt-1 text-sm text-atr-fg-muted">
           Form ini sama dengan form baseline yang diisi peserta program. Anda
-          dan peserta saling melengkapi data desa — yang Anda isi di sini
+          dan peserta saling melengkapi data desa - yang Anda isi di sini
           langsung terlihat di profil, dan sebaliknya.
         </p>
         {existing?.submitted_at && (

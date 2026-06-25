@@ -83,7 +83,7 @@ export default async function PesertaTrainingPage({
       {isOnline && (
         <div className="rounded-lg border border-atr-yellow/40 bg-atr-yellow/15 px-3.5 py-2.5 text-xs text-atr-fg">
           🟡 <strong>Mode online.</strong> Anda mengikuti pelatihan ini via
-          jalur online — pre-test, materi, dan post-test. Sesi pendampingan
+          jalur online - pre-test, materi, dan post-test. Sesi pendampingan
           lapangan tidak diikuti, action plan opsional.
         </div>
       )}

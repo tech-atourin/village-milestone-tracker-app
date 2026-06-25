@@ -141,7 +141,7 @@ function NarasumberRatingCard({
                 value={comment}
                 onChange={(e) => setComment(e.target.value)}
                 rows={2}
-                placeholder="Komentar wajib: ceritakan pengalaman pendampingan — apa yang membantu dan apa yang bisa ditingkatkan."
+                placeholder="Komentar wajib: ceritakan pengalaman pendampingan - apa yang membantu dan apa yang bisa ditingkatkan."
                 className="w-full rounded-lg border border-atr-outline bg-white p-2 text-xs outline-none focus:border-atr-purple focus:ring-2 focus:ring-atr-purple/15"
               />
               {error && (

@@ -76,7 +76,7 @@ export default async function DesaProfilPage() {
             Profil Desa
           </h1>
           <p className="text-sm text-atr-fg-muted">
-            Profil lengkap desa wisata Anda — sama persis dengan tampilan
+            Profil lengkap desa wisata Anda - sama persis dengan tampilan
             superadmin & mitra. Sebagian besar field bisa diisi lewat baseline
             (kolaborasi dengan peserta) atau di-sync otomatis dari Hub.
           </p>

@@ -169,7 +169,7 @@ export function BulkImportFlow({
             </span>
             <span className="text-xs text-atr-fg-muted">
               .xlsx · kolom: full_name, email, phone, nik, gender, birthdate,
-              desa_name, role, attendance_mode (offline/online, opsional —
+              desa_name, role, attendance_mode (offline/online, opsional -
               default offline)
             </span>
             <input

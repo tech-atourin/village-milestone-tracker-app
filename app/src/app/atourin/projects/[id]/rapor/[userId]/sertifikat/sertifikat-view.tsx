@@ -122,7 +122,7 @@ export function SertifikatView({
         <div className="mt-4 flex-1 text-center">
           <h1 className="text-sm font-bold uppercase tracking-[0.25em] text-atr-purple-600">
             {membership?.attendance_mode === "online"
-              ? "Sertifikat Penyelesaian — Peserta Online"
+              ? "Sertifikat Penyelesaian - Peserta Online"
               : "Sertifikat Penghargaan"}
           </h1>
           <p className="mt-1 text-xs uppercase tracking-widest text-atr-fg-muted">

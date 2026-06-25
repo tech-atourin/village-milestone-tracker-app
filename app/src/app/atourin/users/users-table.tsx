@@ -187,7 +187,7 @@ export function UsersTable({
     }
     if (
       !confirm(
-        `Generate password baru untuk ${u.full_name}?\n\nPassword lama tidak akan berlaku lagi. Password baru akan ditampilkan satu kali — simpan/bagikan ke user.`,
+        `Generate password baru untuk ${u.full_name}?\n\nPassword lama tidak akan berlaku lagi. Password baru akan ditampilkan satu kali - simpan/bagikan ke user.`,
       )
     )
       return;
@@ -498,7 +498,7 @@ export function UsersTable({
                 </h2>
                 <p className="text-xs text-atr-fg-muted">
                   Password lama sudah tidak berlaku. Simpan/bagikan password
-                  baru sekarang — tidak akan ditampilkan lagi.
+                  baru sekarang - tidak akan ditampilkan lagi.
                 </p>
               </div>
               <button

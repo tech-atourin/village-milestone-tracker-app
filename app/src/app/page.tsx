@@ -18,7 +18,7 @@ import {
 import { getCurrentUser, scopeHomePath } from "@/lib/auth/rbac";
 
 export const metadata = {
-  title: "Village Milestone Tracker — Platform Manajemen Program Pendampingan",
+  title: "Village Milestone Tracker - Platform Manajemen Program Pendampingan",
   description:
     "Village Milestone Tracker by Atourin. Platform multi-tenant untuk Pemerintah, BUMN/Swasta, dan NGO dalam mengelola program pelatihan, pendampingan, dan klasifikasi desa wisata secara terukur.",
 };

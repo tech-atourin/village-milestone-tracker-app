@@ -80,7 +80,7 @@ export function SesiBaruForm({ projects }: { projects: ProjectScope[] }) {
         </Field>
       ) : (
         <div className="rounded-lg border border-atr-purple/30 bg-atr-purple-50/40 px-3 py-2 text-xs text-atr-fg">
-          Project ini bertipe <strong>Pelaku Pariwisata</strong> — sesi
+          Project ini bertipe <strong>Pelaku Pariwisata</strong> - sesi
           pendampingan langsung untuk seluruh peserta project, tidak per-desa.
         </div>
       )}
