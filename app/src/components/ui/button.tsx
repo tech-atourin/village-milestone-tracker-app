@@ -1,6 +1,7 @@
 import * as React from "react"
 import { Slot } from "@radix-ui/react-slot"
 import { cva, type VariantProps } from "class-variance-authority"
+import { Loader2 } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 
@@ -38,17 +39,47 @@ export interface ButtonProps
   extends React.ButtonHTMLAttributes<HTMLButtonElement>,
     VariantProps<typeof buttonVariants> {
   asChild?: boolean
+  /** Show spinner + disable button. Skipped when asChild is true. */
+  loading?: boolean
+  /** Optional label shown while loading, replaces children. */
+  loadingText?: string
 }
 
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ className, variant, size, asChild = false, ...props }, ref) => {
+  (
+    {
+      className,
+      variant,
+      size,
+      asChild = false,
+      loading = false,
+      loadingText,
+      disabled,
+      children,
+      ...props
+    },
+    ref
+  ) => {
     const Comp = asChild ? Slot : "button"
+    // Slot forwards to child, can't inject spinner — skip loading UI in asChild mode.
+    const showSpinner = loading && !asChild
     return (
       <Comp
         className={cn(buttonVariants({ variant, size, className }))}
         ref={ref}
+        disabled={disabled || (loading && !asChild)}
+        aria-busy={loading || undefined}
         {...props}
-      />
+      >
+        {showSpinner ? (
+          <>
+            <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+            {loadingText ?? children}
+          </>
+        ) : (
+          children
+        )}
+      </Comp>
     )
   }
 )

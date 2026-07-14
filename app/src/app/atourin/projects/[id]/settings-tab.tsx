@@ -8,6 +8,7 @@ import {
   archiveProject,
   deleteProject,
 } from "@/server/actions/project-edit";
+import { startRouteProgress } from "@/components/route-progress";
 import {
   ExtraLogosManager,
   type ExtraLogo,
@@ -100,6 +101,7 @@ export function SettingsTab({
       return;
     startTransition(async () => {
       await deleteProject(project.id);
+      startRouteProgress();
       router.push("/atourin/projects");
     });
   }

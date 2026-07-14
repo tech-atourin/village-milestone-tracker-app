@@ -1,5 +1,4 @@
-export const metadata = { title: "Dashboard Publik" };
-
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Image from "next/image";
 import {
@@ -332,6 +331,49 @@ function formatDate(iso: string | null) {
     month: "long",
     year: "numeric",
   }).format(new Date(iso));
+}
+
+const SITE_URL =
+  process.env.NEXT_PUBLIC_SITE_URL ?? "https://vmt.atourin.com";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: { slug: string };
+}): Promise<Metadata> {
+  const data = await fetchSummary(params.slug);
+  if (!data) return { title: "Dashboard Publik" };
+  const title = `${data.project.name} - Dashboard Publik`;
+  const description =
+    data.project.description?.slice(0, 200) ??
+    `Dashboard publik program ${data.project.name}${data.organization ? ` bersama ${data.organization.name}` : ""}. ${data.stats.desa_count} desa, ${data.stats.peserta_count} peserta.`;
+  const canonicalUrl = `${SITE_URL}/public/${params.slug}`;
+  return {
+    title,
+    description,
+    alternates: { canonical: canonicalUrl },
+    robots: {
+      index: true,
+      follow: true,
+      googleBot: { index: true, follow: true },
+    },
+    openGraph: {
+      type: "website",
+      url: canonicalUrl,
+      siteName: "Village Milestone Tracker",
+      title,
+      description,
+      locale: "id_ID",
+      images: data.organization?.logo_url
+        ? [{ url: data.organization.logo_url }]
+        : undefined,
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+    },
+  };
 }
 
 export default async function PublicDashboardPage({

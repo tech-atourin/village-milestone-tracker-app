@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Loader2, Save } from "lucide-react";
 import type { ProjectScope } from "@/server/queries/pendampingan";
 import { createSession } from "@/server/actions/pendampingan";
+import { startRouteProgress } from "@/components/route-progress";
 
 export function SesiBaruForm({ projects }: { projects: ProjectScope[] }) {
   const router = useRouter();
@@ -44,7 +45,10 @@ export function SesiBaruForm({ projects }: { projects: ProjectScope[] }) {
         materi: materi || null,
       });
       if (r.error) setError(r.error);
-      else if (r.id) router.push(`/narasumber/sesi/${r.id}`);
+      else if (r.id) {
+        startRouteProgress();
+        router.push(`/narasumber/sesi/${r.id}`);
+      }
     });
   }
 

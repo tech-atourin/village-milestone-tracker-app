@@ -53,10 +53,16 @@ async function ensureAccess(roleToTouch: string, orgIdToTouch: string | null) {
   if (!user) return { error: "Tidak terautentikasi" } as const;
   if (user.global_role === "superadmin") return { user } as const;
   if (user.global_role === "mitra_admin") {
-    // Mitra can only manage peserta, narasumber within their own org
-    if (roleToTouch === "superadmin") return { error: "Tidak diizinkan membuat superadmin" } as const;
-    if (roleToTouch === "mitra_admin" && orgIdToTouch !== user.organization_id)
-      return { error: "Mitra hanya bisa kelola org sendiri" } as const;
+    // Mitra_admin scope: only users inside their own organization,
+    // and never target a superadmin. This applies to every target role
+    // (peserta/narasumber/desa_wisata/mitra_admin) so cross-org account
+    // takeover via reset/update/delete is not possible.
+    if (roleToTouch === "superadmin")
+      return { error: "Tidak diizinkan menyentuh akun superadmin" } as const;
+    if (!user.organization_id)
+      return { error: "Akun mitra Anda belum di-attach ke organisasi" } as const;
+    if (orgIdToTouch !== user.organization_id)
+      return { error: "User bukan bagian dari organisasi Anda" } as const;
     return { user } as const;
   }
   return { error: "Tidak diizinkan" } as const;
@@ -72,7 +78,14 @@ export async function upsertUser(input: z.input<typeof upsertSchema>): Promise<
     return { error: `Input tidak valid: ${issue.path.join(".") || "field"} - ${issue.message}` };
   }
   const body = parsed.data;
-  const access = await ensureAccess(body.global_role, body.organization_id ?? null);
+  // Force mitra_admin insert/update to always target their own organization.
+  // Prevents crafting a request that lands a user in another org.
+  const caller = await getCurrentUser();
+  const effectiveOrgId =
+    caller?.global_role === "mitra_admin"
+      ? caller.organization_id
+      : body.organization_id ?? null;
+  const access = await ensureAccess(body.global_role, effectiveOrgId);
   if ("error" in access) return { error: access.error ?? "Tidak diizinkan" };
 
   const admin = createAdminClient();
@@ -84,7 +97,7 @@ export async function upsertUser(input: z.input<typeof upsertSchema>): Promise<
     email_artificial: !body.email,
     phone: body.phone ?? null,
     global_role: body.global_role,
-    organization_id: body.organization_id ?? null,
+    organization_id: effectiveOrgId,
   };
   // representing_desa_id used by:
   // - desa_wisata: the desa they represent on the platform
@@ -103,6 +116,25 @@ export async function upsertUser(input: z.input<typeof upsertSchema>): Promise<
 
   if (body.id) {
     // ----- Update existing -----
+    // For mitra_admin, verify target user is actually in caller's org
+    // (effectiveOrgId gave the *intended* org; without this check a mitra
+    // could pull a peserta out of another org into theirs.)
+    if (caller?.global_role === "mitra_admin") {
+      const { data: existing } = await admin
+        .from("users")
+        .select("organization_id, global_role")
+        .eq("id", body.id)
+        .maybeSingle();
+      const cur = existing as {
+        organization_id: string | null;
+        global_role: string;
+      } | null;
+      if (!cur) return { error: "User tidak ditemukan" };
+      if (cur.organization_id !== caller.organization_id)
+        return { error: "User bukan bagian dari organisasi Anda" };
+      if (cur.global_role === "superadmin")
+        return { error: "Tidak diizinkan menyentuh akun superadmin" };
+    }
     const { error } = await admin.from("users").update(profile).eq("id", body.id);
     if (error) return { error: error.message };
     await audit({

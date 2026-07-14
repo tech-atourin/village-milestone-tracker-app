@@ -70,9 +70,16 @@ export async function signInAction(
     .update({ last_login_at: new Date().toISOString() })
     .eq("id", data.user.id);
 
-  const target = parsed.data.redirectTo?.startsWith("/")
-    ? parsed.data.redirectTo
-    : scopeHomePath(role);
+  // Only accept relative same-origin paths. Reject "//evil.com" (protocol-relative)
+  // and any URL containing scheme or backslashes.
+  const rt = parsed.data.redirectTo;
+  const safeRedirect =
+    rt &&
+    rt.startsWith("/") &&
+    !rt.startsWith("//") &&
+    !rt.startsWith("/\\") &&
+    !rt.includes(":");
+  const target = safeRedirect ? rt : scopeHomePath(role);
 
   redirect(target);
 }

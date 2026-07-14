@@ -8,34 +8,9 @@
  * Keep in sync with the canonical file.
  * ===================================================== */
 
-@font-face {
-  font-family: "Product Sans";
-  src: url("/fonts/Product-Sans-Regular.ttf") format("truetype");
-  font-weight: 400;
-  font-style: normal;
-  font-display: swap;
-}
-@font-face {
-  font-family: "Product Sans";
-  src: url("/fonts/Product-Sans-Italic.ttf") format("truetype");
-  font-weight: 400;
-  font-style: italic;
-  font-display: swap;
-}
-@font-face {
-  font-family: "Product Sans";
-  src: url("/fonts/Product-Sans-Bold.ttf") format("truetype");
-  font-weight: 700;
-  font-style: normal;
-  font-display: swap;
-}
-@font-face {
-  font-family: "Product Sans";
-  src: url("/fonts/Product-Sans-Bold-Italic.ttf") format("truetype");
-  font-weight: 700;
-  font-style: italic;
-  font-display: swap;
-}
+/* Product Sans loaded via next/font/local in src/app/layout.tsx.
+   next/font handles preload, font-display: swap, self-hosting, and CLS-free
+   fallback metric adjustment automatically. */
 
 :root {
   /* Brand: purple */
@@ -65,7 +40,7 @@
   --atr-info: var(--atr-purple);
 
   /* Type */
-  --atr-font-sans: "Product Sans", -apple-system, BlinkMacSystemFont,
+  --atr-font-sans: var(--font-product-sans), -apple-system, BlinkMacSystemFont,
     "Segoe UI", Roboto, sans-serif;
 
   /* Shadows */

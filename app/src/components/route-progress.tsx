@@ -7,8 +7,17 @@ import { usePathname, useSearchParams } from "next/navigation";
 // RouteProgress - top-of-page nprogress-style bar that
 // shows during client-side navigations. Triggered by:
 // - Any anchor click whose href starts with "/"
+// - Explicit startRouteProgress() call (for router.push/replace)
 // - Any pathname/searchParams change (completion)
 // =====================================================
+
+// Module-level trigger — set by the mounted RouteProgress and called by
+// any client code that navigates programmatically (form submits, wizards,
+// router.push after mutation). No-op before the component mounts.
+let startFn: (() => void) | null = null;
+export function startRouteProgress(): void {
+  startFn?.();
+}
 
 export function RouteProgress() {
   const pathname = usePathname();
@@ -25,6 +34,25 @@ export function RouteProgress() {
     }, 250);
     return () => clearTimeout(t);
   }, [pathname, searchParams]);
+
+  // Shared start routine — used by anchor interceptor and by
+  // startRouteProgress() called from router.push callers.
+  useEffect(() => {
+    function begin() {
+      setActive(true);
+      setProgress(15);
+      let p = 15;
+      const interval = window.setInterval(() => {
+        p = Math.min(80, p + 5 + Math.random() * 10);
+        setProgress(p);
+        if (p >= 80) window.clearInterval(interval);
+      }, 150);
+    }
+    startFn = begin;
+    return () => {
+      if (startFn === begin) startFn = null;
+    };
+  }, []);
 
   // Intercept clicks on internal links to start the bar
   useEffect(() => {
@@ -45,15 +73,7 @@ export function RouteProgress() {
       // Skip current URL (no actual navigation)
       const target = href.split("#")[0];
       if (target === pathname) return;
-      setActive(true);
-      setProgress(15);
-      // Animate to ~80 over time
-      let p = 15;
-      const interval = window.setInterval(() => {
-        p = Math.min(80, p + 5 + Math.random() * 10);
-        setProgress(p);
-        if (p >= 80) window.clearInterval(interval);
-      }, 150);
+      startFn?.();
     }
     document.addEventListener("click", onClick, { capture: true });
     return () => document.removeEventListener("click", onClick, { capture: true });

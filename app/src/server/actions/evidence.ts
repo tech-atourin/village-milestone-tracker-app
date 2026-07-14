@@ -39,7 +39,12 @@ export async function uploadEvidence(input: UploadEvidenceInput) {
     return { error: "Input tidak valid" };
   }
 
-  const fileType = FILE_TYPE_MAP[parsed.data.mime_type] ?? "document";
+  // Reject any MIME type that isn't in the whitelist. Without this a caller
+  // can upload HTML/SVG that browsers render inline when the signed URL is
+  // opened directly - potential stored XSS surface even though our own UI
+  // treats it as a "document".
+  const fileType = FILE_TYPE_MAP[parsed.data.mime_type];
+  if (!fileType) return { error: "Tipe file tidak didukung" };
   const supabase = createClient();
 
   // Decode base64 → bytes

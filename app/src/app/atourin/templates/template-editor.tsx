@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { startRouteProgress } from "@/components/route-progress";
 import {
   Loader2,
   Save,
@@ -191,6 +192,7 @@ export function TemplateEditor({
         setError(r.error);
         return;
       }
+      startRouteProgress();
       router.push("/atourin/templates");
       router.refresh();
     });
@@ -212,6 +214,7 @@ export function TemplateEditor({
         setError(r.error);
         return;
       }
+      startRouteProgress();
       router.push("/atourin/templates");
       router.refresh();
     });
@@ -472,7 +475,10 @@ export function TemplateEditor({
         <div className="ml-auto flex items-center gap-2">
           <button
             type="button"
-            onClick={() => router.push("/atourin/templates")}
+            onClick={() => {
+              startRouteProgress();
+              router.push("/atourin/templates");
+            }}
             className="inline-flex h-10 items-center rounded-lg border border-atr-outline bg-white px-4 text-sm font-bold text-atr-fg hover:bg-atr-bg-soft"
           >
             Batal

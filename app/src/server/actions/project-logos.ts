@@ -110,6 +110,11 @@ export async function removeProjectLogo(input: z.input<typeof removeSchema>) {
   const current =
     ((row as { extra_logos: Array<{ path: string; label: string }> } | null)
       ?.extra_logos ?? []);
+  // Only allow deleting a path that is actually registered on this project.
+  // Prevents crafting a request that deletes arbitrary storage objects from
+  // the vmt-evidence bucket (e.g. someone else's project's evidence).
+  if (!current.some((l) => l.path === parsed.data.path))
+    return { error: "Logo tidak terdaftar pada project ini" };
   const next = current.filter((l) => l.path !== parsed.data.path);
 
   const { error: updErr } = await admin

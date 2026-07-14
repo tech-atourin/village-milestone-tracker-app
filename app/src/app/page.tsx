@@ -17,10 +17,56 @@ import {
 } from "lucide-react";
 import { getCurrentUser, scopeHomePath } from "@/lib/auth/rbac";
 
+const SITE_URL =
+  process.env.NEXT_PUBLIC_SITE_URL ?? "https://vmt.atourin.com";
+const OG_IMAGE = `${SITE_URL}/logo/vmt/vmt-app-icon-512.png`;
+const DESCRIPTION =
+  "Village Milestone Tracker by Atourin. Platform multi-tenant untuk Pemerintah, BUMN/Swasta, dan NGO dalam mengelola program pelatihan, pendampingan, dan klasifikasi desa wisata secara terukur.";
+
 export const metadata = {
   title: "Village Milestone Tracker - Platform Manajemen Program Pendampingan",
-  description:
-    "Village Milestone Tracker by Atourin. Platform multi-tenant untuk Pemerintah, BUMN/Swasta, dan NGO dalam mengelola program pelatihan, pendampingan, dan klasifikasi desa wisata secara terukur.",
+  description: DESCRIPTION,
+  metadataBase: new URL(SITE_URL),
+  alternates: { canonical: "/" },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: { index: true, follow: true },
+  },
+  openGraph: {
+    type: "website",
+    url: "/",
+    siteName: "Village Milestone Tracker",
+    title:
+      "Village Milestone Tracker - Platform Manajemen Program Pendampingan",
+    description: DESCRIPTION,
+    locale: "id_ID",
+    images: [
+      {
+        url: OG_IMAGE,
+        width: 1200,
+        height: 630,
+        alt: "Village Milestone Tracker by Atourin",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title:
+      "Village Milestone Tracker - Platform Manajemen Program Pendampingan",
+    description: DESCRIPTION,
+    images: [OG_IMAGE],
+  },
+  keywords: [
+    "desa wisata",
+    "ADWI",
+    "klasifikasi desa wisata",
+    "Permenpar",
+    "pendampingan desa",
+    "Atourin",
+    "milestone tracker",
+    "pelaku pariwisata",
+  ],
 };
 
 const WA_HREF =
@@ -125,8 +171,36 @@ export default async function LandingPage() {
   const user = await getCurrentUser();
   if (user) redirect(scopeHomePath(user.global_role));
 
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Organization",
+        "@id": `${SITE_URL}#organization`,
+        name: "Atourin",
+        url: SITE_URL,
+        logo: `${SITE_URL}/logo/atourin/atourin-logo-purple.png`,
+      },
+      {
+        "@type": "SoftwareApplication",
+        "@id": `${SITE_URL}#app`,
+        name: "Village Milestone Tracker",
+        alternateName: "VMT by Atourin",
+        applicationCategory: "BusinessApplication",
+        operatingSystem: "Web",
+        url: SITE_URL,
+        publisher: { "@id": `${SITE_URL}#organization` },
+        description: DESCRIPTION,
+        offers: { "@type": "Offer", price: "0", priceCurrency: "IDR" },
+      },
+    ],
+  };
   return (
     <main className="min-h-screen bg-white text-atr-fg">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       <header className="sticky top-0 z-30 border-b border-atr-outline/60 bg-white/80 backdrop-blur">
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-5">
           <div className="flex items-center gap-2.5">

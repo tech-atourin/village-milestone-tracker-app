@@ -51,11 +51,49 @@ async function resolveChecklistContext(checklistProgressId: string): Promise<{
   };
 }
 
+// Access rules for a resolved checklist context.
+// Prevents cross-tenant IDOR — without this, any signed-in user could
+// list/post comments on any checklist by UUID.
+async function canAccessChecklist(
+  user: { id: string; global_role: string; organization_id: string | null; representing_desa_id: string | null },
+  ctx: { project_id: string; desa_id: string },
+): Promise<boolean> {
+  if (user.global_role === "superadmin") return true;
+  const admin = createAdminClient();
+  if (user.global_role === "mitra_admin") {
+    if (!user.organization_id) return false;
+    const { data } = await admin
+      .from("projects")
+      .select("organization_id")
+      .eq("id", ctx.project_id)
+      .maybeSingle();
+    return (
+      (data as { organization_id: string | null } | null)?.organization_id ===
+      user.organization_id
+    );
+  }
+  if (user.global_role === "desa_wisata") {
+    return user.representing_desa_id === ctx.desa_id;
+  }
+  // peserta / narasumber — must have active membership on the project
+  const { data } = await admin
+    .from("project_memberships")
+    .select("id")
+    .eq("project_id", ctx.project_id)
+    .eq("user_id", user.id)
+    .eq("status", "active")
+    .limit(1);
+  return (data?.length ?? 0) > 0;
+}
+
 export async function listChecklistComments(
   checklistProgressId: string,
 ): Promise<ChecklistComment[]> {
   const user = await getCurrentUser();
   if (!user) return [];
+  const ctx = await resolveChecklistContext(checklistProgressId);
+  if (!ctx) return [];
+  if (!(await canAccessChecklist(user, ctx))) return [];
   const admin = createAdminClient();
   const { data } = await admin
     .from("assessment_comments")
@@ -86,6 +124,8 @@ export async function addChecklistComment(
 
   const ctx = await resolveChecklistContext(parsed.data.checklist_progress_id);
   if (!ctx) return { error: "Checklist tidak ditemukan" };
+  if (!(await canAccessChecklist(user, ctx)))
+    return { error: "Tidak diizinkan mengomentari checklist ini" };
 
   const admin = createAdminClient();
   const { data: inserted, error } = await admin

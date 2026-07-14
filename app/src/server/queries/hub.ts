@@ -29,13 +29,15 @@ export type HubDesaSearchResult = {
 
 export async function searchHubDesa(q: string): Promise<HubDesaSearchResult[]> {
   if (!q || q.trim().length < 2) return [];
+  const safe = q.replace(/[,()%*]/g, "").slice(0, 100);
+  if (safe.length < 2) return [];
   const supabase = hubClient();
   const { data, error } = await supabase
     .from("desa")
     .select(
       "id, nama, slug, kategori, desa_kel, kecamatan, kabupaten, provinsi, jumlah_kunjungan, cover_image_url, source_id",
     )
-    .or(`nama.ilike.%${q}%,kabupaten.ilike.%${q}%,provinsi.ilike.%${q}%`)
+    .or(`nama.ilike.%${safe}%,kabupaten.ilike.%${safe}%,provinsi.ilike.%${safe}%`)
     .order("jumlah_kunjungan", { ascending: false, nullsFirst: false })
     .limit(20);
   if (error) {

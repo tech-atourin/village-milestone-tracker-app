@@ -605,6 +605,11 @@ export type CriteriaProgressEvidence = {
 export async function listCriteriaEvidence(
   criteriaProgressId: string,
 ): Promise<CriteriaProgressEvidence[]> {
+  // Require an authenticated session before returning storage paths / metadata.
+  // Without this, an unauthenticated caller (or any bot) could enumerate
+  // criteria_progress UUIDs and retrieve file references.
+  const user = await getCurrentUser();
+  if (!user) return [];
   const admin = createAdminClient();
   const { data: tags } = await admin
     .from("evidence_tags")

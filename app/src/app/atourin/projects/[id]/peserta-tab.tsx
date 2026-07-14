@@ -33,6 +33,7 @@ export function PesertaTab({
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
+  const [removingId, setRemovingId] = useState<string | null>(null);
   const [showAdd, setShowAdd] = useState(false);
   const [q, setQ] = useState("");
   const [selUser, setSelUser] = useState<string | null>(null);
@@ -85,12 +86,15 @@ export function PesertaTab({
     });
   }
 
-  function remove(membershipId: string) {
+  async function remove(membershipId: string) {
     if (!confirm("Hapus anggota dari project?")) return;
-    startTransition(async () => {
+    setRemovingId(membershipId);
+    try {
       await removeProjectMember({ membership_id: membershipId, project_id: projectId });
       router.refresh();
-    });
+    } finally {
+      setRemovingId(null);
+    }
   }
 
   const activeMembers = safeMembers.filter((m) => m.status === "active");
@@ -300,6 +304,7 @@ export function PesertaTab({
           projectId={projectId}
           members={activeMembers}
           onRemove={remove}
+          removingId={removingId}
           raporBasePath={raporBasePath}
           programType={programType}
         />
@@ -315,12 +320,14 @@ function MembersTable({
   projectId,
   members,
   onRemove,
+  removingId,
   raporBasePath = "/atourin",
   programType = "desa_based",
 }: {
   projectId: string;
   members: ProjectMemberRow[];
   onRemove: (id: string) => void;
+  removingId: string | null;
   raporBasePath?: string;
   programType?: "desa_based" | "pelaku_pariwisata";
 }) {
@@ -414,9 +421,14 @@ function MembersTable({
           <button
             type="button"
             onClick={() => onRemove(row.original.id)}
-            className="inline-flex h-7 items-center gap-1 rounded-md border border-atr-outline bg-white px-2 text-xs font-bold text-atr-fg-muted transition hover:border-atr-red/30 hover:text-atr-red"
+            disabled={removingId === row.original.id}
+            className="inline-flex h-7 items-center gap-1 rounded-md border border-atr-outline bg-white px-2 text-xs font-bold text-atr-fg-muted transition hover:border-atr-red/30 hover:text-atr-red disabled:cursor-not-allowed disabled:opacity-60"
           >
-            <X className="h-3 w-3" />
+            {removingId === row.original.id ? (
+              <Loader2 className="h-3 w-3 animate-spin" />
+            ) : (
+              <X className="h-3 w-3" />
+            )}
             Hapus
           </button>
         </div>

@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { startRouteProgress } from "@/components/route-progress";
 import {
   Check,
   ChevronLeft,
@@ -125,6 +126,7 @@ export function ProjectWizard({
         return;
       }
       if (result.projectId) {
+        startRouteProgress();
         router.push(`/${redirectScope}/projects/${result.projectId}`);
       }
     });

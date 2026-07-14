@@ -25,7 +25,15 @@ export async function listDesa(q?: string): Promise<DesaRow[]> {
     .limit(500);
 
   if (q) {
-    query = query.or(`name.ilike.%${q}%,kabupaten.ilike.%${q}%,provinsi.ilike.%${q}%`);
+    // Escape PostgREST OR delimiters (,) and wildcards to prevent filter
+    // injection where a crafted `q` could break out of ilike and target
+    // arbitrary columns / soft-deleted rows.
+    const safe = q.replace(/[,()%*]/g, "").slice(0, 100);
+    if (safe) {
+      query = query.or(
+        `name.ilike.%${safe}%,kabupaten.ilike.%${safe}%,provinsi.ilike.%${safe}%`,
+      );
+    }
   }
   const { data, error } = await query;
   if (error) {
