@@ -47,6 +47,7 @@ export function DesaTab({
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
+  const [busyId, setBusyId] = useState<string | null>(null);
   const [showSearch, setShowSearch] = useState(false);
   const [showHub, setShowHub] = useState(false);
   const [hubQ, setHubQ] = useState("");
@@ -78,17 +79,22 @@ export function DesaTab({
 
   function importFromHub(hubDesaId: string) {
     setError(null);
+    setBusyId(hubDesaId);
     startTransition(async () => {
-      const r = await importHubDesaToProject({
-        project_id: projectId,
-        hub_desa_id: hubDesaId,
-      });
-      if (r.error) setError(r.error);
-      else {
-        setShowHub(false);
-        setHubQ("");
-        setHubResults([]);
-        router.refresh();
+      try {
+        const r = await importHubDesaToProject({
+          project_id: projectId,
+          hub_desa_id: hubDesaId,
+        });
+        if (r.error) setError(r.error);
+        else {
+          setShowHub(false);
+          setHubQ("");
+          setHubResults([]);
+          router.refresh();
+        }
+      } finally {
+        setBusyId(null);
       }
     });
   }
@@ -107,10 +113,15 @@ export function DesaTab({
 
   function attach(desaId: string) {
     setError(null);
+    setBusyId(desaId);
     startTransition(async () => {
-      const r = await attachDesaToProject({ project_id: projectId, desa_id: desaId });
-      if (r.error) setError(r.error);
-      else router.refresh();
+      try {
+        const r = await attachDesaToProject({ project_id: projectId, desa_id: desaId });
+        if (r.error) setError(r.error);
+        else router.refresh();
+      } finally {
+        setBusyId(null);
+      }
     });
   }
 
@@ -221,10 +232,10 @@ export function DesaTab({
                   <button
                     type="button"
                     onClick={() => importFromHub(d.id)}
-                    disabled={pending}
+                    disabled={busyId === d.id}
                     className="inline-flex h-8 shrink-0 items-center gap-1 rounded-md bg-atr-purple px-2.5 text-xs font-bold text-white transition hover:bg-atr-purple-600 disabled:opacity-50"
                   >
-                    {pending ? (
+                    {busyId === d.id ? (
                       <Loader2 className="h-3 w-3 animate-spin" />
                     ) : (
                       <Plus className="h-3 w-3" />
@@ -307,10 +318,10 @@ export function DesaTab({
                     <button
                       type="button"
                       onClick={() => attach(d.id)}
-                      disabled={pending}
+                      disabled={busyId === d.id}
                       className="inline-flex h-8 shrink-0 items-center gap-1 rounded-md bg-atr-purple px-2.5 text-xs font-bold text-white transition hover:bg-atr-purple-600 disabled:opacity-50"
                     >
-                      {pending ? (
+                      {busyId === d.id ? (
                         <Loader2 className="h-3 w-3 animate-spin" />
                       ) : (
                         <Plus className="h-3 w-3" />

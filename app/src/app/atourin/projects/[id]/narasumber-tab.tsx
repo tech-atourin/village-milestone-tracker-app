@@ -47,6 +47,7 @@ export function NarasumberTab({
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
+  const [removingId, setRemovingId] = useState<string | null>(null);
   const [showAdd, setShowAdd] = useState(false);
   const [q, setQ] = useState("");
   const [selUser, setSelUser] = useState<string | null>(null);
@@ -122,12 +123,17 @@ export function NarasumberTab({
       )
     )
       return;
+    setRemovingId(membershipId);
     startTransition(async () => {
-      await removeProjectMember({
-        membership_id: membershipId,
-        project_id: projectId,
-      });
-      router.refresh();
+      try {
+        await removeProjectMember({
+          membership_id: membershipId,
+          project_id: projectId,
+        });
+        router.refresh();
+      } finally {
+        setRemovingId(null);
+      }
     });
   }
 
@@ -331,11 +337,16 @@ export function NarasumberTab({
                 {a.membership_id && (
                   <button
                     type="button"
-                    onClick={() => remove(a.membership_id)}
+                    onClick={() => remove(a.membership_id!)}
+                    disabled={removingId === a.membership_id}
                     title="Lepas dari project"
-                    className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-atr-outline bg-white text-atr-fg-muted transition hover:border-atr-red/30 hover:text-atr-red"
+                    className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-atr-outline bg-white text-atr-fg-muted transition hover:border-atr-red/30 hover:text-atr-red disabled:cursor-not-allowed disabled:opacity-60"
                   >
-                    <X className="h-3 w-3" />
+                    {removingId === a.membership_id ? (
+                      <Loader2 className="h-3 w-3 animate-spin" />
+                    ) : (
+                      <X className="h-3 w-3" />
+                    )}
                   </button>
                 )}
               </div>

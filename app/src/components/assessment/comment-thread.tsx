@@ -58,6 +58,7 @@ export function CommentThread({
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
+  const [deletingId, setDeletingId] = useState<string | null>(null);
   const [open, setOpen] = useState(comments.length > 0);
   const [body, setBody] = useState("");
   const [isInternal, setIsInternal] = useState(false);
@@ -87,10 +88,15 @@ export function CommentThread({
 
   function remove(id: string) {
     if (!confirm("Hapus comment ini?")) return;
+    setDeletingId(id);
     startTransition(async () => {
-      const r = await deleteAssessmentComment(id);
-      if (r.error) setErr(r.error);
-      else router.refresh();
+      try {
+        const r = await deleteAssessmentComment(id);
+        if (r.error) setErr(r.error);
+        else router.refresh();
+      } finally {
+        setDeletingId(null);
+      }
     });
   }
 
@@ -170,11 +176,15 @@ export function CommentThread({
                       <button
                         type="button"
                         onClick={() => remove(c.id)}
-                        disabled={pending}
-                        className="shrink-0 rounded-md p-1 text-atr-fg-muted hover:bg-atr-red/10 hover:text-atr-red"
+                        disabled={deletingId === c.id}
+                        className="shrink-0 rounded-md p-1 text-atr-fg-muted hover:bg-atr-red/10 hover:text-atr-red disabled:cursor-not-allowed disabled:opacity-60"
                         aria-label="Hapus"
                       >
-                        <Trash2 className="h-3 w-3" />
+                        {deletingId === c.id ? (
+                          <Loader2 className="h-3 w-3 animate-spin" />
+                        ) : (
+                          <Trash2 className="h-3 w-3" />
+                        )}
                       </button>
                     )}
                   </li>
