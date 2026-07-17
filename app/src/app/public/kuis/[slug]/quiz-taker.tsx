@@ -405,6 +405,23 @@ export function QuizTaker({
     );
   }
 
+  // ---- Submitting → result transition ----
+  if (submitting) {
+    return (
+      <Card>
+        <div className="flex flex-col items-center gap-3 py-10 text-center">
+          <Loader2 className="h-10 w-10 animate-spin text-atr-purple" />
+          <div className="text-sm font-bold text-atr-fg">
+            Mengirim jawaban &amp; menghitung hasil...
+          </div>
+          <p className="text-xs text-atr-fg-muted">
+            Mohon tunggu, jangan tutup halaman ini.
+          </p>
+        </div>
+      </Card>
+    );
+  }
+
   // ---- Taking ----
   const answeredCount = Object.values(answers).filter((v) => v.length > 0).length;
   return (
