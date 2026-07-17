@@ -44,7 +44,7 @@ export default async function PublicQuizPage({
           knownIdentity={knownIdentity}
         />
         <p className="mt-6 text-center text-[11px] text-atr-fg-muted">
-          Ditenagai oleh Village Milestone Tracker by Atourin
+          Didukung oleh Village Milestone Tracker by Atourin
         </p>
       </div>
     </main>

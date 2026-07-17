@@ -97,7 +97,10 @@ export async function POST(
       .eq("respondent_email", email);
     if ((count ?? 0) >= quiz.max_attempts) {
       return NextResponse.json(
-        { error: "Anda sudah mencapai batas maksimal pengerjaan kuis ini." },
+        {
+          error:
+            "Anda sudah menyelesaikan kuis ini. Kuis tidak dapat dikerjakan ulang.",
+        },
         { status: 403 },
       );
     }

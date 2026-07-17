@@ -119,7 +119,9 @@ export function QuizTaker({
     return () => clearTimeout(t);
   }, [phase, remaining, doSubmit]);
 
-  function start() {
+  const [starting, setStarting] = useState(false);
+
+  async function start() {
     setError(null);
     if (name.trim().length < 2) {
       setError("Nama wajib diisi");
@@ -129,6 +131,28 @@ export function QuizTaker({
       setError("Email tidak valid");
       return;
     }
+    // Eligibility gate: block if this participant already completed the quiz
+    // (incl. timed-out attempts). Deliberately generic message — do not reveal
+    // it is keyed on email.
+    setStarting(true);
+    try {
+      const res = await fetch(`/api/kuis/${slug}/check`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: email.trim() }),
+      });
+      const json = await res.json().catch(() => ({ allowed: true }));
+      if (json.allowed === false) {
+        setError(
+          "Anda sudah menyelesaikan kuis ini. Kuis tidak dapat dikerjakan ulang.",
+        );
+        setStarting(false);
+        return;
+      }
+    } catch {
+      // fail-open; submit route still enforces the hard cap
+    }
+    setStarting(false);
     startedAtRef.current = new Date().toISOString();
     if (quiz.time_limit_seconds) setRemaining(quiz.time_limit_seconds);
     setPhase("taking");
@@ -360,9 +384,16 @@ export function QuizTaker({
         <button
           type="button"
           onClick={start}
-          className="mt-5 inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-atr-purple text-sm font-bold text-white transition hover:bg-atr-purple-600"
+          disabled={starting}
+          className="mt-5 inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-atr-purple text-sm font-bold text-white transition hover:bg-atr-purple-600 disabled:opacity-60"
         >
-          Mulai Kerjakan
+          {starting ? (
+            <>
+              <Loader2 className="h-4 w-4 animate-spin" /> Memeriksa...
+            </>
+          ) : (
+            "Mulai Kerjakan"
+          )}
         </button>
         {quiz.time_limit_seconds ? (
           <p className="mt-2 text-center text-[11px] text-atr-fg-muted">
