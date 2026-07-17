@@ -139,6 +139,41 @@ export function QuizTaker({
     setAnswers((prev) => ({ ...prev, [q.id]: [optionId] }));
   }
 
+  const hasBranding =
+    quiz.branding.org_logo_url ||
+    quiz.branding.extra_logos.length > 0 ||
+    quiz.branding.org_name;
+  const LogoHeader = hasBranding ? (
+    <div className="mb-4 flex flex-wrap items-center justify-center gap-x-5 gap-y-3">
+      {quiz.branding.extra_logos.map((l) => (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          key={l.signed_url}
+          src={l.signed_url}
+          alt={l.label}
+          title={l.label}
+          className="h-10 w-auto object-contain"
+        />
+      ))}
+      {quiz.branding.org_logo_url ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={quiz.branding.org_logo_url}
+          alt={quiz.branding.org_name ?? "Mitra"}
+          title={quiz.branding.org_name ?? undefined}
+          className="h-10 w-auto object-contain"
+        />
+      ) : (
+        quiz.branding.org_name &&
+        quiz.branding.extra_logos.length === 0 && (
+          <span className="text-sm font-bold text-atr-fg">
+            {quiz.branding.org_name}
+          </span>
+        )
+      )}
+    </div>
+  ) : null;
+
   // ---- Window closed / not yet open ----
   if (quiz.window !== "open") {
     return (
@@ -249,7 +284,9 @@ export function QuizTaker({
   // ---- Intro ----
   if (phase === "intro") {
     return (
-      <Card>
+      <>
+        {LogoHeader}
+        <Card>
         <h1 className="text-xl font-bold text-atr-fg">{quiz.title}</h1>
         {quiz.description && (
           <p className="mt-1 text-sm text-atr-fg-muted">{quiz.description}</p>
@@ -332,7 +369,8 @@ export function QuizTaker({
             Timer mulai berjalan begitu Anda menekan &quot;Mulai&quot;.
           </p>
         ) : null}
-      </Card>
+        </Card>
+      </>
     );
   }
 

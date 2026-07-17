@@ -58,6 +58,19 @@ function revalidateProject(projectId: string) {
   revalidatePath(`/mitra/projects/${projectId}`);
 }
 
+// Revalidate the public taker page for a quiz's slug (belt-and-suspenders;
+// the page is force-dynamic but this clears any client router cache too).
+async function revalidatePublicSlug(quizId: string) {
+  const admin = createAdminClient();
+  const { data } = await admin
+    .from("quizzes")
+    .select("public_slug")
+    .eq("id", quizId)
+    .maybeSingle();
+  const slug = (data as { public_slug: string | null } | null)?.public_slug;
+  if (slug) revalidatePath(`/public/kuis/${slug}`);
+}
+
 // =====================================================
 // Quiz meta CRUD
 // =====================================================
@@ -128,6 +141,7 @@ export async function updateQuizMeta(
     .eq("id", parsed.data.quiz_id);
   if (error) return { error: error.message };
   revalidateProject(access.projectId);
+  await revalidatePublicSlug(parsed.data.quiz_id);
   return { ok: true };
 }
 
@@ -185,6 +199,7 @@ export async function togglePublishQuiz(
     .eq("id", quizId);
   if (error) return { error: error.message };
   revalidateProject(access.projectId);
+  if (slug) revalidatePath(`/public/kuis/${slug}`);
   return { ok: true, slug };
 }
 

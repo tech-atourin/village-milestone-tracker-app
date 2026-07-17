@@ -12,6 +12,11 @@ export type PublicQuizQuestion = {
   options: PublicQuizOption[];
 };
 export type PublicQuizWindow = "open" | "not_yet" | "closed";
+export type PublicQuizBranding = {
+  org_name: string | null;
+  org_logo_url: string | null;
+  extra_logos: { label: string; signed_url: string }[];
+};
 export type PublicQuiz = {
   id: string;
   title: string;
@@ -24,6 +29,7 @@ export type PublicQuiz = {
   question_count: number;
   total_points: number;
   questions: PublicQuizQuestion[];
+  branding: PublicQuizBranding;
 };
 
 function computeWindow(
@@ -49,7 +55,7 @@ export async function getPublicQuiz(
   const { data: quiz } = await admin
     .from("quizzes")
     .select(
-      "id, title, description, time_limit_seconds, passing_score, max_attempts, shuffle_questions, is_published, opens_at, closes_at",
+      "id, title, description, time_limit_seconds, passing_score, max_attempts, shuffle_questions, is_published, opens_at, closes_at, project:projects(extra_logos, organization:organizations(name, logo_url))",
     )
     .eq("public_slug", slug)
     .eq("is_published", true)
@@ -57,6 +63,28 @@ export async function getPublicQuiz(
   if (!quiz) return null;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const q = quiz as any;
+
+  // Branding: org logo (direct URL) + extra project logos (signed, 7 days).
+  const org = q.project?.organization ?? null;
+  const extraRaw = (q.project?.extra_logos ?? []) as Array<{
+    path: string;
+    label: string;
+  }>;
+  const extra_logos = (
+    await Promise.all(
+      extraRaw.map(async (l) => {
+        const { data: signed } = await admin.storage
+          .from("vmt-evidence")
+          .createSignedUrl(l.path, 60 * 60 * 24 * 7);
+        return { label: l.label, signed_url: signed?.signedUrl ?? "" };
+      }),
+    )
+  ).filter((l) => l.signed_url);
+  const branding: PublicQuizBranding = {
+    org_name: org?.name ?? null,
+    org_logo_url: org?.logo_url ?? null,
+    extra_logos,
+  };
 
   const { data: questions } = await admin
     .from("quiz_questions")
@@ -92,5 +120,6 @@ export async function getPublicQuiz(
     question_count: mapped.length,
     total_points: totalPoints,
     questions: mapped,
+    branding,
   };
 }

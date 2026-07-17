@@ -27,6 +27,7 @@ import {
 } from "./gforms-tab";
 import { SummaryTab } from "./summary-tab";
 import { KuisTab } from "./kuis-tab";
+import { KuisTesTab } from "./kuis-tes-tab";
 import { listProjectQuizzes } from "@/server/queries/quizzes";
 import { ActionPlanBoard } from "@/components/action-plans/action-plan-board";
 import { listActionPlans } from "@/server/queries/action-plans";
@@ -72,8 +73,7 @@ const ALL_TABS = [
   { key: "narasumber", label: "Narasumber" },
   { key: "rencana-aksi", label: "Rencana Aksi" },
   { key: "evidence", label: "Bukti" },
-  { key: "gforms", label: "Hasil Tes" },
-  { key: "kuis", label: "Kuis" },
+  { key: "kuis", label: "Kuis & Tes" },
   { key: "settings", label: "Pengaturan" },
 ] as const;
 
@@ -196,9 +196,11 @@ export default async function ProjectDetailPage({
           filterDesaId={searchParams.desa}
         />
       )}
-      {activeTab === "gforms" && <GformsAndResultsLoader projectId={project.id} />}
       {activeTab === "kuis" && (
-        <KuisTabLoader projectId={project.id} scope="atourin" />
+        <KuisTesTab
+          kuis={<KuisTabLoader projectId={project.id} scope="atourin" />}
+          gform={<GformsAndResultsLoader projectId={project.id} />}
+        />
       )}
       {activeTab === "settings" && (
         <SettingsTabLoader

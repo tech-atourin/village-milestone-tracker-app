@@ -28,6 +28,7 @@ import {
 import { OverviewTab } from "@/app/atourin/projects/[id]/overview-tab";
 import { SummaryTab } from "@/app/atourin/projects/[id]/summary-tab";
 import { KuisTab } from "@/app/atourin/projects/[id]/kuis-tab";
+import { KuisTesTab } from "@/app/atourin/projects/[id]/kuis-tes-tab";
 import { listProjectQuizzes } from "@/server/queries/quizzes";
 import { ActionPlanBoard } from "@/components/action-plans/action-plan-board";
 import { listActionPlans } from "@/server/queries/action-plans";
@@ -73,8 +74,7 @@ const ALL_TABS = [
   { key: "narasumber", label: "Narasumber" },
   { key: "rencana-aksi", label: "Rencana Aksi" },
   { key: "evidence", label: "Bukti" },
-  { key: "gforms", label: "Hasil Tes" },
-  { key: "kuis", label: "Kuis" },
+  { key: "kuis", label: "Kuis & Tes" },
   { key: "settings", label: "Pengaturan" },
 ] as const;
 
@@ -204,9 +204,11 @@ export default async function MitraProjectDetailPage({
           filterDesaId={searchParams.desa}
         />
       )}
-      {activeTab === "gforms" && <GformsAndResultsLoader projectId={project.id} />}
       {activeTab === "kuis" && (
-        <KuisTabLoader projectId={project.id} scope="mitra" />
+        <KuisTesTab
+          kuis={<KuisTabLoader projectId={project.id} scope="mitra" />}
+          gform={<GformsAndResultsLoader projectId={project.id} />}
+        />
       )}
       {activeTab === "settings" && (
         <MitraSettingsLoader project={project} />
