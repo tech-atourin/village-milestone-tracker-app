@@ -23,7 +23,8 @@ const PUBLIC_PREFIXES = [
   "/reset-password",
   "/auth", // magic-link + reset callback
   "/forbidden",
-  "/public", // shareable dashboards (Phase 3)
+  "/public", // shareable dashboards + public quiz taking (/public/kuis)
+  "/api/kuis", // anonymous quiz submit — route does its own rate-limit + slug gate
 ];
 
 const SCOPE_PREFIXES = {

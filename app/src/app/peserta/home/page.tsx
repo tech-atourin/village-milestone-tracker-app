@@ -1,7 +1,12 @@
 export const metadata = { title: "Beranda" };
 
 import Link from "next/link";
-import { ChevronRight, MapPin, ClipboardList, GraduationCap } from "lucide-react";
+import {
+  ChevronRight,
+  MapPin,
+  ClipboardList,
+  GraduationCap,
+} from "lucide-react";
 import { getCurrentUser } from "@/lib/auth/rbac";
 import {
   listPesertaProjectDesa,
@@ -29,6 +34,22 @@ export default async function PesertaHomePage() {
           dengan peserta lain dari desa yang sama.
         </p>
       </header>
+
+      <Link
+        href="/peserta/kuis"
+        className="flex items-center gap-3 rounded-2xl border border-atr-outline bg-white p-4 shadow-atr-1 transition hover:bg-atr-bg-soft"
+      >
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-atr-purple-50 text-atr-purple">
+          <ClipboardList className="h-5 w-5" />
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="text-sm font-bold text-atr-fg">Hasil Kuis Saya</div>
+          <div className="text-xs text-atr-fg-muted">
+            Lihat skor kuis + pembahasan post-test
+          </div>
+        </div>
+        <ChevronRight className="h-4 w-4 shrink-0 text-atr-fg-muted" />
+      </Link>
 
       {trainings.length > 0 && (
         <section className="space-y-2">

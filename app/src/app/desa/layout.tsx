@@ -7,6 +7,7 @@ const NAV_ITEMS: SidebarItem[] = [
   { href: "/desa/dashboard", label: "Dashboard", icon: "LayoutDashboard" },
   { href: "/desa/self-assessment", label: "Self-Assessment", icon: "ClipboardCheck" },
   { href: "/desa/rencana-aksi", label: "Rencana Aksi", icon: "ListChecks" },
+  { href: "/desa/kuis", label: "Hasil Kuis", icon: "ClipboardList" },
   { href: "/desa/riwayat", label: "Riwayat Program", icon: "History" },
   { href: "/desa/profil", label: "Profil Desa", icon: "MapPin" },
   { href: "/desa/pengelola", label: "Profil Pengelola", icon: "Building2" },

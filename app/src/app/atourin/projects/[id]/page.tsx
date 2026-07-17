@@ -26,6 +26,8 @@ import {
   type NarasumberRatingRow,
 } from "./gforms-tab";
 import { SummaryTab } from "./summary-tab";
+import { KuisTab } from "./kuis-tab";
+import { listProjectQuizzes } from "@/server/queries/quizzes";
 import { ActionPlanBoard } from "@/components/action-plans/action-plan-board";
 import { listActionPlans } from "@/server/queries/action-plans";
 import { listProjectLogoUrls } from "@/server/actions/project-logos";
@@ -71,6 +73,7 @@ const ALL_TABS = [
   { key: "rencana-aksi", label: "Rencana Aksi" },
   { key: "evidence", label: "Bukti" },
   { key: "gforms", label: "Hasil Tes" },
+  { key: "kuis", label: "Kuis" },
   { key: "settings", label: "Pengaturan" },
 ] as const;
 
@@ -194,6 +197,9 @@ export default async function ProjectDetailPage({
         />
       )}
       {activeTab === "gforms" && <GformsAndResultsLoader projectId={project.id} />}
+      {activeTab === "kuis" && (
+        <KuisTabLoader projectId={project.id} scope="atourin" />
+      )}
       {activeTab === "settings" && (
         <SettingsTabLoader
           project={{
@@ -412,6 +418,28 @@ async function GformsAndResultsLoader({ projectId }: { projectId: string }) {
       gforms={gforms}
       testResults={testResults}
       narasumberRatings={narasumberRatings}
+    />
+  );
+}
+
+async function KuisTabLoader({
+  projectId,
+  scope,
+}: {
+  projectId: string;
+  scope: "atourin" | "mitra";
+}) {
+  const [quizzes, topik] = await Promise.all([
+    listProjectQuizzes(projectId),
+    listProjectTopikWithItems(projectId),
+  ]);
+  const topikOptions = topik.map((t) => ({ id: t.id, name: t.name }));
+  return (
+    <KuisTab
+      projectId={projectId}
+      quizzes={quizzes}
+      topikOptions={topikOptions}
+      scope={scope}
     />
   );
 }

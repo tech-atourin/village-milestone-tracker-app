@@ -30,6 +30,9 @@ const createProjectSchema = z.object({
     .min(1, "Minimal 1 hari")
     .max(60, "Maksimal 60 hari")
     .default(5),
+  participant_mode: z.enum(["offline", "online", "both"]).default("offline"),
+  target_online: z.number().int().min(0).max(100000).default(0),
+  target_offline: z.number().int().min(0).max(100000).default(0),
   enabled_modules: z
     .object({
       desa_baseline: z.boolean().default(true),
@@ -108,6 +111,12 @@ export async function createProjectAction(
     if (data.total_pendampingan_days)
       patch.total_pendampingan_days = data.total_pendampingan_days;
     if (data.program_type) patch.program_type = data.program_type;
+    patch.participant_mode = data.participant_mode;
+    // Only the counts relevant to the chosen mode; others stay 0.
+    patch.target_online =
+      data.participant_mode === "offline" ? 0 : data.target_online;
+    patch.target_offline =
+      data.participant_mode === "online" ? 0 : data.target_offline;
     if (Object.keys(patch).length > 0) {
       await supabase
         .from("projects")

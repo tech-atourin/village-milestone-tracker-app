@@ -11,6 +11,7 @@ import {
 } from "@/lib/excel/bulk-import";
 import { invitationHtml } from "@/lib/email/invitation-template";
 import { sanitizeAuthUser } from "@/lib/auth/sanitize";
+import { reconcileAttemptsForUser } from "@/lib/quiz/reconcile";
 
 // =====================================================
 // Generate Excel template
@@ -539,6 +540,9 @@ export async function commitBulkImport(
       if (desaId)
         await autoAttachPesertaToAllMatchingProjects(authResult.user.id, desaId);
     }
+    // Link prior anonymous quiz attempts submitted with this email.
+    if (!emailArtificial && email)
+      await reconcileAttemptsForUser(authResult.user.id, email);
 
     if (!emailArtificial) {
       credentials.push({

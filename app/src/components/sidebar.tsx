@@ -19,6 +19,7 @@ import {
   History,
   CalendarDays,
   ListChecks,
+  ClipboardList,
   type LucideIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -40,6 +41,7 @@ const ICONS: Record<string, LucideIcon> = {
   History,
   CalendarDays,
   ListChecks,
+  ClipboardList,
 };
 
 export type SidebarIconName = keyof typeof ICONS;

@@ -33,6 +33,9 @@ type State = {
   name: string;
   description: string;
   program_type: ProgramType;
+  participant_mode: "offline" | "online" | "both";
+  target_online: number;
+  target_offline: number;
   period_start: string;
   period_end: string;
   total_pendampingan_days: number;
@@ -68,6 +71,9 @@ export function ProjectWizard({
     name: "",
     description: "",
     program_type: "desa_based",
+    participant_mode: "offline",
+    target_online: 0,
+    target_offline: 0,
     period_start: "",
     period_end: "",
     total_pendampingan_days: 5,
@@ -112,6 +118,9 @@ export function ProjectWizard({
         name: state.name.trim(),
         description: state.description.trim() || null,
         program_type: state.program_type,
+        participant_mode: state.participant_mode,
+        target_online: state.target_online,
+        target_offline: state.target_offline,
         organization_id: state.organization_id,
         template_id: state.template_id,
         period_start: state.period_start || null,
@@ -294,6 +303,97 @@ export function ProjectWizard({
                   Jumlah hari kunjungan narasumber per desa (Hari 1, Hari 2, ...).
                 </p>
               </Field>
+            </div>
+
+            {/* Mode peserta + target jumlah */}
+            <div className="rounded-xl border border-atr-outline bg-atr-bg-soft/40 p-4">
+              <div className="text-sm font-semibold text-atr-fg">
+                Mode Peserta
+              </div>
+              <p className="mb-3 mt-0.5 text-[11px] text-atr-fg-muted">
+                Offline = full (checklist, rencana aksi, rapor, sertifikat).
+                Online = pelatihan + pre/post test saja.
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {(
+                  [
+                    { key: "offline", label: "Offline saja" },
+                    { key: "online", label: "Online saja" },
+                    { key: "both", label: "Keduanya" },
+                  ] as const
+                ).map((opt) => {
+                  const active = state.participant_mode === opt.key;
+                  return (
+                    <button
+                      key={opt.key}
+                      type="button"
+                      onClick={() =>
+                        setState({ ...state, participant_mode: opt.key })
+                      }
+                      className={`rounded-lg border px-3 py-2 text-xs font-bold transition ${
+                        active
+                          ? "border-atr-purple bg-atr-purple-50 text-atr-purple-700"
+                          : "border-atr-outline bg-white text-atr-fg hover:bg-atr-bg-soft"
+                      }`}
+                    >
+                      {opt.label}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {state.participant_mode !== "offline" && (
+                <div className="mt-3 grid grid-cols-2 gap-3">
+                  {state.participant_mode === "both" && (
+                    <Field label="Target peserta offline">
+                      <input
+                        type="number"
+                        min={0}
+                        value={state.target_offline}
+                        onChange={(e) =>
+                          setState({
+                            ...state,
+                            target_offline: Number(e.target.value) || 0,
+                          })
+                        }
+                        className="h-11 w-full rounded-lg border border-atr-outline px-3 text-sm outline-none focus:border-atr-purple focus:ring-2 focus:ring-atr-purple/15"
+                      />
+                    </Field>
+                  )}
+                  <Field label="Target peserta online">
+                    <input
+                      type="number"
+                      min={0}
+                      value={state.target_online}
+                      onChange={(e) =>
+                        setState({
+                          ...state,
+                          target_online: Number(e.target.value) || 0,
+                        })
+                      }
+                      className="h-11 w-full rounded-lg border border-atr-outline px-3 text-sm outline-none focus:border-atr-purple focus:ring-2 focus:ring-atr-purple/15"
+                    />
+                  </Field>
+                </div>
+              )}
+              {state.participant_mode === "offline" && (
+                <div className="mt-3">
+                  <Field label="Target jumlah peserta (offline)">
+                    <input
+                      type="number"
+                      min={0}
+                      value={state.target_offline}
+                      onChange={(e) =>
+                        setState({
+                          ...state,
+                          target_offline: Number(e.target.value) || 0,
+                        })
+                      }
+                      className="h-11 w-full rounded-lg border border-atr-outline px-3 text-sm outline-none focus:border-atr-purple focus:ring-2 focus:ring-atr-purple/15"
+                    />
+                  </Field>
+                </div>
+              )}
             </div>
           </div>
         )}

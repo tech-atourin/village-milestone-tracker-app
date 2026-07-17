@@ -36,6 +36,9 @@ export type ProjectDetail = ProjectListRow & {
   enabled_modules: Record<string, boolean>;
   total_pendampingan_days: number | null;
   program_type: "desa_based" | "pelaku_pariwisata";
+  participant_mode: "offline" | "online" | "both";
+  target_online: number;
+  target_offline: number;
   topik_count: number;
   checklist_count: number;
   desa_count: number;
@@ -47,7 +50,7 @@ export async function getProject(id: string): Promise<ProjectDetail | null> {
   const { data: project, error } = await supabase
     .from("projects")
     .select(
-      "id, name, description, status, period_start, period_end, total_pendampingan_days, program_type, created_at, enabled_modules, organization:organizations(id,name), template:project_templates(id,name)",
+      "id, name, description, status, period_start, period_end, total_pendampingan_days, program_type, participant_mode, target_online, target_offline, created_at, enabled_modules, organization:organizations(id,name), template:project_templates(id,name)",
     )
     .eq("id", id)
     .is("deleted_at", null)
@@ -98,6 +101,13 @@ export async function getProject(id: string): Promise<ProjectDetail | null> {
     program_type:
       ((project as unknown as { program_type?: string }).program_type ??
         "desa_based") as "desa_based" | "pelaku_pariwisata",
+    participant_mode:
+      ((project as unknown as { participant_mode?: string }).participant_mode ??
+        "offline") as "offline" | "online" | "both",
+    target_online:
+      (project as unknown as { target_online?: number }).target_online ?? 0,
+    target_offline:
+      (project as unknown as { target_offline?: number }).target_offline ?? 0,
     topik_count: topik ?? 0,
     checklist_count: checklist,
     desa_count: desa ?? 0,

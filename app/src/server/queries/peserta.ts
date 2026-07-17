@@ -596,14 +596,28 @@ export async function getPesertaTrainingDetail(
       .map((it) => ({ id: it.id, title: it.title, description: it.description })),
   }));
 
-  // Per-materi test results
-  const { data: trs } = await supabase
+  // Per-materi test results. Two sources feed the same map:
+  //  1. Google-Form-synced rows (project_gforms!inner scoped by project)
+  //  2. Native quiz rows (source='quiz', scoped via quiz_attempts→quizzes)
+  // Both carry form_type on the row now (denormalized in migration 0015), so
+  // grading buckets by r.form_type regardless of source.
+  const { data: gformTrs } = await supabase
     .from("peserta_test_results")
     .select(
-      "score, project_topik_id, project_topik:project_topik(name, sort_order), gform:project_gforms!inner(form_type, project_id)",
+      "score, form_type, project_topik_id, project_topik:project_topik(name, sort_order), gform:project_gforms!inner(project_id)",
     )
     .eq("user_id", userId)
+    .eq("source", "gform")
     .eq("gform.project_id", projectId)
+    .not("project_topik_id", "is", null);
+  const { data: quizTrs } = await supabase
+    .from("peserta_test_results")
+    .select(
+      "score, form_type, project_topik_id, project_topik:project_topik(name, sort_order), attempt:quiz_attempts!inner(quiz:quizzes!inner(project_id))",
+    )
+    .eq("user_id", userId)
+    .eq("source", "quiz")
+    .eq("attempt.quiz.project_id", projectId)
     .not("project_topik_id", "is", null);
   type MatRow = {
     name: string;
@@ -613,7 +627,7 @@ export async function getPesertaTrainingDetail(
   };
   const matMap = new Map<string, MatRow>();
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  for (const r of (trs ?? []) as any[]) {
+  for (const r of ([...(gformTrs ?? []), ...(quizTrs ?? [])] as any[])) {
     const id = r.project_topik_id as string;
     if (!id) continue;
     const cur =
@@ -625,8 +639,8 @@ export async function getPesertaTrainingDetail(
         post: null,
       } as MatRow);
     const score = Number(r.score);
-    if (r.gform?.form_type === "pre_test") cur.pre = score;
-    else if (r.gform?.form_type === "post_test") cur.post = score;
+    if (r.form_type === "pre_test") cur.pre = score;
+    else if (r.form_type === "post_test") cur.post = score;
     matMap.set(id, cur);
   }
   const materi_scores = Array.from(matMap.entries())

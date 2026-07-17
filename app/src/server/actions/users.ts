@@ -6,6 +6,7 @@ import { createAdminClient } from "@/lib/supabase/server";
 import { requireRole, getCurrentUser } from "@/lib/auth/rbac";
 import { audit } from "@/lib/audit";
 import { sanitizeAuthUser } from "@/lib/auth/sanitize";
+import { reconcileAttemptsForUser } from "@/lib/quiz/reconcile";
 
 // =====================================================
 // Single-user CRUD - superadmin + mitra_admin can create
@@ -229,6 +230,9 @@ export async function upsertUser(input: z.input<typeof upsertSchema>): Promise<
       console.warn("auto-attach peserta failed:", e);
     }
   }
+
+  // Link any prior anonymous quiz attempts submitted with this email.
+  if (body.email) await reconcileAttemptsForUser(userId, body.email);
 
   await audit({
     actor_id: access.user.id,
