@@ -8,6 +8,7 @@ import {
   Award,
   CalendarRange,
   BookOpen,
+  MapPin,
 } from "lucide-react";
 import { getCurrentUser } from "@/lib/auth/rbac";
 import { getPesertaTrainingDetail } from "@/server/queries/peserta";
@@ -91,6 +92,41 @@ export default async function PesertaTrainingPage({
         </div>
       )}
 
+      {/* Check-in kehadiran — prominent, di atas supaya mudah ditemukan */}
+      {topik.length > 0 && (
+        <section className="rounded-2xl border-2 border-atr-purple/30 bg-atr-purple-50/40 p-5 shadow-atr-1">
+          <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+            <h2 className="inline-flex items-center gap-1.5 text-sm font-bold text-atr-fg">
+              <MapPin className="h-4 w-4 text-atr-purple" />
+              Check-in Kehadiran
+            </h2>
+            <span className="rounded-full border border-atr-purple/30 bg-white px-2.5 py-0.5 text-[11px] font-bold text-atr-purple-700">
+              {checkinIds.size}/{topik.length} topik
+            </span>
+          </div>
+          <p className="mb-3 text-xs text-atr-fg-muted">
+            Tekan tombol check-in di tiap topik saat Anda hadir mengikutinya.
+          </p>
+          <ul className="space-y-2">
+            {topik.map((t) => (
+              <li
+                key={t.id}
+                className="flex items-center justify-between gap-3 rounded-xl border border-atr-outline bg-white p-3"
+              >
+                <span className="min-w-0 text-sm font-bold text-atr-fg">
+                  {t.sort_order}. {t.name}
+                </span>
+                <TopikCheckinButton
+                  projectId={project.id}
+                  topikId={t.id}
+                  checkedIn={checkinIds.has(t.id)}
+                />
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
       {/* Skor pre/post */}
       <section className="rounded-2xl border border-atr-outline bg-white p-5 shadow-atr-1">
         <h2 className="mb-3 text-xs font-bold uppercase tracking-wide text-atr-fg-muted">
@@ -110,17 +146,10 @@ export default async function PesertaTrainingPage({
 
       {/* Modul / topik (read-only) */}
       <section className="rounded-2xl border border-atr-outline bg-white p-5 shadow-atr-1">
-        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-          <h2 className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wide text-atr-fg-muted">
-            <BookOpen className="h-3.5 w-3.5" />
-            Modul Pelatihan ({topik.length})
-          </h2>
-          {topik.length > 0 && (
-            <span className="rounded-full border border-atr-purple/30 bg-atr-purple-50/60 px-2 py-0.5 text-[10px] font-bold text-atr-purple-700">
-              Check-in {checkinIds.size}/{topik.length}
-            </span>
-          )}
-        </div>
+        <h2 className="mb-3 inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wide text-atr-fg-muted">
+          <BookOpen className="h-3.5 w-3.5" />
+          Modul Pelatihan ({topik.length})
+        </h2>
         {topik.length === 0 ? (
           <p className="text-sm text-atr-fg-muted">Belum ada modul terdaftar.</p>
         ) : (
@@ -163,13 +192,6 @@ export default async function PesertaTrainingPage({
                       ))}
                     </ul>
                   )}
-                  <div className="mt-2 flex justify-end border-t border-atr-outline pt-2">
-                    <TopikCheckinButton
-                      projectId={project.id}
-                      topikId={t.id}
-                      checkedIn={checkinIds.has(t.id)}
-                    />
-                  </div>
                 </li>
               );
             })}
