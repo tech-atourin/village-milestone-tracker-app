@@ -29,6 +29,7 @@ import { OverviewTab } from "@/app/atourin/projects/[id]/overview-tab";
 import { SummaryTab } from "@/app/atourin/projects/[id]/summary-tab";
 import { KuisTab } from "@/app/atourin/projects/[id]/kuis-tab";
 import { KuisTesTab } from "@/app/atourin/projects/[id]/kuis-tes-tab";
+import { KehadiranTab } from "@/app/atourin/projects/[id]/kehadiran-tab";
 import { listProjectQuizzes } from "@/server/queries/quizzes";
 import { ActionPlanBoard } from "@/components/action-plans/action-plan-board";
 import { listActionPlans } from "@/server/queries/action-plans";
@@ -75,6 +76,7 @@ const ALL_TABS = [
   { key: "rencana-aksi", label: "Rencana Aksi" },
   { key: "evidence", label: "Bukti" },
   { key: "kuis", label: "Kuis & Tes" },
+  { key: "kehadiran", label: "Kehadiran" },
   { key: "settings", label: "Pengaturan" },
 ] as const;
 
@@ -210,6 +212,7 @@ export default async function MitraProjectDetailPage({
           gform={<GformsAndResultsLoader projectId={project.id} />}
         />
       )}
+      {activeTab === "kehadiran" && <KehadiranTab projectId={project.id} />}
       {activeTab === "settings" && (
         <MitraSettingsLoader project={project} />
       )}

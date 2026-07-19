@@ -11,6 +11,8 @@ import {
 } from "lucide-react";
 import { getCurrentUser } from "@/lib/auth/rbac";
 import { getPesertaTrainingDetail } from "@/server/queries/peserta";
+import { getMyCheckinTopikIds } from "@/server/queries/checkin";
+import { TopikCheckinButton } from "./topik-checkin-button";
 
 function fmtDate(iso: string | null): string {
   if (!iso) return "-";
@@ -32,6 +34,7 @@ export default async function PesertaTrainingPage({
   const data = await getPesertaTrainingDetail(user.id, params.projectId);
   if (!data) notFound();
 
+  const checkinIds = await getMyCheckinTopikIds(params.projectId, user.id);
   const { project, membership, topik, materi_scores, sessions } = data;
   const isOnline = membership.attendance_mode === "online";
   const preAvg = avgOf(materi_scores.map((m) => m.pre));
@@ -107,10 +110,17 @@ export default async function PesertaTrainingPage({
 
       {/* Modul / topik (read-only) */}
       <section className="rounded-2xl border border-atr-outline bg-white p-5 shadow-atr-1">
-        <h2 className="mb-3 inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wide text-atr-fg-muted">
-          <BookOpen className="h-3.5 w-3.5" />
-          Modul Pelatihan ({topik.length})
-        </h2>
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+          <h2 className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wide text-atr-fg-muted">
+            <BookOpen className="h-3.5 w-3.5" />
+            Modul Pelatihan ({topik.length})
+          </h2>
+          {topik.length > 0 && (
+            <span className="rounded-full border border-atr-purple/30 bg-atr-purple-50/60 px-2 py-0.5 text-[10px] font-bold text-atr-purple-700">
+              Check-in {checkinIds.size}/{topik.length}
+            </span>
+          )}
+        </div>
         {topik.length === 0 ? (
           <p className="text-sm text-atr-fg-muted">Belum ada modul terdaftar.</p>
         ) : (
@@ -153,6 +163,13 @@ export default async function PesertaTrainingPage({
                       ))}
                     </ul>
                   )}
+                  <div className="mt-2 flex justify-end border-t border-atr-outline pt-2">
+                    <TopikCheckinButton
+                      projectId={project.id}
+                      topikId={t.id}
+                      checkedIn={checkinIds.has(t.id)}
+                    />
+                  </div>
                 </li>
               );
             })}
