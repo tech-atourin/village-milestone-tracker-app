@@ -29,6 +29,7 @@ import { SummaryTab } from "./summary-tab";
 import { KuisTab } from "./kuis-tab";
 import { KuisTesTab } from "./kuis-tes-tab";
 import { KehadiranTab } from "./kehadiran-tab";
+import { MateriTab } from "./materi-tab";
 import { listProjectQuizzes } from "@/server/queries/quizzes";
 import { ActionPlanBoard } from "@/components/action-plans/action-plan-board";
 import { listActionPlans } from "@/server/queries/action-plans";
@@ -76,6 +77,7 @@ const ALL_TABS = [
   { key: "evidence", label: "Bukti" },
   { key: "kuis", label: "Kuis & Tes" },
   { key: "kehadiran", label: "Kehadiran" },
+  { key: "materi", label: "Materi & Tautan" },
   { key: "settings", label: "Pengaturan" },
 ] as const;
 
@@ -205,6 +207,7 @@ export default async function ProjectDetailPage({
         />
       )}
       {activeTab === "kehadiran" && <KehadiranTab projectId={project.id} />}
+      {activeTab === "materi" && <MateriTab projectId={project.id} />}
       {activeTab === "settings" && (
         <SettingsTabLoader
           project={{

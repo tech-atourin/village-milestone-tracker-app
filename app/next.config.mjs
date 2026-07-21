@@ -52,6 +52,12 @@ const securityHeaders = [
 ];
 
 const nextConfig = {
+  experimental: {
+    // Materi & Tautan / evidence uploads post file bytes (base64) through a
+    // server action. Raise the default 1MB cap so PDFs/Excel/foto go through;
+    // large media (video/rekaman zoom) should be added as a link instead.
+    serverActions: { bodySizeLimit: "25mb" },
+  },
   images: {
     formats: ["image/avif", "image/webp"],
     remotePatterns: [

@@ -6,6 +6,7 @@ import { requireRole } from "@/lib/auth/rbac";
 const NAV_ITEMS: SidebarItem[] = [
   { href: "/peserta/home", label: "Beranda", icon: "LayoutDashboard" },
   { href: "/peserta/projects", label: "Project", icon: "Folder" },
+  { href: "/peserta/materi", label: "Materi", icon: "Download" },
   { href: "/notifications", label: "Notifikasi", icon: "ClipboardCheck" },
   { href: "/peserta/bantuan", label: "Bantuan", icon: "HelpCircle" },
   { href: "/profile", label: "Profil", icon: "Users" },

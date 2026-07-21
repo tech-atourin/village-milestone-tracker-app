@@ -27,6 +27,7 @@ import {
   UserCircle,
   Bell,
   HelpCircle,
+  Download,
   type LucideIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -51,6 +52,7 @@ const ICONS: Record<string, LucideIcon> = {
   ListChecks,
   ClipboardList,
   HelpCircle,
+  Download,
 };
 
 export type MobileBottomNavUser = {

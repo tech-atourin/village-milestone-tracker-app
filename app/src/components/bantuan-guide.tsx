@@ -109,6 +109,15 @@ export function BantuanGuide({ defaultRole = "peserta" }: { defaultRole?: Role }
                 satu, tergantung program.
               </p>
             </Step>
+            <Step n="3" title="Buka Materi & Tautan">
+              <p>
+                Menu <Pill>Materi &amp; Tautan</Pill> berisi file dan tautan
+                yang dibagikan penyelenggara: <strong>materi pelatihan</strong>{" "}
+                (PDF/Excel), <strong>video &amp; rekaman</strong>, foto, serta{" "}
+                <strong>link pre-test, post-test, dan form evaluasi</strong>.
+                Tekan sebuah item untuk mengunduh file atau membuka tautannya.
+              </p>
+            </Step>
           </ol>
 
           <Track tag="B" title="Program Pelatihan" subtitle='Buka lewat kartu di "Pelatihan Saya"' />
