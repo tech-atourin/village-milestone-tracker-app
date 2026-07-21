@@ -20,6 +20,11 @@ type Project = {
   description: string | null;
   period_start: string | null;
   period_end: string | null;
+  pelatihan_start: string | null;
+  pelatihan_end: string | null;
+  total_pelatihan_days: number | null;
+  pendampingan_start: string | null;
+  pendampingan_end: string | null;
   total_pendampingan_days: number | null;
   status: "draft" | "active" | "completed" | "archived";
   enabled_modules: Record<string, boolean>;
@@ -47,8 +52,19 @@ export function SettingsTab({
   const [description, setDescription] = useState(project.description ?? "");
   const [periodStart, setPeriodStart] = useState(project.period_start ?? "");
   const [periodEnd, setPeriodEnd] = useState(project.period_end ?? "");
-  const [totalDays, setTotalDays] = useState<number>(
-    project.total_pendampingan_days ?? 5,
+  const [pelatihanStart, setPelatihanStart] = useState(project.pelatihan_start ?? "");
+  const [pelatihanEnd, setPelatihanEnd] = useState(project.pelatihan_end ?? "");
+  const [totalPelatihanDays, setTotalPelatihanDays] = useState<string>(
+    project.total_pelatihan_days?.toString() ?? "",
+  );
+  const [pendampinganStart, setPendampinganStart] = useState(
+    project.pendampingan_start ?? "",
+  );
+  const [pendampinganEnd, setPendampinganEnd] = useState(
+    project.pendampingan_end ?? "",
+  );
+  const [totalDays, setTotalDays] = useState<string>(
+    project.total_pendampingan_days?.toString() ?? "",
   );
   const [status, setStatus] = useState(project.status);
   const [modules, setModules] = useState<Record<string, boolean>>(() => ({
@@ -69,7 +85,12 @@ export function SettingsTab({
         description,
         period_start: periodStart,
         period_end: periodEnd,
-        total_pendampingan_days: totalDays,
+        pelatihan_start: pelatihanStart,
+        pelatihan_end: pelatihanEnd,
+        total_pelatihan_days: totalPelatihanDays === "" ? null : Number(totalPelatihanDays),
+        pendampingan_start: pendampinganStart,
+        pendampingan_end: pendampinganEnd,
+        total_pendampingan_days: totalDays === "" ? null : Number(totalDays),
         status,
         enabled_modules: {
           desa_baseline: modules.desa_baseline,
@@ -127,37 +148,113 @@ export function SettingsTab({
               className="w-full rounded-lg border border-atr-outline p-3 text-sm outline-none focus:border-atr-purple focus:ring-2 focus:ring-atr-purple/15"
             />
           </Field>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <Field label="Tanggal mulai">
-              <input
-                type="date"
-                value={periodStart}
-                onChange={(e) => setPeriodStart(e.target.value)}
-                className={inputCls}
-              />
-            </Field>
-            <Field label="Tanggal selesai">
-              <input
-                type="date"
-                value={periodEnd}
-                onChange={(e) => setPeriodEnd(e.target.value)}
-                className={inputCls}
-              />
-            </Field>
-            <Field label="Total hari pendampingan">
-              <input
-                type="number"
-                min={1}
-                max={60}
-                value={totalDays}
-                onChange={(e) => setTotalDays(Number(e.target.value) || 1)}
-                className={inputCls}
-              />
-              <p className="mt-1 text-[11px] text-atr-fg-muted">
-                Jumlah hari kunjungan narasumber per desa. Dipakai untuk
-                pelabelan Hari 1, Hari 2, dst di tab Sesi Pendampingan.
-              </p>
-            </Field>
+          {/* Periode program keseluruhan */}
+          <div className="rounded-xl border border-atr-outline p-4">
+            <h4 className="mb-3 text-xs font-bold uppercase tracking-wide text-atr-fg-muted">
+              Periode Program (keseluruhan)
+            </h4>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Field label="Tanggal mulai">
+                <input
+                  type="date"
+                  value={periodStart}
+                  onChange={(e) => setPeriodStart(e.target.value)}
+                  className={inputCls}
+                />
+              </Field>
+              <Field label="Tanggal selesai">
+                <input
+                  type="date"
+                  value={periodEnd}
+                  onChange={(e) => setPeriodEnd(e.target.value)}
+                  className={inputCls}
+                />
+              </Field>
+            </div>
+            <p className="mt-2 text-[11px] text-atr-fg-muted">
+              Rentang menyeluruh program, mencakup fase pelatihan sampai
+              pendampingan.
+            </p>
+          </div>
+
+          {/* Fase pelatihan */}
+          <div className="rounded-xl border border-atr-outline p-4">
+            <h4 className="mb-3 text-xs font-bold uppercase tracking-wide text-atr-fg-muted">
+              Fase Pelatihan
+            </h4>
+            <div className="grid gap-4 sm:grid-cols-3">
+              <Field label="Tanggal mulai pelatihan">
+                <input
+                  type="date"
+                  value={pelatihanStart}
+                  onChange={(e) => setPelatihanStart(e.target.value)}
+                  className={inputCls}
+                />
+              </Field>
+              <Field label="Tanggal selesai pelatihan">
+                <input
+                  type="date"
+                  value={pelatihanEnd}
+                  onChange={(e) => setPelatihanEnd(e.target.value)}
+                  className={inputCls}
+                />
+              </Field>
+              <Field label="Total hari pelatihan">
+                <input
+                  type="number"
+                  min={1}
+                  max={60}
+                  value={totalPelatihanDays}
+                  placeholder="mis. 5"
+                  onChange={(e) => setTotalPelatihanDays(e.target.value)}
+                  className={inputCls}
+                />
+              </Field>
+            </div>
+            <p className="mt-2 text-[11px] text-atr-fg-muted">
+              Jumlah hari peserta mengikuti sesi pelatihan. Dipakai sebagai
+              acuan check-in kehadiran per topik.
+            </p>
+          </div>
+
+          {/* Fase pendampingan */}
+          <div className="rounded-xl border border-atr-outline p-4">
+            <h4 className="mb-3 text-xs font-bold uppercase tracking-wide text-atr-fg-muted">
+              Fase Pendampingan
+            </h4>
+            <div className="grid gap-4 sm:grid-cols-3">
+              <Field label="Tanggal mulai pendampingan">
+                <input
+                  type="date"
+                  value={pendampinganStart}
+                  onChange={(e) => setPendampinganStart(e.target.value)}
+                  className={inputCls}
+                />
+              </Field>
+              <Field label="Tanggal selesai pendampingan">
+                <input
+                  type="date"
+                  value={pendampinganEnd}
+                  onChange={(e) => setPendampinganEnd(e.target.value)}
+                  className={inputCls}
+                />
+              </Field>
+              <Field label="Total hari pendampingan">
+                <input
+                  type="number"
+                  min={1}
+                  max={60}
+                  value={totalDays}
+                  placeholder="mis. 14"
+                  onChange={(e) => setTotalDays(e.target.value)}
+                  className={inputCls}
+                />
+              </Field>
+            </div>
+            <p className="mt-2 text-[11px] text-atr-fg-muted">
+              Jumlah hari kunjungan narasumber per desa. Dipakai untuk pelabelan
+              Hari 1, Hari 2, dst di tab Sesi Pendampingan.
+            </p>
           </div>
           <Field label="Status">
             <select

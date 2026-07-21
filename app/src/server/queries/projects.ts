@@ -33,6 +33,11 @@ export async function listProjects(): Promise<ProjectListRow[]> {
 }
 
 export type ProjectDetail = ProjectListRow & {
+  pelatihan_start: string | null;
+  pelatihan_end: string | null;
+  total_pelatihan_days: number | null;
+  pendampingan_start: string | null;
+  pendampingan_end: string | null;
   enabled_modules: Record<string, boolean>;
   total_pendampingan_days: number | null;
   program_type: "desa_based" | "pelaku_pariwisata";
@@ -50,7 +55,7 @@ export async function getProject(id: string): Promise<ProjectDetail | null> {
   const { data: project, error } = await supabase
     .from("projects")
     .select(
-      "id, name, description, status, period_start, period_end, total_pendampingan_days, program_type, participant_mode, target_online, target_offline, created_at, enabled_modules, organization:organizations(id,name), template:project_templates(id,name)",
+      "id, name, description, status, period_start, period_end, pelatihan_start, pelatihan_end, total_pelatihan_days, pendampingan_start, pendampingan_end, total_pendampingan_days, program_type, participant_mode, target_online, target_offline, created_at, enabled_modules, organization:organizations(id,name), template:project_templates(id,name)",
     )
     .eq("id", id)
     .is("deleted_at", null)
@@ -98,6 +103,21 @@ export async function getProject(id: string): Promise<ProjectDetail | null> {
     total_pendampingan_days:
       (project as unknown as { total_pendampingan_days: number | null })
         .total_pendampingan_days ?? null,
+    pelatihan_start:
+      (project as unknown as { pelatihan_start: string | null })
+        .pelatihan_start ?? null,
+    pelatihan_end:
+      (project as unknown as { pelatihan_end: string | null })
+        .pelatihan_end ?? null,
+    total_pelatihan_days:
+      (project as unknown as { total_pelatihan_days: number | null })
+        .total_pelatihan_days ?? null,
+    pendampingan_start:
+      (project as unknown as { pendampingan_start: string | null })
+        .pendampingan_start ?? null,
+    pendampingan_end:
+      (project as unknown as { pendampingan_end: string | null })
+        .pendampingan_end ?? null,
     program_type:
       ((project as unknown as { program_type?: string }).program_type ??
         "desa_based") as "desa_based" | "pelaku_pariwisata",

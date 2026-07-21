@@ -216,6 +216,11 @@ export default async function ProjectDetailPage({
             description: project.description,
             period_start: project.period_start,
             period_end: project.period_end,
+            pelatihan_start: project.pelatihan_start,
+            pelatihan_end: project.pelatihan_end,
+            total_pelatihan_days: project.total_pelatihan_days,
+            pendampingan_start: project.pendampingan_start,
+            pendampingan_end: project.pendampingan_end,
             total_pendampingan_days: project.total_pendampingan_days,
             status: project.status,
             enabled_modules: project.enabled_modules,
@@ -235,6 +240,11 @@ async function SettingsTabLoader({
     description: string | null;
     period_start: string | null;
     period_end: string | null;
+    pelatihan_start: string | null;
+    pelatihan_end: string | null;
+    total_pelatihan_days: number | null;
+    pendampingan_start: string | null;
+    pendampingan_end: string | null;
     total_pendampingan_days: number | null;
     status: "draft" | "active" | "completed" | "archived";
     enabled_modules: Record<string, boolean>;
