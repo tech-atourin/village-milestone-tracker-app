@@ -47,6 +47,11 @@ const STATUS_COLOR_AP = {
   ditunda: YELLOW,
 } as const;
 
+// Dua kartu ini disembunyikan sementara dari tab Ringkasan.
+// Ubah ke true untuk menampilkannya kembali.
+const SHOW_KUISIONER_MATERI = false;
+const SHOW_STATUS_SESI = false;
+
 export function AnalyticsCharts({
   data,
   hideNarasumberInternals = false,
@@ -281,6 +286,7 @@ export function AnalyticsCharts({
           )}
         </section>
 
+        {SHOW_KUISIONER_MATERI && (
         <section className="rounded-2xl border border-atr-outline bg-white p-6 shadow-atr-1">
           <header className="mb-4 flex items-center justify-between gap-2">
             <div className="inline-flex items-center gap-2">
@@ -366,6 +372,7 @@ export function AnalyticsCharts({
             </div>
           )}
         </section>
+        )}
       </div>
 
       {/* Rating distribution + Pre/Post growth per materi, side-by-side */}
@@ -546,7 +553,7 @@ export function AnalyticsCharts({
           )}
         </section>
 
-        {!hideNarasumberInternals && (
+        {SHOW_STATUS_SESI && !hideNarasumberInternals && (
         <section className="rounded-2xl border border-atr-outline bg-white p-6 shadow-atr-1">
           <header className="mb-4 flex items-center gap-2">
             <h3 className="text-sm font-bold uppercase tracking-wide text-atr-fg">

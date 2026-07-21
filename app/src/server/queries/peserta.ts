@@ -1,6 +1,6 @@
 import "server-only";
 
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createAdminClient } from "@/lib/supabase/server";
 
 // =====================================================
 // Active project_desa rows the peserta represents.
@@ -457,8 +457,13 @@ export async function listPesertaTraining(
   const projectIds = Array.from(
     new Set(rows.map((r) => r.project.id as string)),
   );
+  // rapor_peserta hanya punya policy RLS untuk desa_wisata, jadi peserta tidak
+  // bisa membaca rapornya sendiri lewat client biasa dan kartu Pre/Post di
+  // beranda selalu kosong. Dibaca lewat admin client, dikunci ke userId, dan
+  // kolomnya dibatasi: tugas_score/keaktifan_score sengaja TIDAK diambil
+  // supaya rincian penilaian tidak pernah sampai ke peserta.
   const [{ data: rapors }, { data: topiks }] = await Promise.all([
-    supabase
+    createAdminClient()
       .from("rapor_peserta")
       .select("project_id, pre_test_score, post_test_score, improvement_percent")
       .eq("user_id", userId)

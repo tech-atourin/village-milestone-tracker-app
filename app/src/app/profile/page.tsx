@@ -11,7 +11,7 @@ import {
   ArrowLeft,
 } from "lucide-react";
 import { getCurrentUser, scopeHomePath } from "@/lib/auth/rbac";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { ChangePasswordCard } from "./change-password";
 import { CountBadge } from "@/components/ui/count-badge";
 
@@ -30,8 +30,13 @@ async function fetchProjectsAndRapor(userId: string) {
     .eq("user_id", userId)
     .order("invited_at", { ascending: false });
 
-  // Rapor history per project
-  const { data: rapors } = await supabase
+  // Rapor history per project.
+  // rapor_peserta hanya punya policy RLS untuk desa_wisata, jadi peserta tidak
+  // bisa membaca rapornya sendiri lewat client biasa. Dibaca lewat admin
+  // client, dikunci ke userId, dan kolomnya dibatasi: tugas_score/
+  // keaktifan_score sengaja TIDAK diambil supaya rincian penilaian tidak
+  // pernah sampai ke peserta.
+  const { data: rapors } = await createAdminClient()
     .from("rapor_peserta")
     .select(
       "project_id, pre_test_score, post_test_score, improvement_percent, attendance, generated_at",

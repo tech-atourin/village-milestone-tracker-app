@@ -34,12 +34,56 @@ const updateProjectSchema = z.object({
     klasifikasi_nasional: z.boolean(),
     public_dashboard: z.boolean(),
   }),
-});
+})
+  // Validasi tanggal. Ditaruh di server supaya tidak bisa dilangkahi lewat
+  // pemanggilan action langsung, bukan hanya lewat form.
+  .superRefine((d, ctx) => {
+    const at = (v?: string | null) => (v ? v : null);
+
+    const rentang: Array<[string | null, string | null, string]> = [
+      [at(d.period_start), at(d.period_end), "Periode program"],
+      [at(d.pelatihan_start), at(d.pelatihan_end), "Fase pelatihan"],
+      [at(d.pendampingan_start), at(d.pendampingan_end), "Fase pendampingan"],
+    ];
+    for (const [mulai, selesai, label] of rentang) {
+      if (mulai && selesai && selesai < mulai) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: `${label}: tanggal selesai tidak boleh mendahului tanggal mulai.`,
+        });
+      }
+    }
+
+    // Tiap fase harus berada di dalam periode program (bila periodenya diisi).
+    const pStart = at(d.period_start);
+    const pEnd = at(d.period_end);
+    const fase: Array<[string | null, string | null, string]> = [
+      [at(d.pelatihan_start), at(d.pelatihan_end), "Fase pelatihan"],
+      [at(d.pendampingan_start), at(d.pendampingan_end), "Fase pendampingan"],
+    ];
+    for (const [mulai, selesai, label] of fase) {
+      if (pStart && mulai && mulai < pStart) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: `${label}: mulai sebelum periode program dimulai.`,
+        });
+      }
+      if (pEnd && selesai && selesai > pEnd) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: `${label}: selesai setelah periode program berakhir.`,
+        });
+      }
+    }
+  });
 
 export async function updateProject(input: z.input<typeof updateProjectSchema>) {
   await requireRole("superadmin");
   const parsed = updateProjectSchema.safeParse(input);
-  if (!parsed.success) return { error: "Input tidak valid" };
+  if (!parsed.success)
+    return {
+      error: parsed.error.issues[0]?.message ?? "Input tidak valid",
+    };
   const supabase = createClient();
   const d = parsed.data;
   const { error } = await supabase
