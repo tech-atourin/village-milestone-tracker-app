@@ -43,8 +43,12 @@ function Pill({ children }: { children: React.ReactNode }) {
   );
 }
 
+// Tab "Desa Wisata" disembunyikan sementara; hanya Peserta dulu.
+// Ubah ke true untuk mengaktifkan kembali pemilih peran + panduan Desa.
+const SHOW_DESA = false;
+
 export function BantuanGuide({ defaultRole = "peserta" }: { defaultRole?: Role }) {
-  const [role, setRole] = useState<Role>(defaultRole);
+  const [role, setRole] = useState<Role>(SHOW_DESA ? defaultRole : "peserta");
 
   return (
     <div className="space-y-5">
@@ -53,35 +57,38 @@ export function BantuanGuide({ defaultRole = "peserta" }: { defaultRole?: Role }
           Panduan Penggunaan
         </h1>
         <p className="text-sm text-atr-fg-muted">
-          Tutorial langkah demi langkah. Pilih peran, lalu ikuti urutannya.
+          Tutorial langkah demi langkah. Ikuti urutannya sesuai program yang
+          Anda ikuti.
         </p>
       </header>
 
-      <div className="grid grid-cols-2 gap-2">
-        {(
-          [
-            { key: "peserta", label: "Peserta", Icon: GraduationCap },
-            { key: "desa", label: "Desa Wisata", Icon: Building2 },
-          ] as const
-        ).map(({ key, label, Icon }) => {
-          const active = role === key;
-          return (
-            <button
-              key={key}
-              type="button"
-              onClick={() => setRole(key)}
-              className={`inline-flex items-center justify-center gap-2 rounded-xl border px-3 py-2.5 text-sm font-bold transition ${
-                active
-                  ? "border-atr-purple bg-atr-purple text-white shadow-atr-1"
-                  : "border-atr-outline bg-white text-atr-fg-muted hover:bg-atr-bg-soft"
-              }`}
-            >
-              <Icon className="h-4 w-4" />
-              {label}
-            </button>
-          );
-        })}
-      </div>
+      {SHOW_DESA && (
+        <div className="grid grid-cols-2 gap-2">
+          {(
+            [
+              { key: "peserta", label: "Peserta", Icon: GraduationCap },
+              { key: "desa", label: "Desa Wisata", Icon: Building2 },
+            ] as const
+          ).map(({ key, label, Icon }) => {
+            const active = role === key;
+            return (
+              <button
+                key={key}
+                type="button"
+                onClick={() => setRole(key)}
+                className={`inline-flex items-center justify-center gap-2 rounded-xl border px-3 py-2.5 text-sm font-bold transition ${
+                  active
+                    ? "border-atr-purple bg-atr-purple text-white shadow-atr-1"
+                    : "border-atr-outline bg-white text-atr-fg-muted hover:bg-atr-bg-soft"
+                }`}
+              >
+                <Icon className="h-4 w-4" />
+                {label}
+              </button>
+            );
+          })}
+        </div>
+      )}
 
       {role === "peserta" ? (
         <div>
