@@ -45,18 +45,31 @@ export default async function PesertaTrainingPage({
   // (Pre/Post/Tugas/Keaktifan) sengaja tidak ditampilkan ke peserta.
   const { data: raporRow } = await createAdminClient()
     .from("rapor_peserta")
-    .select("final_score")
+    .select("final_score, pre_test_score, post_test_score")
     .eq("project_id", params.projectId)
     .eq("user_id", user.id)
     .maybeSingle();
-  const finalScore =
-    (raporRow as { final_score: number | null } | null)?.final_score ?? null;
+  const rapor = raporRow as {
+    final_score: number | null;
+    pre_test_score: number | null;
+    post_test_score: number | null;
+  } | null;
+  const finalScore = rapor?.final_score ?? null;
 
   // Pre-test & post-test tetap ditampilkan: peserta memang sudah tahu nilainya
   // dari hasil pengisian. Yang disembunyikan adalah rincian bobot penilaian
   // (Tugas & Keaktifan).
-  const preAvg = avgOf(materi_scores.map((m) => m.pre));
-  const postAvg = avgOf(materi_scores.map((m) => m.post));
+  // Utamakan nilai yang tersimpan di rapor (sumber yang sama dengan Nilai
+  // Akhir). Rata-rata per materi hanya dipakai sebagai cadangan, supaya angka
+  // Pre/Post tidak pernah kosong sementara Nilai Akhir sudah terisi.
+  const preAvg =
+    rapor?.pre_test_score != null
+      ? Number(rapor.pre_test_score)
+      : avgOf(materi_scores.map((m) => m.pre));
+  const postAvg =
+    rapor?.post_test_score != null
+      ? Number(rapor.post_test_score)
+      : avgOf(materi_scores.map((m) => m.post));
 
   return (
     <div className="space-y-5">

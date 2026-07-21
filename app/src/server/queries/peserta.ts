@@ -554,13 +554,14 @@ export async function getPesertaTrainingDetail(
   const supabase = createClient();
   const { data: membership } = await supabase
     .from("project_memberships")
-    .select("attendance_mode")
+    .select("attendance_mode, desa_id")
     .eq("user_id", userId)
     .eq("project_id", projectId)
     .eq("role", "peserta")
     .eq("status", "active")
     .maybeSingle();
   if (!membership) return null;
+  const myDesaId = (membership as { desa_id: string | null }).desa_id ?? null;
 
   const { data: proj } = await supabase
     .from("projects")
@@ -656,15 +657,30 @@ export async function getPesertaTrainingDetail(
       return sa - sb;
     });
 
-  // Sessions: kalau peserta offline, kemungkinan ikut sesi (attendance).
-  // Tampilkan SEMUA sesi project (sebagai materi yang dibawakan narasumber).
-  const { data: sessRows } = await supabase
+  // Sesi pendampingan dibatasi ke desa peserta sendiri. Tanpa batasan ini,
+  // peserta melihat sesi seluruh desa dalam project sehingga daftarnya tampak
+  // berulang (mis. 3 sesi x 5 desa = 15 baris yang judulnya sama).
+  let sessQuery = supabase
     .from("pendampingan_sessions")
     .select(
       "id, day_number, session_date, materi, narasumber:users!pendampingan_sessions_narasumber_id_fkey(full_name)",
     )
-    .eq("project_id", projectId)
-    .order("session_date", { ascending: true });
+    .eq("project_id", projectId);
+  if (myDesaId) {
+    const { data: pdRow } = await supabase
+      .from("project_desa")
+      .select("id")
+      .eq("project_id", projectId)
+      .eq("desa_id", myDesaId)
+      .maybeSingle();
+    const pdId = (pdRow as { id: string } | null)?.id ?? null;
+    // Peserta terikat ke sebuah desa: hanya tampilkan sesi desa tersebut.
+    // Kalau project_desa belum ada, jangan tampilkan sesi desa lain.
+    sessQuery = sessQuery.eq("project_desa_id", pdId ?? myDesaId);
+  }
+  const { data: sessRows } = await sessQuery.order("session_date", {
+    ascending: true,
+  });
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const sessions = ((sessRows ?? []) as any[]).map((s) => ({
     id: s.id as string,
