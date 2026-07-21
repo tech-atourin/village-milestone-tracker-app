@@ -156,7 +156,7 @@ export async function deleteQuiz(quizId: string): Promise<Ok | Err> {
 }
 
 // =====================================================
-// Publish toggle — generates a CSPRNG slug on first publish.
+// Publish toggle - generates a CSPRNG slug on first publish.
 // =====================================================
 export async function togglePublishQuiz(
   quizId: string,
@@ -323,7 +323,7 @@ export async function reorderQuestions(
 }
 
 // =====================================================
-// Manual match resolution — assign a quiz attempt to a project member
+// Manual match resolution - assign a quiz attempt to a project member
 // (or clear the match). Used from the results view for
 // unmatched/ambiguous rows.
 // =====================================================

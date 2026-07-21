@@ -49,7 +49,7 @@ export default async function MitraPesertaPage() {
   await requireRole("mitra_admin");
   // Use the same RLS-filtered project list the mitra sees on /mitra/projects
   // instead of comparing organization_id (which fails when the user's org and
-  // project's org don't match exactly — e.g. atourin-created projects that
+  // project's org don't match exactly - e.g. atourin-created projects that
   // the mitra has membership-level access to).
   const projects = await listProjects();
   const rows = await loadPeserta(projects.map((p) => p.id));

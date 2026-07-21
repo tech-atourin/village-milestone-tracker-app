@@ -10,7 +10,7 @@ import { createAdminClient } from "@/lib/supabase/server";
  * Only quizzes with kind pre_test|post_test AND a topik_id produce a bridged
  * row, and only when the attempt is matched to a user. Idempotent: keyed on
  * quiz_attempt_id. When the attempt is unmatched/cleared, the bridged row is
- * removed. Best-effort — never throws.
+ * removed. Best-effort - never throws.
  */
 export async function bridgeAttemptToTestResult(attemptId: string): Promise<void> {
   const admin = createAdminClient();

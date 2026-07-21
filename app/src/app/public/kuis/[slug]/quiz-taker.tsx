@@ -29,7 +29,7 @@ type Result = {
 function shuffle<T>(arr: T[]): T[] {
   const a = [...arr];
   for (let i = a.length - 1; i > 0; i--) {
-    // Not cryptographic — display order only.
+    // Not cryptographic - display order only.
     const j = Math.floor(Math.random() * (i + 1));
     [a[i], a[j]] = [a[j], a[i]];
   }
@@ -132,7 +132,7 @@ export function QuizTaker({
       return;
     }
     // Eligibility gate: block if this participant already completed the quiz
-    // (incl. timed-out attempts). Deliberately generic message — do not reveal
+    // (incl. timed-out attempts). Deliberately generic message - do not reveal
     // it is keyed on email.
     setStarting(true);
     try {
@@ -365,7 +365,7 @@ export function QuizTaker({
             value={phone}
             onChange={setPhone}
           />
-          {/* Honeypot — visually hidden, ignored by humans */}
+          {/* Honeypot - visually hidden, ignored by humans */}
           <input
             type="text"
             value={hp}

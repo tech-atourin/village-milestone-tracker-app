@@ -65,7 +65,7 @@ export async function listReviewQueue(
       topikNameById.set(t.id, t.name);
     }
   }
-  // Stash meta per instance (need topik_id from the embed actually — re-query simpler):
+  // Stash meta per instance (need topik_id from the embed actually - re-query simpler):
   const { data: instFullRows } = await supabase
     .from("desa_topik_instance")
     .select("id, project_topik_id, project_desa_id")

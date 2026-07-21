@@ -27,6 +27,7 @@ import {
   uploadActionPlanEvidence,
   getActionPlanEvidenceUrl,
 } from "@/server/actions/action-plans";
+import { runOrQueue, isQueued } from "@/lib/offline/run";
 
 type DesaOption = {
   project_desa_id: string;
@@ -581,7 +582,7 @@ function PlanForm({
     setErr(null);
     startTransition(async () => {
       if (initial) {
-        const r = await updateActionPlan({
+        const payload = {
           id: initial.id,
           timeframe: form.timeframe,
           title: form.title,
@@ -591,12 +592,15 @@ function PlanForm({
           start_date: form.start_date || null,
           end_date: form.end_date || null,
           status: form.status,
-        });
-        if (r.error) setErr(r.error);
+        };
+        const r = await runOrQueue("action_plan_update", payload, () =>
+          updateActionPlan(payload),
+        );
+        if (!isQueued(r) && r.error) setErr(r.error);
         else onDone();
       } else {
         if (!opt) return;
-        const r = await createActionPlan({
+        const payload = {
           project_id: opt.project_id,
           project_desa_id: opt.project_desa_id,
           timeframe: form.timeframe,
@@ -607,8 +611,11 @@ function PlanForm({
           start_date: form.start_date || null,
           end_date: form.end_date || null,
           status: form.status,
-        });
-        if (r.error) setErr(r.error);
+        };
+        const r = await runOrQueue("action_plan_create", payload, () =>
+          createActionPlan(payload),
+        );
+        if (!isQueued(r) && r.error) setErr(r.error);
         else onDone();
       }
     });

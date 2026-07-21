@@ -60,7 +60,7 @@ export function ExtraLogosManager({
         setError(r.error);
         return;
       }
-      // Optimistic add — we don't have signed_url yet, so just refresh.
+      // Optimistic add - we don't have signed_url yet, so just refresh.
       setLabel("");
       setFile(null);
       router.refresh();

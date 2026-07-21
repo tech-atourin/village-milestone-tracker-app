@@ -231,7 +231,7 @@ export async function deleteSessionEvidence(
 
 // =====================================================
 // Bulk import peserta dari Excel ke desa di project ini.
-// Dipanggil dari halaman editor sesi narasumber — narasumber boleh add
+// Dipanggil dari halaman editor sesi narasumber - narasumber boleh add
 // peserta untuk desa yang sedang mereka dampingi.
 // Excel kolom: full_name, email, phone, nik, gender, birthdate, jabatan
 // =====================================================
@@ -323,7 +323,7 @@ export async function bulkImportPesertaToDesa(
       continue;
     }
     const row = r.data;
-    // Resolve email — fall back to NIK pseudo-email
+    // Resolve email - fall back to NIK pseudo-email
     let email = (row.email as string | null | undefined)?.trim().toLowerCase() || null;
     let emailArtificial = false;
     if (!email) {

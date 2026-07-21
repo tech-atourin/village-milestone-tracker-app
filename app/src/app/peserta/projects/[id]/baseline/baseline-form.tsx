@@ -4,6 +4,7 @@ import { useState, useTransition, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2, Save, Send, Plus, Trash2 } from "lucide-react";
 import { saveBaseline } from "@/server/actions/baseline";
+import { runOrQueue, isQueued } from "@/lib/offline/run";
 import type {
   BaselineField,
   BaselineSchemaRow,
@@ -70,16 +71,19 @@ export function BaselineForm({
   function save(submit: boolean) {
     setError(null);
     startTransition(async () => {
-      const r = await saveBaseline({
+      const payload = {
         project_desa_id: projectDesaId,
         schema_version: schema.version,
         data,
         submit,
-      });
-      if (r.error) setError(r.error);
+      };
+      const r = await runOrQueue("save_baseline", payload, () =>
+        saveBaseline(payload),
+      );
+      if (!isQueued(r) && r.error) setError(r.error);
       else {
         setSavedAt(new Date().toISOString());
-        if (submit) router.refresh();
+        if (submit && !isQueued(r)) router.refresh();
       }
     });
   }

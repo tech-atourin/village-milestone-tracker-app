@@ -2,7 +2,7 @@ import "server-only";
 
 import { createAdminClient } from "@/lib/supabase/server";
 
-// Public-safe shapes — NEVER include is_correct.
+// Public-safe shapes - NEVER include is_correct.
 export type PublicQuizOption = { id: string; label: string };
 export type PublicQuizQuestion = {
   id: string;

@@ -286,7 +286,7 @@ export async function updateUserEmail(
     .maybeSingle();
   if (dup) return { error: "Email sudah dipakai user lain" };
 
-  // Update auth user email — also confirm immediately so login works
+  // Update auth user email - also confirm immediately so login works
   const { error: authErr } = await admin.auth.admin.updateUserById(
     parsed.data.id,
     { email: parsed.data.email, email_confirm: true },
@@ -334,7 +334,7 @@ export async function resetUserPassword(
     organization_id: string | null;
     email: string | null;
   };
-  if (!t.email) return { error: "User belum punya email — tidak bisa reset password" };
+  if (!t.email) return { error: "User belum punya email, tidak bisa reset password" };
   const access = await ensureAccess(t.global_role, t.organization_id);
   if ("error" in access) return { error: access.error ?? "Tidak diizinkan" };
 

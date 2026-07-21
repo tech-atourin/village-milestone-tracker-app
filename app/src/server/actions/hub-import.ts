@@ -25,7 +25,7 @@ function hubClient() {
 /**
  * Mirror Hub-side rich content (produk, foto, awards, events) into
  * vmt.desa_profile_data so the profil desa page can render them without
- * needing a second sync click. Idempotent — safe to call on re-import.
+ * needing a second sync click. Idempotent - safe to call on re-import.
  */
 async function upsertHubProfileData(
   vmtDesaId: string,

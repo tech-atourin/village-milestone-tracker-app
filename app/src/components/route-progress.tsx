@@ -11,7 +11,7 @@ import { usePathname, useSearchParams } from "next/navigation";
 // - Any pathname/searchParams change (completion)
 // =====================================================
 
-// Module-level trigger — set by the mounted RouteProgress and called by
+// Module-level trigger - set by the mounted RouteProgress and called by
 // any client code that navigates programmatically (form submits, wizards,
 // router.push after mutation). No-op before the component mounts.
 let startFn: (() => void) | null = null;
@@ -35,7 +35,7 @@ export function RouteProgress() {
     return () => clearTimeout(t);
   }, [pathname, searchParams]);
 
-  // Shared start routine — used by anchor interceptor and by
+  // Shared start routine - used by anchor interceptor and by
   // startRouteProgress() called from router.push callers.
   useEffect(() => {
     function begin() {

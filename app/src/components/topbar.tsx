@@ -60,7 +60,7 @@ export async function Topbar({
 
       <div className="flex items-center gap-3">
         <NotificationBell unreadCount={unreadCount} />
-        {/* UserMenu disembunyikan di mobile — akses akun ada di drawer
+        {/* UserMenu disembunyikan di mobile - akses akun ada di drawer
             "Lainnya" pada bottom nav. */}
         <div className="hidden lg:block">
           <UserMenu

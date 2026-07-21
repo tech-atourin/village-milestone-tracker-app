@@ -156,7 +156,7 @@ async function fetchSummary(slug: string): Promise<SummaryResponse | null> {
 
   // 5) memberships (peserta + narasumber). Pakai FK hint eksplisit
   // (!project_memberships_user_id_fkey) karena project_memberships punya
-  // dua FK ke users (user_id + invited_by) — embed implisit jadi ambigu
+  // dua FK ke users (user_id + invited_by) - embed implisit jadi ambigu
   // dan bikin query return 0 rows diam-diam. Sinkron dengan analytics.
   const { data: memberRows } = await supabase
     .from("project_memberships")
@@ -244,7 +244,7 @@ async function fetchSummary(slug: string): Promise<SummaryResponse | null> {
     }
   }
 
-  // 7) AI summary (cached) — optional
+  // 7) AI summary (cached) - optional
   const { data: aiRow } = await supabase
     .from("ai_insights")
     .select("content, generated_at")

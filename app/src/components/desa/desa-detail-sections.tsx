@@ -716,7 +716,7 @@ export function DesaDetailSections({
         )}
       </Section>
 
-      {/* Hub extras (produk/foto/events) — awards moved into Pencapaian below
+      {/* Hub extras (produk/foto/events) - awards moved into Pencapaian below
           to avoid duplication. */}
       <HubExtrasSections
         produk={profile?.produk_list ?? null}
@@ -765,7 +765,7 @@ export function DesaDetailSections({
         )}
       </Section>
 
-      {/* Pencapaian — Hub awards + baseline entries merged */}
+      {/* Pencapaian - Hub awards + baseline entries merged */}
       <Section title="Pencapaian" icon={Award}>
         {penghargaanMerged.length > 0 ||
         partisipasi_event.length > 0 ||

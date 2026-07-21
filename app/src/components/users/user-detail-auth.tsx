@@ -117,7 +117,7 @@ export function UserDetailAuth({
         </h3>
         <p className="mb-3 text-xs text-atr-fg-muted">
           Generate password baru. Password lama akan langsung tidak berlaku.
-          Password baru hanya ditampilkan sekali — pastikan langsung dicopy
+          Password baru hanya ditampilkan sekali, pastikan langsung dicopy
           atau dicatat untuk dikirim ke user.
         </p>
         {newPassword ? (
@@ -174,7 +174,7 @@ export function UserDetailAuth({
         )}
         {!initialEmail && (
           <p className="mt-2 text-[11px] italic text-atr-fg-muted">
-            User belum punya email — atur email dulu untuk bisa reset password.
+            User belum punya email. Atur email dulu untuk bisa reset password.
           </p>
         )}
       </section>

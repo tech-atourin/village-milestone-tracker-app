@@ -7,6 +7,7 @@ import {
   rateNarasumber,
   type NarasumberToRate,
 } from "@/server/actions/narasumber-rating";
+import { runOrQueue, isQueued } from "@/lib/offline/run";
 
 export function NarasumberRatingSection({
   projectId,
@@ -63,19 +64,22 @@ function NarasumberRatingCard({
     }
     setError(null);
     startTransition(async () => {
-      const r = await rateNarasumber({
+      const payload = {
         narasumber_id: n.narasumber_id,
         project_id: projectId,
         rating,
         comment: comment.trim(),
-      });
-      if ("error" in r) {
+      };
+      const r = await runOrQueue("rate_narasumber", payload, () =>
+        rateNarasumber(payload),
+      );
+      if (!isQueued(r) && "error" in r) {
         setError(r.error);
         return;
       }
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
-      router.refresh();
+      if (!isQueued(r)) router.refresh();
     });
   }
 

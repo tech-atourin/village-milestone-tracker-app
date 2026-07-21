@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Check, Loader2, MapPin } from "lucide-react";
 import { checkInTopik } from "@/server/actions/topik-checkin";
+import { runOrQueue, isQueued } from "@/lib/offline/run";
 
 export function TopikCheckinButton({
   projectId,
@@ -17,12 +18,13 @@ export function TopikCheckinButton({
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
+  const [queued, setQueued] = useState(false);
 
-  if (checkedIn) {
+  if (checkedIn || queued) {
     return (
       <span className="inline-flex items-center gap-1 rounded-full border border-atr-arti/30 bg-atr-arti/15 px-2.5 py-1 text-[11px] font-bold text-atr-arti">
         <Check className="h-3 w-3" />
-        Sudah check-in
+        {queued ? "Tersimpan (menunggu sinyal)" : "Sudah check-in"}
       </span>
     );
   }
@@ -34,11 +36,17 @@ export function TopikCheckinButton({
         onClick={() =>
           startTransition(async () => {
             setError(null);
-            const r = await checkInTopik({
-              project_id: projectId,
-              project_topik_id: topikId,
-            });
-            if ("error" in r) setError(r.error);
+            const r = await runOrQueue(
+              "checkin",
+              { project_id: projectId, project_topik_id: topikId },
+              () =>
+                checkInTopik({
+                  project_id: projectId,
+                  project_topik_id: topikId,
+                }),
+            );
+            if (isQueued(r)) setQueued(true);
+            else if ("error" in r) setError(r.error);
             else router.refresh();
           })
         }

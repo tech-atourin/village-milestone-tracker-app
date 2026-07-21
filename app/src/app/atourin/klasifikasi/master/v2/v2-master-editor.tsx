@@ -233,7 +233,7 @@ export function V2MasterEditor({
 
   function save() {
     setSaved(false);
-    // Validation — keys/ids auto-generated, only check user-facing
+    // Validation - keys/ids auto-generated, only check user-facing
     const ids = new Set<string>();
     for (const p of pillars) {
       if (!p.title.trim()) {

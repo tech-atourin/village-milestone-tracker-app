@@ -35,7 +35,7 @@ export async function getAttentionItems(): Promise<AttentionItem[]> {
     });
   }
 
-  // 2. Pending criteria verification (V1 Permenpar per-kriteria) — show both
+  // 2. Pending criteria verification (V1 Permenpar per-kriteria) - show both
   // the kriteria count AND the desa count so reviewer knows the granularity.
   const { data: ncpRows } = await supabase
     .from("national_criteria_progress")

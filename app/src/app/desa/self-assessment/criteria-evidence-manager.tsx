@@ -31,6 +31,7 @@ import {
 } from "@/server/actions/self-assessment";
 import { compressIfImage } from "@/lib/image-compress";
 import { CountBadge } from "@/components/ui/count-badge";
+import { runOrQueue, isQueued } from "@/lib/offline/run";
 
 function fileIcon(type: string) {
   if (type === "image") return ImageIcon;
@@ -129,15 +130,18 @@ export function CriteriaEvidenceManager({
         let bin = "";
         for (let j = 0; j < bytes.length; j++) bin += String.fromCharCode(bytes[j]);
         const base64 = btoa(bin);
-        const r = await uploadCriteriaEvidenceFile({
+        const payload = {
           desa_id: desaId,
           criteria_item_id: criteriaItemId,
           filename: f.name,
           mime_type: f.type || "application/octet-stream",
           base64,
           caption: null,
-        });
-        if ("error" in r) errors.push(`${f.name}: ${r.error}`);
+        };
+        const r = await runOrQueue("criteria_evidence", payload, () =>
+          uploadCriteriaEvidenceFile(payload),
+        );
+        if (!isQueued(r) && "error" in r) errors.push(`${f.name}: ${r.error}`);
       }
       setProgress(null);
       if (errors.length > 0)
@@ -205,16 +209,19 @@ export function CriteriaEvidenceManager({
   function submitForReview() {
     setError(null);
     startTransition(async () => {
-      const r = await submitCriteriaItemForReview({
+      const payload = {
         desa_id: desaId,
         criteria_item_id: criteriaItemId,
         evidence_note: note.trim() || null,
-      });
-      if ("error" in r) {
+      };
+      const r = await runOrQueue("criteria_submit", payload, () =>
+        submitCriteriaItemForReview(payload),
+      );
+      if (!isQueued(r) && "error" in r) {
         setError(r.error);
         return;
       }
-      router.refresh();
+      if (!isQueued(r)) router.refresh();
       onClose();
     });
   }

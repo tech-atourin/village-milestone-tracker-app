@@ -61,7 +61,7 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     ref
   ) => {
     const Comp = asChild ? Slot : "button"
-    // Slot forwards to child, can't inject spinner — skip loading UI in asChild mode.
+    // Slot forwards to child, can't inject spinner - skip loading UI in asChild mode.
     const showSpinner = loading && !asChild
     return (
       <Comp

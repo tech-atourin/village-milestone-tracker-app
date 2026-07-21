@@ -24,7 +24,7 @@ const PUBLIC_PREFIXES = [
   "/auth", // magic-link + reset callback
   "/forbidden",
   "/public", // shareable dashboards + public quiz taking (/public/kuis)
-  "/api/kuis", // anonymous quiz submit — route does its own rate-limit + slug gate
+  "/api/kuis", // anonymous quiz submit - route does its own rate-limit + slug gate
 ];
 
 const SCOPE_PREFIXES = {

@@ -6,7 +6,7 @@ import { createAdminClient } from "@/lib/supabase/server";
 import { requireRole } from "@/lib/auth/rbac";
 
 // =====================================================
-// V1 — national_criteria_item CRUD (per kriteria Permenpar)
+// V1 - national_criteria_item CRUD (per kriteria Permenpar)
 // =====================================================
 
 const itemSchema = z.object({
@@ -62,7 +62,7 @@ export async function deleteCriteriaItem(id: string) {
 }
 
 // =====================================================
-// V2 — hub_assessment_template definisi JSON
+// V2 - hub_assessment_template definisi JSON
 // =====================================================
 
 const templateSchema = z.object({

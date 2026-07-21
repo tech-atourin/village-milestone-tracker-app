@@ -76,7 +76,7 @@ export async function listNarasumbersWithStats(): Promise<NarasumberRow[]> {
     }
   }
 
-  // Peserta memberships — lookup which (project, desa) each user belongs to
+  // Peserta memberships - lookup which (project, desa) each user belongs to
   const { data: members } = await supabase
     .from("project_memberships")
     .select("user_id, project_id, desa_id")
@@ -93,7 +93,7 @@ export async function listNarasumbersWithStats(): Promise<NarasumberRow[]> {
     memberPairs.get(m.user_id)!.add(`${m.project_id}::${m.desa_id}`);
   }
 
-  // Ratings: avg + count per narasumber — but only count ratings where the
+  // Ratings: avg + count per narasumber - but only count ratings where the
   // rater is a peserta in the same (project, desa) the narasumber served.
   // This filters out demo-seed bogus ratings.
   const { data: ratings } = await supabase

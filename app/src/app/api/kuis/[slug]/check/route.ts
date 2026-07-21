@@ -6,7 +6,7 @@ import { rateLimit, ipFromHeaders } from "@/lib/rate-limit";
 // Pre-start eligibility check. Called when the taker presses "Mulai Kerjakan":
 // blocks starting if this email already reached the quiz's attempt cap (incl.
 // timed-out attempts that auto-submitted). The response never reveals that the
-// reason is the email — so participants don't just switch email.
+// reason is the email - so participants don't just switch email.
 
 const schema = z.object({ email: z.string().email().max(200) });
 
@@ -17,7 +17,7 @@ export async function POST(
   const ip = ipFromHeaders(req.headers);
   const rl = rateLimit(`quiz-check:${ip}`, { limit: 30, windowMs: 60_000 });
   if (!rl.ok) {
-    // On rate-limit, allow (fail-open) — submit route enforces the hard cap.
+    // On rate-limit, allow (fail-open) - submit route enforces the hard cap.
     return NextResponse.json({ allowed: true });
   }
 

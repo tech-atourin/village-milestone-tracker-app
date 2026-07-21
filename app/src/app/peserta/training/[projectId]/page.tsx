@@ -92,7 +92,7 @@ export default async function PesertaTrainingPage({
         </div>
       )}
 
-      {/* Check-in kehadiran — prominent, di atas supaya mudah ditemukan */}
+      {/* Check-in kehadiran - prominent, di atas supaya mudah ditemukan */}
       {topik.length > 0 && (
         <section className="rounded-2xl border-2 border-atr-purple/30 bg-atr-purple-50/40 p-5 shadow-atr-1">
           <div className="mb-3 flex flex-wrap items-center justify-between gap-2">

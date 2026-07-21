@@ -216,7 +216,7 @@ export async function notify(input: NotifyPayload): Promise<void> {
   if (!u) return;
 
   // EMAIL channel - via Google Workspace SMTP (nodemailer).
-  // Sementara dimatikan global lewat NOTIFY_EMAIL_DISABLED — skip kirim
+  // Sementara dimatikan global lewat NOTIFY_EMAIL_DISABLED - skip kirim
   // dan jangan mark pending biar log bersih.
   if (input.channel === "email" && NOTIFY_EMAIL_DISABLED) return;
   if (input.channel === "email") {

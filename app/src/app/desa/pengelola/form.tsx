@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Save, Loader2, Building2, Award, Users } from "lucide-react";
 import { savePengelolaData } from "@/server/actions/desa-profile";
+import { runOrQueue, isQueued } from "@/lib/offline/run";
 
 const BENTUK_OPTIONS = [
   "Pokdarwis",
@@ -80,7 +81,7 @@ export function PengelolaForm({
     setErr(null);
     setSaved(false);
     startTransition(async () => {
-      const r = await savePengelolaData({
+      const payload = {
         desa_id: desaId,
         bentuk_kelembagaan: f.bentuk_kelembagaan || null,
         landasan_pembentukan: f.landasan_pembentukan || null,
@@ -93,11 +94,14 @@ export function PengelolaForm({
         rating_inovasi: f.rating_inovasi,
         jaringan_kerjasama: f.jaringan_kerjasama,
         catatan: f.catatan || null,
-      });
-      if (r.error) setErr(r.error);
+      };
+      const r = await runOrQueue("save_pengelola", payload, () =>
+        savePengelolaData(payload),
+      );
+      if (!isQueued(r) && r.error) setErr(r.error);
       else {
         setSaved(true);
-        router.refresh();
+        if (!isQueued(r)) router.refresh();
       }
     });
   }

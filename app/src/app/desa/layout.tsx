@@ -11,6 +11,7 @@ const NAV_ITEMS: SidebarItem[] = [
   { href: "/desa/riwayat", label: "Riwayat Program", icon: "History" },
   { href: "/desa/profil", label: "Profil Desa", icon: "MapPin" },
   { href: "/desa/pengelola", label: "Profil Pengelola", icon: "Building2" },
+  { href: "/desa/bantuan", label: "Bantuan", icon: "HelpCircle" },
 ];
 
 export default async function DesaLayout({

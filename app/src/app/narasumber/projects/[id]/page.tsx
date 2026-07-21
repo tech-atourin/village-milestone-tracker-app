@@ -214,7 +214,7 @@ async function PesertaTabLoader({ projectId }: { projectId: string }) {
     listProjectDesa(projectId),
   ]);
   const members = (memberData ?? []) as unknown as ProjectMemberRow[];
-  // Narasumber can't add peserta — pass an empty candidate list so the add
+  // Narasumber can't add peserta - pass an empty candidate list so the add
   // form has nothing to pick (server-side action would reject anyway).
   const candidates: UserListRow[] = [];
   return (
@@ -290,7 +290,7 @@ async function GformsAndResultsLoader({ projectId }: { projectId: string }) {
     }));
   }
 
-  // Narasumber doesn't get to see other narasumbers' ratings — empty list.
+  // Narasumber doesn't get to see other narasumbers' ratings - empty list.
   const narasumberRatings: NarasumberRatingRow[] = [];
 
   return (

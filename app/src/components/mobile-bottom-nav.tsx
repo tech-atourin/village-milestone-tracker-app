@@ -20,11 +20,13 @@ import {
   History,
   CalendarDays,
   ListChecks,
+  ClipboardList,
   MoreHorizontal,
   X,
   LogOut,
   UserCircle,
   Bell,
+  HelpCircle,
   type LucideIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -47,6 +49,8 @@ const ICONS: Record<string, LucideIcon> = {
   History,
   CalendarDays,
   ListChecks,
+  ClipboardList,
+  HelpCircle,
 };
 
 export type MobileBottomNavUser = {
@@ -150,7 +154,7 @@ export function MobileBottomNav({
         />
       )}
 
-      {/* Drawer panel — slides from bottom */}
+      {/* Drawer panel - slides from bottom */}
       <div
         className={cn(
           "fixed inset-x-0 bottom-0 z-50 max-h-[85vh] overflow-y-auto rounded-t-2xl bg-white pb-[env(safe-area-inset-bottom)] shadow-[0_-8px_24px_rgba(0,0,0,0.15)] transition-transform duration-200 ease-out lg:hidden",

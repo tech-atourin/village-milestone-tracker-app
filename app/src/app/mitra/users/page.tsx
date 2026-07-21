@@ -20,7 +20,7 @@ export default async function MitraUsersListPage() {
   await requireRole("mitra_admin");
 
   // Admin client bypasses RLS on vmt.users (mitra anon role can't read other
-  // users' rows). Scope: only roles relevant to a mitra — peserta, narasumber,
+  // users' rows). Scope: only roles relevant to a mitra - peserta, narasumber,
   // desa_wisata. Superadmin + mitra_admin tidak ditampilkan.
   const admin = createAdminClient();
   const [{ data }, orgs, desa] = await Promise.all([

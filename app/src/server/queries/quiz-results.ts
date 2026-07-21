@@ -117,7 +117,7 @@ export async function getQuizResults(
     distribution[idx].count++;
   }
 
-  // Item analysis — join questions + their answers across attempts.
+  // Item analysis - join questions + their answers across attempts.
   const { data: questions } = await admin
     .from("quiz_questions")
     .select("id, prompt, sort_order")

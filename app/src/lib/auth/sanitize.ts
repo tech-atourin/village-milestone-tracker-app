@@ -8,7 +8,7 @@ import { createAdminClient } from "@/lib/supabase/server";
  * The Supabase admin createUser path leaves several token columns as NULL
  * in `auth.users` (email_change, phone_change, *_token, recovery_token, etc).
  * GoTrue's `signInWithPassword` expects empty strings on those columns and
- * rejects logins with "Invalid login credentials" when they're NULL — even
+ * rejects logins with "Invalid login credentials" when they're NULL - even
  * though the password hash itself verifies fine.
  *
  * Symptom: user created via bulk-import / orgs / narasumber CRUD can never

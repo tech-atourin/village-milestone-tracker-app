@@ -6,7 +6,7 @@ import { getCurrentUser } from "@/lib/auth/rbac";
 import { rateLimit, ipFromHeaders } from "@/lib/rate-limit";
 import { bridgeAttemptToTestResult } from "@/lib/quiz/bridge";
 
-// Anonymous quiz submission. No auth — gated by published slug + window +
+// Anonymous quiz submission. No auth - gated by published slug + window +
 // attempt cap + rate limit. Grading happens here (server-side) so correct
 // answers never reach the client.
 
@@ -155,7 +155,7 @@ export async function POST(
 
   // Identity resolution:
   //  1. If the taker is LOGGED IN, attribute the attempt to their account
-  //     directly (authoritative — from the session cookie, not client input).
+  //     directly (authoritative - from the session cookie, not client input).
   //  2. Otherwise match by email (exact, lowercase). Unmatched anonymous
   //     attempts auto-link later when an account with that email is created
   //     (reconcile, Fase 4).
@@ -221,7 +221,7 @@ export async function POST(
     await bridgeAttemptToTestResult(attemptId);
   }
 
-  // Answer review is only disclosed for POST-TEST — so peserta can learn which
+  // Answer review is only disclosed for POST-TEST - so peserta can learn which
   // answers were correct. Pre-test / standalone return score only (kunci
   // jawaban tetap tersembunyi agar kuis bisa dipakai ulang).
   let review: unknown = undefined;

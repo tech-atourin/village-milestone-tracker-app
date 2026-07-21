@@ -84,7 +84,7 @@ function linkFor(
       return projectId ? `/${scope}/projects/${projectId}` : null;
     case "checklist_approved":
     case "checklist_rejected":
-      // Peserta — go to their project_desa
+      // Peserta - go to their project_desa
       return pesertaProjectHref;
     case "criteria_submitted":
       // Reviewer goes to klasifikasi v1 detail for that desa
@@ -93,7 +93,7 @@ function linkFor(
       return scope === "atourin" ? "/atourin/klasifikasi" : null;
     case "criteria_verified":
     case "criteria_rejected":
-      // Desa wisata — go to their self-assessment
+      // Desa wisata - go to their self-assessment
       if (scope === "desa") return "/desa/self-assessment";
       if (desaId && (scope === "atourin" || scope === "mitra"))
         return `/${scope}/klasifikasi/v1/${desaId}`;

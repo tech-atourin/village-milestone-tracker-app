@@ -52,7 +52,7 @@ async function resolveChecklistContext(checklistProgressId: string): Promise<{
 }
 
 // Access rules for a resolved checklist context.
-// Prevents cross-tenant IDOR — without this, any signed-in user could
+// Prevents cross-tenant IDOR - without this, any signed-in user could
 // list/post comments on any checklist by UUID.
 async function canAccessChecklist(
   user: { id: string; global_role: string; organization_id: string | null; representing_desa_id: string | null },
@@ -75,7 +75,7 @@ async function canAccessChecklist(
   if (user.global_role === "desa_wisata") {
     return user.representing_desa_id === ctx.desa_id;
   }
-  // peserta / narasumber — must have active membership on the project
+  // peserta / narasumber - must have active membership on the project
   const { data } = await admin
     .from("project_memberships")
     .select("id")
@@ -194,7 +194,7 @@ export async function addChecklistComment(
       const subId = (cpSubmitter as { submitted_by: string | null } | null)
         ?.submitted_by;
       if (subId) recipients.add(subId);
-      // Note: desa_wisata role tidak di-notify untuk checklist project — mereka
+      // Note: desa_wisata role tidak di-notify untuk checklist project - mereka
       // tidak punya akses ke halaman review checklist (cuma assessment + rapor).
       // Cuma peserta + desa role lain yang relevan. Untuk komentar V1/V2
       // assessment, lihat assessment-comments.ts.

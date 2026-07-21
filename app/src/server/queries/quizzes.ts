@@ -89,7 +89,7 @@ export type QuizFull = {
 };
 
 /**
- * Full quiz WITH correct-answer flags — admin/authoring only. Never send this
+ * Full quiz WITH correct-answer flags - admin/authoring only. Never send this
  * shape to a public taker (use the sanitized query in queries/quiz-public.ts).
  */
 export async function getQuizFull(quizId: string): Promise<QuizFull | null> {

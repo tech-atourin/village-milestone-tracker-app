@@ -15,9 +15,9 @@ export type BaselineField = {
   required?: boolean;
   options?: string[];
   hint?: string;
-  // For repeater fields — the shape of each row.
+  // For repeater fields - the shape of each row.
   subfields?: BaselineField[];
-  // For repeater fields — short noun for the "Tambah X" button (e.g. "tahun",
+  // For repeater fields - short noun for the "Tambah X" button (e.g. "tahun",
   // "penghargaan"). Defaults to "entri".
   itemLabel?: string;
 };

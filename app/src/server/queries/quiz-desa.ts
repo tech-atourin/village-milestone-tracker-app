@@ -16,9 +16,9 @@ export type DesaQuizResult = {
 };
 
 /**
- * Quiz attempts of peserta belonging to a desa — for the desa_wisata account
+ * Quiz attempts of peserta belonging to a desa - for the desa_wisata account
  * to monitor its representatives. Peserta↔desa link is via
- * project_memberships.desa_id. Scores only (no per-question answer sheet —
+ * project_memberships.desa_id. Scores only (no per-question answer sheet -
  * that stays personal to each peserta).
  */
 export async function listDesaQuizResults(

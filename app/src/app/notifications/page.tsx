@@ -26,7 +26,7 @@ export default async function NotificationsPage() {
     items = items.filter((n) => {
       if (allowedTemplates.has(n.template_key)) return true;
       // comment_added: hanya kalau payload-nya assessment (desa_id present,
-      // no project_id — checklist comment punya project_id)
+      // no project_id - checklist comment punya project_id)
       if (n.template_key === "comment_added") {
         return (
           !n.payload?.project_id &&
@@ -41,7 +41,7 @@ export default async function NotificationsPage() {
     });
   }
 
-  // Enrich payload.project_desa_id for peserta when missing — legacy rows
+  // Enrich payload.project_desa_id for peserta when missing - legacy rows
   // and certain notify call sites don't include it, which breaks the
   // /peserta/projects/[project_desa_id] redirect.
   if (user.global_role === "peserta") {
