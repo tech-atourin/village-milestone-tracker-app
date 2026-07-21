@@ -1,6 +1,7 @@
 import "server-only";
 
 import { createAdminClient } from "@/lib/supabase/server";
+import { getProjectCheckinMatrix } from "@/server/queries/checkin";
 
 export type RaporRow = {
   user_id: string;
@@ -10,6 +11,9 @@ export type RaporRow = {
   attendance_mode: "offline" | "online";
   pre_test_score: number | null;
   post_test_score: number | null;
+  tugas_score: number | null;
+  keaktifan_score: number | null;
+  final_score: number | null;
   attendance: number | null;
   improvement_percent: number | null;
   has_rapor: boolean;
@@ -43,7 +47,7 @@ export async function listProjectRapor(projectId: string): Promise<RaporRow[]> {
   const { data: rapors } = await supabase
     .from("rapor_peserta")
     .select(
-      "user_id, pre_test_score, post_test_score, attendance, improvement_percent",
+      "user_id, pre_test_score, post_test_score, tugas_score, keaktifan_score, final_score, improvement_percent",
     )
     .eq("project_id", projectId)
     .in(
@@ -56,7 +60,9 @@ export async function listProjectRapor(projectId: string): Promise<RaporRow[]> {
     {
       pre_test_score: number | null;
       post_test_score: number | null;
-      attendance: number | null;
+      tugas_score: number | null;
+      keaktifan_score: number | null;
+      final_score: number | null;
       improvement_percent: number | null;
     }
   >();
@@ -64,10 +70,25 @@ export async function listProjectRapor(projectId: string): Promise<RaporRow[]> {
     user_id: string;
     pre_test_score: number | null;
     post_test_score: number | null;
-    attendance: number | null;
+    tugas_score: number | null;
+    keaktifan_score: number | null;
+    final_score: number | null;
     improvement_percent: number | null;
   }>) {
     raporMap.set(r.user_id, r);
+  }
+
+  // Kehadiran diturunkan dari check-in per materi (bukan input manual) dan
+  // tidak ikut dalam perhitungan Nilai Akhir.
+  const matrix = await getProjectCheckinMatrix(projectId);
+  const hadirPct = new Map<string, number | null>();
+  for (const row of matrix.rows) {
+    hadirPct.set(
+      row.user_id,
+      matrix.total_topik > 0
+        ? Math.round((row.checked_count / matrix.total_topik) * 100)
+        : null,
+    );
   }
 
   return memberRows.map((m) => {
@@ -76,7 +97,10 @@ export async function listProjectRapor(projectId: string): Promise<RaporRow[]> {
       ...m,
       pre_test_score: r?.pre_test_score ?? null,
       post_test_score: r?.post_test_score ?? null,
-      attendance: r?.attendance ?? null,
+      tugas_score: r?.tugas_score ?? null,
+      keaktifan_score: r?.keaktifan_score ?? null,
+      final_score: r?.final_score ?? null,
+      attendance: hadirPct.get(m.user_id) ?? null,
       improvement_percent: r?.improvement_percent ?? null,
       has_rapor: !!r,
     };

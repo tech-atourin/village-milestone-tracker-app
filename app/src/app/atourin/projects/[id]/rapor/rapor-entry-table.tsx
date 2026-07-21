@@ -16,14 +16,18 @@ import {
 } from "lucide-react";
 import { saveRapor } from "@/server/actions/rapor";
 import type { RaporRow } from "@/server/queries/rapor";
+import { hitungNilaiAkhir, BOBOT_LABEL } from "@/lib/rapor/scoring";
 
 type SortKey =
   | "name"
   | "desa"
   | "pre"
   | "post"
+  | "tugas"
+  | "keaktifan"
   | "attendance"
-  | "delta";
+  | "delta"
+  | "final";
 type SortDir = "asc" | "desc";
 
 type EditState = Record<
@@ -31,7 +35,8 @@ type EditState = Record<
   {
     pre: string;
     post: string;
-    attendance: string;
+    tugas: string;
+    keaktifan: string;
   }
 >;
 
@@ -51,7 +56,8 @@ export function RaporEntryTable({
       init[r.user_id] = {
         pre: r.pre_test_score?.toString() ?? "",
         post: r.post_test_score?.toString() ?? "",
-        attendance: r.attendance?.toString() ?? "",
+        tugas: r.tugas_score?.toString() ?? "",
+        keaktifan: r.keaktifan_score?.toString() ?? "",
       };
     }
     return init;
@@ -92,10 +98,16 @@ export function RaporEntryTable({
           return (num(a.pre_test_score) - num(b.pre_test_score)) * dir;
         case "post":
           return (num(a.post_test_score) - num(b.post_test_score)) * dir;
+        case "tugas":
+          return (num(a.tugas_score) - num(b.tugas_score)) * dir;
+        case "keaktifan":
+          return (num(a.keaktifan_score) - num(b.keaktifan_score)) * dir;
         case "attendance":
           return (num(a.attendance) - num(b.attendance)) * dir;
         case "delta":
           return (num(a.improvement_percent) - num(b.improvement_percent)) * dir;
+        case "final":
+          return (num(a.final_score) - num(b.final_score)) * dir;
       }
     });
   }, [rows, search, desaFilter, sortKey, sortDir]);
@@ -108,7 +120,11 @@ export function RaporEntryTable({
     }
   }
 
-  function update(userId: string, field: "pre" | "post" | "attendance", value: string) {
+  function update(
+    userId: string,
+    field: "pre" | "post" | "tugas" | "keaktifan",
+    value: string,
+  ) {
     setEditState((s) => ({
       ...s,
       [userId]: { ...s[userId], [field]: value },
@@ -120,7 +136,8 @@ export function RaporEntryTable({
     const e = editState[userId];
     const pre = e.pre === "" ? null : Number(e.pre);
     const post = e.post === "" ? null : Number(e.post);
-    const att = e.attendance === "" ? null : Number(e.attendance);
+    const tugas = e.tugas === "" ? null : Number(e.tugas);
+    const keaktifan = e.keaktifan === "" ? null : Number(e.keaktifan);
 
     startTransition(async () => {
       const r = await saveRapor({
@@ -128,7 +145,8 @@ export function RaporEntryTable({
         user_id: userId,
         pre_test_score: pre,
         post_test_score: post,
-        attendance: att,
+        tugas_score: tugas,
+        keaktifan_score: keaktifan,
       });
       if (r.error) {
         alert(r.error);
@@ -184,6 +202,14 @@ export function RaporEntryTable({
           </button>
         )}
       </div>
+      <div className="rounded-xl border border-atr-outline bg-atr-bg-soft/50 px-3 py-2 text-xs text-atr-fg-muted">
+        <strong className="text-atr-fg">Komposisi Nilai Akhir:</strong>{" "}
+        {BOBOT_LABEL.map((b) => `${b.label} ${b.percent}`).join(" + ")}. Nilai
+        Akhir muncul setelah keempat komponen terisi. Kolom <strong>Hadir %</strong>{" "}
+        terisi otomatis dari check-in per materi dan <strong>tidak</strong>{" "}
+        ikut dihitung. Peserta hanya melihat Nilai Akhir, Pre-Test, dan
+        Post-Test di rapor &amp; sertifikat, bukan Tugas/Keaktifan.
+      </div>
       <div className="text-xs text-atr-fg-muted">
         {visibleRows.length} dari {rows.length} peserta
       </div>
@@ -197,8 +223,11 @@ export function RaporEntryTable({
               <SortableTh label="Desa" k="desa" sortKey={sortKey} sortDir={sortDir} onClick={toggleSort} />
               <SortableTh label="Pre" k="pre" sortKey={sortKey} sortDir={sortDir} onClick={toggleSort} className="w-24" />
               <SortableTh label="Post" k="post" sortKey={sortKey} sortDir={sortDir} onClick={toggleSort} className="w-24" />
+              <SortableTh label="Tugas" k="tugas" sortKey={sortKey} sortDir={sortDir} onClick={toggleSort} className="w-24" />
+              <SortableTh label="Keaktifan" k="keaktifan" sortKey={sortKey} sortDir={sortDir} onClick={toggleSort} className="w-28" />
               <SortableTh label="Hadir %" k="attendance" sortKey={sortKey} sortDir={sortDir} onClick={toggleSort} className="w-28" />
               <SortableTh label="Δ" k="delta" sortKey={sortKey} sortDir={sortDir} onClick={toggleSort} className="w-20" />
+              <SortableTh label="Nilai Akhir" k="final" sortKey={sortKey} sortDir={sortDir} onClick={toggleSort} className="w-28" />
               <th className="px-4 py-3 w-32"></th>
               <th className="px-4 py-3 w-20"></th>
             </tr>
@@ -206,7 +235,7 @@ export function RaporEntryTable({
           <tbody className="divide-y divide-atr-outline text-sm">
             {visibleRows.length === 0 && (
               <tr>
-                <td colSpan={8} className="px-4 py-10 text-center text-sm text-atr-fg-muted">
+                <td colSpan={11} className="px-4 py-10 text-center text-sm text-atr-fg-muted">
                   Tidak ada peserta yang cocok dengan filter.
                 </td>
               </tr>
@@ -216,7 +245,18 @@ export function RaporEntryTable({
               const dirty =
                 e.pre !== (r.pre_test_score?.toString() ?? "") ||
                 e.post !== (r.post_test_score?.toString() ?? "") ||
-                e.attendance !== (r.attendance?.toString() ?? "");
+                e.tugas !== (r.tugas_score?.toString() ?? "") ||
+                e.keaktifan !== (r.keaktifan_score?.toString() ?? "");
+              const livePre = e.pre === "" ? null : Number(e.pre);
+              const livePost = e.post === "" ? null : Number(e.post);
+              const liveTugas = e.tugas === "" ? null : Number(e.tugas);
+              const liveKeaktifan = e.keaktifan === "" ? null : Number(e.keaktifan);
+              const liveFinal = hitungNilaiAkhir({
+                pre_test_score: livePre,
+                post_test_score: livePost,
+                tugas_score: liveTugas,
+                keaktifan_score: liveKeaktifan,
+              });
               const isSaving = pendingRowId === r.user_id;
               return (
                 <tr key={r.user_id} className="hover:bg-atr-bg-soft">
@@ -252,9 +292,23 @@ export function RaporEntryTable({
                   </td>
                   <td className="px-4 py-3">
                     <ScoreInput
-                      value={e.attendance}
-                      onChange={(v) => update(r.user_id, "attendance", v)}
+                      value={e.tugas}
+                      onChange={(v) => update(r.user_id, "tugas", v)}
                     />
+                  </td>
+                  <td className="px-4 py-3">
+                    <ScoreInput
+                      value={e.keaktifan}
+                      onChange={(v) => update(r.user_id, "keaktifan", v)}
+                    />
+                  </td>
+                  <td className="px-4 py-3">
+                    <span
+                      className="text-sm font-bold text-atr-fg"
+                      title="Otomatis dari check-in per materi, bukan komponen penilaian"
+                    >
+                      {r.attendance != null ? `${r.attendance}%` : "-"}
+                    </span>
                   </td>
                   <td className="px-4 py-3">
                     {r.improvement_percent != null ? (
@@ -272,6 +326,27 @@ export function RaporEntryTable({
                       </span>
                     ) : (
                       <span className="text-xs text-atr-fg-muted">-</span>
+                    )}
+                  </td>
+                  <td className="px-4 py-3">
+                    {liveFinal != null ? (
+                      <span
+                        className={`inline-flex rounded-full px-2.5 py-1 text-sm font-bold ${
+                          dirty
+                            ? "bg-atr-yellow/25 text-atr-fg"
+                            : "bg-atr-purple-50 text-atr-purple-700"
+                        }`}
+                        title={dirty ? "Perkiraan, belum disimpan" : "Nilai Akhir tersimpan"}
+                      >
+                        {liveFinal.toFixed(2)}
+                      </span>
+                    ) : (
+                      <span
+                        className="text-[11px] text-atr-fg-muted"
+                        title="Nilai Akhir muncul setelah Pre, Post, Tugas, dan Keaktifan terisi"
+                      >
+                        Belum lengkap
+                      </span>
                     )}
                   </td>
                   <td className="px-4 py-3">

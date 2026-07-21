@@ -1,6 +1,8 @@
 import Image from "next/image";
 import { createAdminClient } from "@/lib/supabase/server";
 import { PrintButton } from "@/components/ui/print-button";
+import { predikat } from "@/lib/rapor/scoring";
+import { getCheckinAttendancePercent } from "@/server/queries/checkin";
 
 export async function loadRapor(projectId: string, userId: string) {
   // Admin client so mitra (and any reviewer) can render a peserta's rapor even
@@ -25,7 +27,7 @@ export async function loadRapor(projectId: string, userId: string) {
       supabase
         .from("rapor_peserta")
         .select(
-          "pre_test_score, post_test_score, improvement_percent, survey_kepuasan, attendance, generated_at",
+          "pre_test_score, post_test_score, tugas_score, keaktifan_score, final_score, improvement_percent, survey_kepuasan, generated_at",
         )
         .eq("project_id", projectId)
         .eq("user_id", userId)
@@ -127,7 +129,18 @@ export async function loadRapor(projectId: string, userId: string) {
     (a, b) => a.sort_order - b.sort_order,
   );
 
-  return { project, user, rapor, membership, narasumber, materi_scores };
+  // Kehadiran diturunkan dari check-in per materi (bukan komponen penilaian).
+  const checkin_attendance = await getCheckinAttendancePercent(projectId, userId);
+
+  return {
+    project,
+    user,
+    rapor,
+    membership,
+    narasumber,
+    materi_scores,
+    checkin_attendance,
+  };
 }
 
 function fmtDateIdn(iso: string | null): string {
@@ -153,6 +166,7 @@ export function RaporView({
 }: {
   scope?: "atourin" | "mitra" | "narasumber";
   data: {
+    checkin_attendance?: number | null;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     project: any;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -333,8 +347,58 @@ export function RaporView({
             </div>
           </div>
         </div>
+        {/* Komposisi Nilai Akhir (internal: mitra/superadmin) */}
+        <div className="mt-4 rounded-xl border-2 border-atr-purple/30 bg-atr-purple-50/50 p-4">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="text-xs font-bold uppercase tracking-wide text-atr-fg-muted">
+              Nilai Akhir
+            </div>
+            <span className="rounded-full bg-white px-2 py-0.5 text-[10px] font-bold text-atr-fg-muted">
+              Internal, peserta hanya melihat nilai akhirnya
+            </span>
+          </div>
+          <div className="mt-1 flex flex-wrap items-baseline gap-3">
+            <span className="text-3xl font-bold text-atr-purple-700">
+              {rapor?.final_score != null
+                ? Number(rapor.final_score).toFixed(2)
+                : "-"}
+            </span>
+            {rapor?.final_score != null && (
+              <span className="text-sm font-bold text-atr-fg-muted">
+                {predikat(Number(rapor.final_score))}
+              </span>
+            )}
+          </div>
+          <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
+            {[
+              { label: "Pre-Test", percent: "10%", v: rapor?.pre_test_score },
+              { label: "Post-Test", percent: "10%", v: rapor?.post_test_score },
+              { label: "Tugas", percent: "50%", v: rapor?.tugas_score },
+              { label: "Keaktifan", percent: "30%", v: rapor?.keaktifan_score },
+            ].map((c) => (
+              <div
+                key={c.label}
+                className="rounded-lg border border-atr-outline bg-white p-2 text-center"
+              >
+                <div className="text-[10px] font-bold uppercase tracking-wide text-atr-fg-muted">
+                  {c.label} · {c.percent}
+                </div>
+                <div className="text-lg font-bold text-atr-fg">
+                  {c.v != null ? Number(c.v) : "-"}
+                </div>
+              </div>
+            ))}
+          </div>
+          {rapor?.final_score == null && (
+            <p className="mt-2 text-[11px] text-atr-fg-muted">
+              Nilai Akhir muncul setelah keempat komponen terisi.
+            </p>
+          )}
+        </div>
+
         <div className="mt-4 text-xs text-atr-fg-muted">
-          Kehadiran: {rapor?.attendance != null ? `${rapor.attendance}%` : "-"}
+          Kehadiran (dari check-in per materi):{" "}
+          {data.checkin_attendance != null ? `${data.checkin_attendance}%` : "-"}
         </div>
       </section>
 

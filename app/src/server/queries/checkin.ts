@@ -95,3 +95,29 @@ export async function getProjectCheckinMatrix(
 
   return { topik, rows, total_topik: topik.length };
 }
+
+/**
+ * Kehadiran (%) peserta = jumlah topik yang sudah di-check-in / total topik.
+ * Diturunkan langsung dari check-in per materi, BUKAN nilai yang diinput
+ * manual, dan TIDAK ikut dalam perhitungan Nilai Akhir.
+ * Mengembalikan null bila project belum punya topik.
+ */
+export async function getCheckinAttendancePercent(
+  projectId: string,
+  userId: string,
+): Promise<number | null> {
+  const admin = createAdminClient();
+  const [{ count: totalTopik }, { count: checked }] = await Promise.all([
+    admin
+      .from("project_topik")
+      .select("id", { count: "exact", head: true })
+      .eq("project_id", projectId),
+    admin
+      .from("topik_check_ins")
+      .select("id", { count: "exact", head: true })
+      .eq("project_id", projectId)
+      .eq("user_id", userId),
+  ]);
+  if (!totalTopik || totalTopik === 0) return null;
+  return Math.round(((checked ?? 0) / totalTopik) * 100);
+}

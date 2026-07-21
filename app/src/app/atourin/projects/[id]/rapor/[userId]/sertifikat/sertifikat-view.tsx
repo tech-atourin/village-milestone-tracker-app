@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { PrintButton } from "@/components/ui/print-button";
+import { isLulus, NILAI_MINIMUM_LULUS } from "@/lib/rapor/scoring";
 
 export function SertifikatView({
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -29,7 +30,10 @@ export function SertifikatView({
     pre !== null && post !== null
       ? Math.round(((post - pre) / Math.max(pre, 1)) * 100)
       : null;
-  const eligible = (post ?? 0) >= 70 && (delta ?? 0) >= 20;
+  // Kelulusan/berhak sertifikat: Nilai Akhir >= 70.
+  const finalScore =
+    rapor?.final_score != null ? Number(rapor.final_score) : null;
+  const eligible = isLulus(finalScore);
   const dateFmt = (iso: string | null) =>
     iso
       ? new Intl.DateTimeFormat("id-ID", {
@@ -154,6 +158,11 @@ export function SertifikatView({
               <ScoreCell label="Pre-test" value={pre} />
               <ScoreCell label="Post-test" value={post} highlight />
               <ScoreCell
+                label="Nilai Akhir"
+                value={finalScore != null ? finalScore.toFixed(2) : "-"}
+                highlight
+              />
+              <ScoreCell
                 label="Peningkatan"
                 value={`${delta! > 0 ? "+" : ""}${delta}%`}
                 emphasis={
@@ -187,8 +196,10 @@ export function SertifikatView({
 
       {!eligible && (
         <p className="no-print mx-auto mt-4 max-w-[1100px] text-center text-xs text-atr-red">
-          Peserta belum memenuhi syarat sertifikat (Post-test ≥70 + improvement
-          ≥20%). Sertifikat tetap bisa di-print untuk preview.
+          Peserta belum memenuhi syarat sertifikat (Nilai Akhir minimal{" "}
+          {NILAI_MINIMUM_LULUS}
+          {finalScore == null ? ", nilai belum lengkap" : ""}). Sertifikat tetap
+          bisa di-print untuk preview.
         </p>
       )}
     </main>

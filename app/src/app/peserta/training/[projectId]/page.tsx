@@ -14,6 +14,8 @@ import { getCurrentUser } from "@/lib/auth/rbac";
 import { getPesertaTrainingDetail } from "@/server/queries/peserta";
 import { getMyCheckinTopikIds } from "@/server/queries/checkin";
 import { TopikCheckinButton } from "./topik-checkin-button";
+import { createAdminClient } from "@/lib/supabase/server";
+import { predikat } from "@/lib/rapor/scoring";
 
 function fmtDate(iso: string | null): string {
   if (!iso) return "-";
@@ -38,12 +40,23 @@ export default async function PesertaTrainingPage({
   const checkinIds = await getMyCheckinTopikIds(params.projectId, user.id);
   const { project, membership, topik, materi_scores, sessions } = data;
   const isOnline = membership.attendance_mode === "online";
+
+  // Peserta hanya melihat Nilai Akhir. Rincian komponen penilaian
+  // (Pre/Post/Tugas/Keaktifan) sengaja tidak ditampilkan ke peserta.
+  const { data: raporRow } = await createAdminClient()
+    .from("rapor_peserta")
+    .select("final_score")
+    .eq("project_id", params.projectId)
+    .eq("user_id", user.id)
+    .maybeSingle();
+  const finalScore =
+    (raporRow as { final_score: number | null } | null)?.final_score ?? null;
+
+  // Pre-test & post-test tetap ditampilkan: peserta memang sudah tahu nilainya
+  // dari hasil pengisian. Yang disembunyikan adalah rincian bobot penilaian
+  // (Tugas & Keaktifan).
   const preAvg = avgOf(materi_scores.map((m) => m.pre));
   const postAvg = avgOf(materi_scores.map((m) => m.post));
-  const delta =
-    preAvg !== null && postAvg !== null
-      ? Math.round(((postAvg - preAvg) / Math.max(preAvg, 1)) * 100)
-      : null;
 
   return (
     <div className="space-y-5">
@@ -127,20 +140,31 @@ export default async function PesertaTrainingPage({
         </section>
       )}
 
-      {/* Skor pre/post */}
+      {/* Nilai akhir + skor tes. Rincian bobot penilaian tidak ditampilkan. */}
       <section className="rounded-2xl border border-atr-outline bg-white p-5 shadow-atr-1">
-        <h2 className="mb-3 text-xs font-bold uppercase tracking-wide text-atr-fg-muted">
-          Skor Anda
-        </h2>
-        <div className="grid grid-cols-3 gap-3">
+        <div className="text-center">
+          <h2 className="text-xs font-bold uppercase tracking-wide text-atr-fg-muted">
+            Nilai Akhir
+          </h2>
+          {finalScore != null ? (
+            <>
+              <div className="mt-1 text-4xl font-bold text-atr-purple-700">
+                {Number(finalScore).toFixed(2)}
+              </div>
+              <div className="mt-1 inline-flex rounded-full bg-atr-purple-50 px-3 py-1 text-xs font-bold text-atr-purple-700">
+                {predikat(Number(finalScore))}
+              </div>
+            </>
+          ) : (
+            <p className="mt-2 text-sm text-atr-fg-muted">
+              Belum tersedia. Nilai akhir muncul setelah penyelenggara selesai
+              menilai.
+            </p>
+          )}
+        </div>
+        <div className="mt-4 grid grid-cols-2 gap-3 border-t border-atr-outline pt-4">
           <ScoreBox label="Pre-test" value={preAvg} />
           <ScoreBox label="Post-test" value={postAvg} highlight />
-          <ScoreBox
-            label="Peningkatan"
-            value={delta}
-            suffix="%"
-            tone={delta == null ? "muted" : delta > 0 ? "green" : "red"}
-          />
         </div>
       </section>
 
@@ -230,7 +254,7 @@ export default async function PesertaTrainingPage({
       {/* Rapor + Sertifikat link */}
       <section className="grid gap-3 sm:grid-cols-2">
         <Link
-          href={`/atourin/projects/${project.id}/rapor/${user.id}`}
+          href={`/peserta/rapor/${project.id}`}
           className="flex items-center gap-3 rounded-2xl border border-atr-purple/30 bg-atr-purple-50/50 p-4 transition hover:bg-atr-purple-50"
         >
           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-atr-purple text-white">
@@ -244,7 +268,7 @@ export default async function PesertaTrainingPage({
           </div>
         </Link>
         <Link
-          href={`/atourin/projects/${project.id}/rapor/${user.id}/sertifikat`}
+          href={`/peserta/rapor/${project.id}/sertifikat`}
           target="_blank"
           rel="noreferrer"
           className="flex items-center gap-3 rounded-2xl border border-atr-yellow/40 bg-atr-yellow/10 p-4 transition hover:bg-atr-yellow/20"
@@ -275,32 +299,23 @@ function avgOf(nums: Array<number | null>): number | null {
 function ScoreBox({
   label,
   value,
-  suffix,
   highlight,
-  tone,
 }: {
   label: string;
   value: number | null;
-  suffix?: string;
   highlight?: boolean;
-  tone?: "green" | "red" | "muted";
 }) {
-  const color =
-    tone === "green"
-      ? "text-atr-arti"
-      : tone === "red"
-        ? "text-atr-red"
-        : highlight
-          ? "text-atr-purple-700"
-          : "text-atr-fg";
   return (
     <div className="rounded-xl border border-atr-outline bg-atr-bg-soft/40 p-3 text-center">
       <div className="text-[10px] font-bold uppercase tracking-wide text-atr-fg-muted">
         {label}
       </div>
-      <div className={`mt-0.5 text-xl font-bold ${color}`}>
+      <div
+        className={`mt-0.5 text-xl font-bold ${
+          highlight ? "text-atr-purple-700" : "text-atr-fg"
+        }`}
+      >
         {value ?? "-"}
-        {value != null && suffix}
       </div>
     </div>
   );
