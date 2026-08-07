@@ -70,6 +70,7 @@ export type QuizQuestionFull = {
   question_type: QuizQuestionType;
   points: number;
   sort_order: number;
+  topik_id: string | null;
   options: QuizOptionFull[];
 };
 export type QuizFull = {
@@ -109,7 +110,7 @@ export async function getQuizFull(quizId: string): Promise<QuizFull | null> {
   const { data: questions } = await admin
     .from("quiz_questions")
     .select(
-      "id, prompt, question_type, points, sort_order, options:quiz_options(id, label, is_correct, sort_order)",
+      "id, prompt, question_type, points, sort_order, topik_id, options:quiz_options(id, label, is_correct, sort_order)",
     )
     .eq("quiz_id", quizId)
     .order("sort_order", { ascending: true });
@@ -139,6 +140,7 @@ export async function getQuizFull(quizId: string): Promise<QuizFull | null> {
       question_type: qq.question_type,
       points: Number(qq.points ?? 1),
       sort_order: qq.sort_order,
+      topik_id: qq.topik_id ?? null,
       options: ((qq.options ?? []) as QuizOptionFull[])
         .slice()
         .sort((a, b) => a.sort_order - b.sort_order)

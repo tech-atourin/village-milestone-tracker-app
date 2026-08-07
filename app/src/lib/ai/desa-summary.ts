@@ -198,12 +198,15 @@ export async function assembleContext(projectDesaId: string): Promise<string> {
 
   // Pre/post test growth per materi if available
   if (projectId) {
+    // GForm + kuis native; baca form_type dari baris + scope via topik, nilai
+    // dinormalisasi ke persen (jangan inner-join project_gforms).
     const { data: testRows } = await supabase
       .from("peserta_test_results")
       .select(
-        "score, project_topik:project_topik(name), gform:project_gforms!inner(form_type, project_id)",
+        "score, max_score, form_type, project_topik:project_topik!inner(name, project_id)",
       )
-      .eq("gform.project_id", projectId)
+      .eq("project_topik.project_id", projectId)
+      .in("form_type", ["pre_test", "post_test"])
       .not("project_topik_id", "is", null);
     type Agg = { pre: number[]; post: number[] };
     const byMateri = new Map<string, Agg>();
@@ -211,8 +214,10 @@ export async function assembleContext(projectDesaId: string): Promise<string> {
     for (const r of ((testRows ?? []) as any[])) {
       const name = r.project_topik?.name ?? "-";
       const cur = byMateri.get(name) ?? { pre: [], post: [] };
-      if (r.gform?.form_type === "pre_test") cur.pre.push(Number(r.score));
-      else if (r.gform?.form_type === "post_test") cur.post.push(Number(r.score));
+      const max = Number(r.max_score);
+      const pct = max > 0 ? Math.round((Number(r.score) / max) * 100) : Number(r.score);
+      if (r.form_type === "pre_test") cur.pre.push(pct);
+      else if (r.form_type === "post_test") cur.post.push(pct);
       byMateri.set(name, cur);
     }
     if (byMateri.size > 0) {

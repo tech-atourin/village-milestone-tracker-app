@@ -526,14 +526,19 @@ export async function getProjectAnalytics(
     project_topik_id: string | null;
     score: number | null;
     project_topik: { id: string; name: string | null } | null;
-    gform: { form_type: string | null } | null;
+    form_type: string | null;
+    max_score: number | null;
   };
+  // Sumber GForm + kuis native. Baca form_type dari baris + scope via topik
+  // (jangan inner-join project_gforms - membuang hasil kuis). Nilai dinormalisasi
+  // ke persen supaya rata-rata konsisten (kuis 0..maks, gform 0..100).
   const { data: testRows } = await supabase
     .from("peserta_test_results")
     .select(
-      "project_topik_id, score, project_topik:project_topik(id, name), gform:project_gforms!inner(form_type, project_id)",
+      "project_topik_id, score, max_score, form_type, project_topik:project_topik!inner(id, name, project_id)",
     )
-    .eq("gform.project_id", projectId)
+    .eq("project_topik.project_id", projectId)
+    .in("form_type", ["pre_test", "post_test"])
     .not("project_topik_id", "is", null);
   const testAgg = new Map<
     string,
@@ -555,11 +560,13 @@ export async function getProjectAnalytics(
       post_sum: 0,
       post_count: 0,
     };
-    if (r.gform?.form_type === "pre_test") {
-      cur.pre_sum += Number(r.score);
+    const max = Number(r.max_score);
+    const pct = max > 0 ? (Number(r.score) / max) * 100 : Number(r.score);
+    if (r.form_type === "pre_test") {
+      cur.pre_sum += pct;
       cur.pre_count += 1;
-    } else if (r.gform?.form_type === "post_test") {
-      cur.post_sum += Number(r.score);
+    } else if (r.form_type === "post_test") {
+      cur.post_sum += pct;
       cur.post_count += 1;
     }
     testAgg.set(id, cur);

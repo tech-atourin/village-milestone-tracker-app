@@ -98,13 +98,18 @@ export async function loadRapor(projectId: string, userId: string) {
 
   // Per-materi pre/post breakdown for this peserta (peserta_test_results
   // scoped by user_id + project_topik_id). Shown inside the single rapor.
+  // Sumber bisa GForm ATAU kuis native (source='quiz'). Keduanya menyimpan
+  // form_type + project_topik_id + max_score di peserta_test_results, jadi baca
+  // langsung dari sana (jangan inner-join project_gforms - itu membuang hasil
+  // kuis yang project_gform_id-nya null). Nilai dinormalisasi ke persen.
   const { data: tr } = await supabase
     .from("peserta_test_results")
     .select(
-      "score, project_topik:project_topik(id, name, sort_order), gform:project_gforms!inner(form_type, project_id)",
+      "score, max_score, form_type, project_topik:project_topik!inner(id, name, sort_order, project_id)",
     )
     .eq("user_id", userId)
-    .eq("gform.project_id", projectId)
+    .eq("project_topik.project_id", projectId)
+    .in("form_type", ["pre_test", "post_test"])
     .not("project_topik_id", "is", null);
   type MatRow = { name: string; sort_order: number; pre: number | null; post: number | null };
   const materiMap = new Map<string, MatRow>();
@@ -120,9 +125,11 @@ export async function loadRapor(projectId: string, userId: string) {
         pre: null,
         post: null,
       } as MatRow);
-    const score = Number(r.score);
-    if (r.gform?.form_type === "pre_test") cur.pre = score;
-    else if (r.gform?.form_type === "post_test") cur.post = score;
+    const raw = Number(r.score);
+    const max = Number(r.max_score);
+    const pct = max > 0 ? Math.round((raw / max) * 100) : raw;
+    if (r.form_type === "pre_test") cur.pre = pct;
+    else if (r.form_type === "post_test") cur.post = pct;
     materiMap.set(id, cur);
   }
   const materi_scores = Array.from(materiMap.values()).sort(

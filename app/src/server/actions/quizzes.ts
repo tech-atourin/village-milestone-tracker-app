@@ -218,6 +218,9 @@ const upsertQuestionSchema = z.object({
   prompt: z.string().min(1).max(2000),
   question_type: z.enum(["single_choice", "true_false"]),
   points: z.number().min(0).max(1000).default(1),
+  // Modul/materi soal ini (untuk kuis multi-modul yang nilainya dipecah per
+  // modul). Boleh null: ikut topik kuis.
+  topik_id: z.string().uuid().optional().nullable(),
   options: z.array(optionSchema).min(2).max(8),
 });
 
@@ -240,7 +243,12 @@ export async function upsertQuestion(
   if (questionId) {
     const { error } = await admin
       .from("quiz_questions")
-      .update({ prompt: d.prompt.trim(), question_type: d.question_type, points: d.points })
+      .update({
+        prompt: d.prompt.trim(),
+        question_type: d.question_type,
+        points: d.points,
+        topik_id: d.topik_id ?? null,
+      })
       .eq("id", questionId)
       .eq("quiz_id", d.quiz_id);
     if (error) return { error: error.message };

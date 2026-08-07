@@ -65,8 +65,14 @@ export function QuizEditor({
 
   function saveMeta() {
     setError(null);
-    if (kind !== "standalone" && !topikId) {
-      setError("Pre-test / post-test wajib pilih materi (untuk masuk rapor peserta)");
+    // Pre/post harus bisa masuk rapor per materi. Boleh salah satu:
+    // (a) pilih materi kuis di sini (kuis satu-modul), atau
+    // (b) tandai materi per soal (kuis multi-modul, nilai dipecah otomatis).
+    const adaSoalBermateri = quiz.questions.some((q) => q.topik_id);
+    if (kind !== "standalone" && !topikId && !adaSoalBermateri) {
+      setError(
+        "Pre-test / post-test harus punya materi: pilih 'Materi' di sini, atau tandai materi per soal (kuis multi-modul).",
+      );
       return;
     }
     startTransition(async () => {
@@ -280,6 +286,7 @@ export function QuizEditor({
           <QuestionForm
             quizId={quiz.id}
             initial={editingQ === "new" ? null : editingQ}
+            topikOptions={topikOptions}
             onCancel={() => setEditingQ(null)}
             onSaved={async () => {
               setEditingQ(null);
@@ -323,11 +330,19 @@ export function QuizEditor({
                         </li>
                       ))}
                     </ul>
-                    <div className="mt-1 text-[10px] uppercase tracking-wide text-atr-fg-muted">
-                      {q.question_type === "true_false"
-                        ? "Benar/Salah"
-                        : "Pilihan ganda"}{" "}
-                      · {q.points} poin
+                    <div className="mt-1 flex flex-wrap items-center gap-1.5 text-[10px] uppercase tracking-wide text-atr-fg-muted">
+                      <span>
+                        {q.question_type === "true_false"
+                          ? "Benar/Salah"
+                          : "Pilihan ganda"}{" "}
+                        · {q.points} poin
+                      </span>
+                      {q.topik_id && (
+                        <span className="rounded-full border border-atr-purple/30 bg-atr-purple-50/60 px-1.5 py-0.5 font-bold text-atr-purple-700">
+                          {topikOptions.find((t) => t.id === q.topik_id)?.name ??
+                            "Modul"}
+                        </span>
+                      )}
                     </div>
                   </div>
                   <div className="flex shrink-0 items-center gap-1">
@@ -382,11 +397,13 @@ export function QuizEditor({
 function QuestionForm({
   quizId,
   initial,
+  topikOptions,
   onCancel,
   onSaved,
 }: {
   quizId: string;
   initial: QuizQuestionFull | null;
+  topikOptions: TopikOption[];
   onCancel: () => void;
   onSaved: () => void;
 }) {
@@ -397,6 +414,7 @@ function QuestionForm({
     initial?.question_type ?? "single_choice",
   );
   const [points, setPoints] = useState(initial?.points ?? 1);
+  const [topikId, setTopikId] = useState<string>(initial?.topik_id ?? "");
   const [options, setOptions] = useState<
     { label: string; is_correct: boolean }[]
   >(
@@ -431,6 +449,7 @@ function QuestionForm({
         prompt,
         question_type: type,
         points,
+        topik_id: topikId || null,
         options,
       });
       if ("error" in r) setError(r.error);
@@ -474,7 +493,29 @@ function QuestionForm({
               className="w-24 rounded-lg border border-atr-outline px-3 py-2 text-sm"
             />
           </Field>
+          {topikOptions.length > 0 && (
+            <Field label="Materi (modul)">
+              <select
+                value={topikId}
+                onChange={(e) => setTopikId(e.target.value)}
+                className="rounded-lg border border-atr-outline px-3 py-2 text-sm"
+              >
+                <option value="">Ikut materi kuis</option>
+                {topikOptions.map((t) => (
+                  <option key={t.id} value={t.id}>
+                    {t.name}
+                  </option>
+                ))}
+              </select>
+            </Field>
+          )}
         </div>
+        {topikOptions.length > 0 && (
+          <p className="text-[11px] text-atr-fg-muted">
+            Isi &quot;Materi&quot; kalau kuis ini gabungan beberapa modul dalam
+            satu link. Nilai otomatis dipecah per materi di rapor peserta.
+          </p>
+        )}
 
         <div>
           <div className="mb-1 text-xs font-bold uppercase tracking-wide text-atr-fg-muted">
