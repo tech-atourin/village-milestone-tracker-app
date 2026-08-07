@@ -60,7 +60,13 @@ export function ExtraLogosManager({
         setError(r.error);
         return;
       }
-      // Optimistic add - we don't have signed_url yet, so just refresh.
+      // Tampilkan logo baru langsung tanpa perlu refresh manual.
+      if (r.path) {
+        setLogos((l) => [
+          ...l,
+          { path: r.path!, label: r.label ?? "", signed_url: r.signed_url ?? "" },
+        ]);
+      }
       setLabel("");
       setFile(null);
       router.refresh();
@@ -87,10 +93,9 @@ export function ExtraLogosManager({
           Logo tambahan untuk sertifikat
         </h3>
         <p className="mt-1 text-xs text-atr-fg-muted">
-          Logo organisasi mitra otomatis muncul di sertifikat. Tambahkan di
-          sini logo program (mis. BAKTI), logo kementerian lain, atau partner
-          yang ingin tampil di sertifikat. PNG transparan disarankan, maks 2 MB
-          per logo.
+          Hanya logo yang ditambahkan di sini yang muncul di sertifikat.
+          Tambahkan semua logo yang ingin tampil (mis. Komdigi, BAKTI, logo
+          mitra, atau partner). PNG transparan disarankan, maks 2 MB per logo.
         </p>
       </div>
 

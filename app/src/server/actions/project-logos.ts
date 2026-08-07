@@ -71,9 +71,20 @@ export async function uploadProjectLogo(input: z.input<typeof uploadSchema>) {
     return { error: updErr.message };
   }
 
+  // Sign the freshly-uploaded object so the client can render it immediately
+  // (tanpa perlu refresh halaman).
+  const { data: signed } = await admin.storage
+    .from("vmt-evidence")
+    .createSignedUrl(path, 60 * 60 * 24 * 30);
+
   revalidatePath(`/atourin/projects/${parsed.data.project_id}`);
   revalidatePath(`/mitra/projects/${parsed.data.project_id}`);
-  return { ok: true, path };
+  return {
+    ok: true,
+    path,
+    label: parsed.data.label.trim(),
+    signed_url: signed?.signedUrl ?? "",
+  };
 }
 
 const removeSchema = z.object({

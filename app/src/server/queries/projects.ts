@@ -39,6 +39,7 @@ export type ProjectDetail = ProjectListRow & {
   pendampingan_start: string | null;
   pendampingan_end: string | null;
   enabled_modules: Record<string, boolean>;
+  grading_config: Record<string, unknown>;
   total_pendampingan_days: number | null;
   program_type: "desa_based" | "pelaku_pariwisata";
   participant_mode: "offline" | "online" | "both";
@@ -55,7 +56,7 @@ export async function getProject(id: string): Promise<ProjectDetail | null> {
   const { data: project, error } = await supabase
     .from("projects")
     .select(
-      "id, name, description, status, period_start, period_end, pelatihan_start, pelatihan_end, total_pelatihan_days, pendampingan_start, pendampingan_end, total_pendampingan_days, program_type, participant_mode, target_online, target_offline, created_at, enabled_modules, organization:organizations(id,name), template:project_templates(id,name)",
+      "id, name, description, status, period_start, period_end, pelatihan_start, pelatihan_end, total_pelatihan_days, pendampingan_start, pendampingan_end, total_pendampingan_days, program_type, participant_mode, target_online, target_offline, created_at, enabled_modules, grading_config, organization:organizations(id,name), template:project_templates(id,name)",
     )
     .eq("id", id)
     .is("deleted_at", null)
@@ -100,6 +101,9 @@ export async function getProject(id: string): Promise<ProjectDetail | null> {
     enabled_modules:
       (project as unknown as { enabled_modules: Record<string, boolean> })
         .enabled_modules ?? {},
+    grading_config:
+      (project as unknown as { grading_config?: Record<string, unknown> })
+        .grading_config ?? {},
     total_pendampingan_days:
       (project as unknown as { total_pendampingan_days: number | null })
         .total_pendampingan_days ?? null,

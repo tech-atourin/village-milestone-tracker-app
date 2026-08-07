@@ -29,9 +29,11 @@ import { OverviewTab } from "@/app/atourin/projects/[id]/overview-tab";
 import { SummaryTab } from "@/app/atourin/projects/[id]/summary-tab";
 import { KuisTab } from "@/app/atourin/projects/[id]/kuis-tab";
 import { KuisTesTab } from "@/app/atourin/projects/[id]/kuis-tes-tab";
+import { PendaftaranPanel } from "@/app/atourin/projects/[id]/pendaftaran-panel";
 import { KehadiranTab } from "@/app/atourin/projects/[id]/kehadiran-tab";
 import { MateriTab } from "@/app/atourin/projects/[id]/materi-tab";
 import { listProjectQuizzes } from "@/server/queries/quizzes";
+import { listProjectRegistrations } from "@/server/queries/quiz-registrations";
 import { ActionPlanBoard } from "@/components/action-plans/action-plan-board";
 import { listActionPlans } from "@/server/queries/action-plans";
 import { listProjectLogoUrls } from "@/server/actions/project-logos";
@@ -211,6 +213,7 @@ export default async function MitraProjectDetailPage({
       {activeTab === "kuis" && (
         <KuisTesTab
           kuis={<KuisTabLoader projectId={project.id} scope="mitra" />}
+          pendaftaran={<PendaftaranLoader projectId={project.id} />}
           gform={<GformsAndResultsLoader projectId={project.id} />}
         />
       )}
@@ -487,8 +490,10 @@ async function MitraSettingsLoader({
         total_pendampingan_days: project.total_pendampingan_days,
         status: project.status,
         enabled_modules: project.enabled_modules,
+        grading_config: project.grading_config,
       }}
       extraLogos={extraLogos}
+      canManageLifecycle={false}
     />
   );
 }
@@ -513,4 +518,9 @@ async function KuisTabLoader({
       scope={scope}
     />
   );
+}
+
+async function PendaftaranLoader({ projectId }: { projectId: string }) {
+  const rows = await listProjectRegistrations(projectId);
+  return <PendaftaranPanel rows={rows} />;
 }

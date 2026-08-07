@@ -38,7 +38,7 @@ export async function saveRapor(input: z.input<typeof saveSchema>) {
   // Mitra hanya boleh menilai peserta pada project milik organisasinya.
   const { data: proj } = await admin
     .from("projects")
-    .select("organization_id")
+    .select("organization_id, grading_config")
     .eq("id", parsed.data.project_id)
     .maybeSingle();
   if (!proj) return { error: "Project tidak ditemukan" };
@@ -47,6 +47,9 @@ export async function saveRapor(input: z.input<typeof saveSchema>) {
     if (!orgId || orgId !== actor.organization_id)
       return { error: "Project bukan milik organisasi Anda" };
   }
+  const gradingConfig = (proj as { grading_config?: unknown }).grading_config as
+    | Partial<import("@/lib/rapor/scoring").GradingConfig>
+    | null;
 
   const pre = parsed.data.pre_test_score ?? null;
   const post = parsed.data.post_test_score ?? null;
@@ -58,12 +61,15 @@ export async function saveRapor(input: z.input<typeof saveSchema>) {
       ? Math.round(((post - pre) / pre) * 100)
       : null;
 
-  const finalScore = hitungNilaiAkhir({
-    pre_test_score: pre,
-    post_test_score: post,
-    tugas_score: tugas,
-    keaktifan_score: keaktifan,
-  });
+  const finalScore = hitungNilaiAkhir(
+    {
+      pre_test_score: pre,
+      post_test_score: post,
+      tugas_score: tugas,
+      keaktifan_score: keaktifan,
+    },
+    gradingConfig,
+  );
 
   const { error } = await admin.from("rapor_peserta").upsert(
     {

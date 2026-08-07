@@ -15,7 +15,7 @@ export async function loadRapor(projectId: string, userId: string) {
       supabase
         .from("projects")
         .select(
-          "id, name, period_start, period_end, organization_id, organization:organizations(name, logo_url, brand_color_primary)",
+          "id, name, period_start, period_end, organization_id, grading_config, organization:organizations(name, logo_url, brand_color_primary)",
         )
         .eq("id", projectId)
         .maybeSingle(),

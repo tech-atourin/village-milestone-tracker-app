@@ -2,19 +2,34 @@ import Image from "next/image";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { PrintButton } from "@/components/ui/print-button";
-import { isLulus, NILAI_MINIMUM_LULUS } from "@/lib/rapor/scoring";
+import {
+  isLulus,
+  resolveGradingConfig,
+  type GradingConfig,
+} from "@/lib/rapor/scoring";
 
 export function SertifikatView({
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   data,
   backHref,
   extraLogos = [],
+  gradingConfig,
 }: {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   data: any;
   backHref?: string;
   extraLogos?: Array<{ path: string; label: string; signed_url: string }>;
+  gradingConfig?: Partial<GradingConfig> | null;
 }) {
+  // Prioritaskan prop; kalau tidak ada, ambil dari project yang di-load.
+  const effectiveGrading =
+    gradingConfig ??
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    ((data.project as any)?.grading_config as
+      | Partial<GradingConfig>
+      | null
+      | undefined);
+  const passingScore = resolveGradingConfig(effectiveGrading).passing_score;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const project = data.project as any;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -33,7 +48,7 @@ export function SertifikatView({
   // Kelulusan/berhak sertifikat: Nilai Akhir >= 70.
   const finalScore =
     rapor?.final_score != null ? Number(rapor.final_score) : null;
-  const eligible = isLulus(finalScore);
+  const eligible = isLulus(finalScore, gradingConfig);
   const dateFmt = (iso: string | null) =>
     iso
       ? new Intl.DateTimeFormat("id-ID", {
@@ -83,44 +98,39 @@ export function SertifikatView({
         <div className="absolute bottom-0 left-0 h-24 w-24 border-b-4 border-l-4 border-atr-yellow" />
         <div className="absolute bottom-0 right-0 h-24 w-24 border-b-4 border-r-4 border-atr-yellow" />
 
-        <header className="flex items-start justify-between">
-          <div className="flex items-center gap-3">
-            <Image src="/logo/vmt/vmt-app-icon.svg" alt="VMT" width={48} height={48} />
-            <div>
-              <div className="text-sm font-bold tracking-wide text-atr-purple-600">
-                Village Milestone Tracker
-              </div>
-              <div className="text-[10px] uppercase tracking-widest text-atr-fg-muted">
-                by Atourin
-              </div>
-            </div>
-          </div>
-          <div className="flex items-center gap-4">
-            {extraLogos.map((logo) => (
+        {/* Header: HANYA logo yang diupload di pengaturan project (extra
+            logos). Logo organisasi/mitra sengaja tidak ditampilkan. Kalau
+            belum ada logo sama sekali, fallback ke brand VMT. */}
+        <header className="flex min-h-[2.75rem] flex-wrap items-center justify-center gap-6">
+          {extraLogos.length > 0 ? (
+            extraLogos.map((logo) => (
               // eslint-disable-next-line @next/next/no-img-element
               <img
                 key={logo.path}
                 src={logo.signed_url}
                 alt={logo.label}
                 title={logo.label}
-                className="h-14 w-auto object-contain"
+                className="h-10 w-auto object-contain"
               />
-            ))}
-            {project.organization?.logo_url ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={project.organization.logo_url}
-                alt={project.organization.name}
-                className="h-14 w-auto object-contain"
+            ))
+          ) : (
+            <div className="flex items-center gap-3">
+              <Image
+                src="/logo/vmt/vmt-app-icon.svg"
+                alt="VMT"
+                width={40}
+                height={40}
               />
-            ) : extraLogos.length === 0 ? (
-              <div className="text-right text-xs text-atr-fg-muted">
-                <div className="font-bold text-atr-fg">
-                  {project.organization?.name ?? "Atourin"}
+              <div>
+                <div className="text-sm font-bold tracking-wide text-atr-purple-600">
+                  Village Milestone Tracker
+                </div>
+                <div className="text-[10px] uppercase tracking-widest text-atr-fg-muted">
+                  by Atourin
                 </div>
               </div>
-            ) : null}
-          </div>
+            </div>
+          )}
         </header>
 
         <div className="mt-4 flex-1 text-center">
@@ -173,17 +183,12 @@ export function SertifikatView({
           )}
         </div>
 
-        <footer className="mt-4 grid grid-cols-2 gap-10 px-6 text-center text-xs">
-          <div>
+        {/* Tanda tangan tunggal: pihak mitra penyelenggara saja. */}
+        <footer className="mt-4 flex justify-center px-6 text-center text-xs">
+          <div className="w-72 max-w-full">
             <div className="text-atr-fg-muted">Mengetahui,</div>
             <div className="mt-10 border-t border-atr-fg pt-1 font-bold text-atr-fg">
               {project.organization?.name ?? "Mitra Penyelenggara"}
-            </div>
-          </div>
-          <div>
-            <div className="text-atr-fg-muted">Atourin Mentor</div>
-            <div className="mt-10 border-t border-atr-fg pt-1 font-bold text-atr-fg">
-              Tim Atourin
             </div>
           </div>
         </footer>
@@ -197,7 +202,7 @@ export function SertifikatView({
       {!eligible && (
         <p className="no-print mx-auto mt-4 max-w-[1100px] text-center text-xs text-atr-red">
           Peserta belum memenuhi syarat sertifikat (Nilai Akhir minimal{" "}
-          {NILAI_MINIMUM_LULUS}
+          {passingScore}
           {finalScore == null ? ", nilai belum lengkap" : ""}). Sertifikat tetap
           bisa di-print untuk preview.
         </p>

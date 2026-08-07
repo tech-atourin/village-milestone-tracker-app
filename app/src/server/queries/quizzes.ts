@@ -17,6 +17,7 @@ export type QuizListRow = {
   time_limit_seconds: number | null;
   passing_score: number | null;
   max_attempts: number;
+  collect_registration: boolean;
   opens_at: string | null;
   closes_at: string | null;
   question_count: number;
@@ -31,7 +32,7 @@ export async function listProjectQuizzes(
   const { data } = await admin
     .from("quizzes")
     .select(
-      "id, title, description, kind, topik_id, is_published, public_slug, time_limit_seconds, passing_score, max_attempts, opens_at, closes_at, created_at, topik:project_topik(name), questions:quiz_questions(id), attempts:quiz_attempts(id)",
+      "id, title, description, kind, topik_id, is_published, public_slug, time_limit_seconds, passing_score, max_attempts, opens_at, closes_at, collect_registration, created_at, topik:project_topik(name), questions:quiz_questions(id), attempts:quiz_attempts(id)",
     )
     .eq("project_id", projectId)
     .order("created_at", { ascending: false });
@@ -48,6 +49,7 @@ export async function listProjectQuizzes(
     time_limit_seconds: q.time_limit_seconds ?? null,
     passing_score: q.passing_score ?? null,
     max_attempts: q.max_attempts ?? 1,
+    collect_registration: q.collect_registration ?? false,
     opens_at: q.opens_at ?? null,
     closes_at: q.closes_at ?? null,
     question_count: Array.isArray(q.questions) ? q.questions.length : 0,
@@ -85,6 +87,7 @@ export type QuizFull = {
   closes_at: string | null;
   is_published: boolean;
   public_slug: string | null;
+  collect_registration: boolean;
   questions: QuizQuestionFull[];
 };
 
@@ -97,7 +100,7 @@ export async function getQuizFull(quizId: string): Promise<QuizFull | null> {
   const { data: quiz } = await admin
     .from("quizzes")
     .select(
-      "id, project_id, title, description, kind, topik_id, time_limit_seconds, passing_score, shuffle_questions, max_attempts, opens_at, closes_at, is_published, public_slug",
+      "id, project_id, title, description, kind, topik_id, time_limit_seconds, passing_score, shuffle_questions, max_attempts, opens_at, closes_at, is_published, public_slug, collect_registration",
     )
     .eq("id", quizId)
     .maybeSingle();
@@ -128,6 +131,7 @@ export async function getQuizFull(quizId: string): Promise<QuizFull | null> {
     closes_at: q.closes_at ?? null,
     is_published: q.is_published ?? false,
     public_slug: q.public_slug ?? null,
+    collect_registration: q.collect_registration ?? false,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     questions: ((questions ?? []) as any[]).map((qq) => ({
       id: qq.id,

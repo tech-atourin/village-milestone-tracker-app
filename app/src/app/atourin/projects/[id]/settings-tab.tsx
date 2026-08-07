@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Save, Archive, Trash2, Loader2 } from "lucide-react";
+import { Save, Archive, Trash2, Loader2, Check } from "lucide-react";
 import {
   updateProject,
   archiveProject,
@@ -13,6 +13,11 @@ import {
   ExtraLogosManager,
   type ExtraLogo,
 } from "./extra-logos-manager";
+import {
+  resolveGradingConfig,
+  type GradingConfig,
+  type BobotKey,
+} from "@/lib/rapor/scoring";
 
 type Project = {
   id: string;
@@ -28,7 +33,15 @@ type Project = {
   total_pendampingan_days: number | null;
   status: "draft" | "active" | "completed" | "archived";
   enabled_modules: Record<string, boolean>;
+  grading_config?: Partial<GradingConfig> | null;
 };
+
+const BOBOT_FIELDS: Array<{ key: BobotKey; label: string }> = [
+  { key: "pre_test", label: "Pre-Test" },
+  { key: "post_test", label: "Post-Test" },
+  { key: "tugas", label: "Tugas" },
+  { key: "keaktifan", label: "Keaktifan" },
+];
 
 const MODULES = [
   ["desa_baseline", "Desa Baseline"],
@@ -41,13 +54,16 @@ const MODULES = [
 export function SettingsTab({
   project,
   extraLogos = [],
+  canManageLifecycle = true,
 }: {
   project: Project;
   extraLogos?: ExtraLogo[];
+  canManageLifecycle?: boolean;
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
+  const [savedFlash, setSavedFlash] = useState(false);
   const [name, setName] = useState(project.name);
   const [description, setDescription] = useState(project.description ?? "");
   const [periodStart, setPeriodStart] = useState(project.period_start ?? "");
@@ -76,6 +92,22 @@ export function SettingsTab({
     public_dashboard: project.enabled_modules.public_dashboard ?? false,
   }));
 
+  // Bobot penilaian dalam PERSEN (0..100) untuk input; disimpan sbg fraksi.
+  const initialGrading = resolveGradingConfig(project.grading_config);
+  const [weights, setWeights] = useState<Record<BobotKey, string>>(() => ({
+    pre_test: String(Math.round(initialGrading.weights.pre_test * 100)),
+    post_test: String(Math.round(initialGrading.weights.post_test * 100)),
+    tugas: String(Math.round(initialGrading.weights.tugas * 100)),
+    keaktifan: String(Math.round(initialGrading.weights.keaktifan * 100)),
+  }));
+  const [passingScore, setPassingScore] = useState<string>(
+    String(initialGrading.passing_score),
+  );
+  const bobotTotal = BOBOT_FIELDS.reduce(
+    (s, f) => s + (Number(weights[f.key]) || 0),
+    0,
+  );
+
   function save() {
     setError(null);
     startTransition(async () => {
@@ -99,9 +131,23 @@ export function SettingsTab({
           klasifikasi_nasional: modules.klasifikasi_nasional,
           public_dashboard: modules.public_dashboard,
         },
+        grading_config: {
+          weights: {
+            pre_test: Number(weights.pre_test) || 0,
+            post_test: Number(weights.post_test) || 0,
+            tugas: Number(weights.tugas) || 0,
+            keaktifan: Number(weights.keaktifan) || 0,
+          },
+          passing_score: Number(passingScore) || 0,
+        },
       });
-      if (r.error) setError(r.error);
-      else router.refresh();
+      if (r.error) {
+        setError(r.error);
+      } else {
+        setSavedFlash(true);
+        setTimeout(() => setSavedFlash(false), 2500);
+        router.refresh();
+      }
     });
   }
 
@@ -274,6 +320,58 @@ export function SettingsTab({
       </section>
 
       <hr className="border-atr-outline" />
+
+      <section className="rounded-2xl border border-atr-outline bg-white p-6 shadow-atr-1">
+        <h3 className="text-sm font-bold text-atr-fg">
+          Komposisi Nilai Akhir &amp; kelulusan
+        </h3>
+        <p className="mt-1 text-xs text-atr-fg-muted">
+          Atur bobot tiap komponen dan batas nilai lulus khusus project ini.
+          Tiap mitra/program bisa berbeda. Total bobot harus 100%.
+        </p>
+        <div className="mt-4 grid gap-3 sm:grid-cols-4">
+          {BOBOT_FIELDS.map((f) => (
+            <Field key={f.key} label={`${f.label} (%)`}>
+              <input
+                type="number"
+                min={0}
+                max={100}
+                value={weights[f.key]}
+                onChange={(e) =>
+                  setWeights((w) => ({ ...w, [f.key]: e.target.value }))
+                }
+                className={inputCls}
+              />
+            </Field>
+          ))}
+        </div>
+        <div className="mt-3 flex flex-wrap items-center gap-4">
+          <span
+            className={`text-xs font-bold ${
+              Math.round(bobotTotal) === 100
+                ? "text-atr-arti"
+                : "text-atr-red"
+            }`}
+          >
+            Total bobot: {Math.round(bobotTotal)}%
+            {Math.round(bobotTotal) !== 100 && " (harus 100%)"}
+          </span>
+          <div className="w-40">
+            <Field label="Batas lulus (Nilai Akhir >=)">
+              <input
+                type="number"
+                min={0}
+                max={100}
+                value={passingScore}
+                onChange={(e) => setPassingScore(e.target.value)}
+                className={inputCls}
+              />
+            </Field>
+          </div>
+        </div>
+      </section>
+
+      <hr className="border-atr-outline" />
       <ExtraLogosManager projectId={project.id} initialLogos={extraLogos} />
       <hr className="border-atr-outline" />
 
@@ -283,40 +381,54 @@ export function SettingsTab({
         </div>
       )}
 
-      <div className="flex flex-col gap-3 sm:flex-row sm:justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex gap-2">
+          {canManageLifecycle && (
+            <>
+              <button
+                type="button"
+                onClick={archive}
+                disabled={pending || project.status === "archived"}
+                className="inline-flex h-10 items-center gap-1.5 rounded-lg border border-atr-outline bg-white px-4 text-sm font-bold text-atr-fg transition hover:bg-atr-bg-soft disabled:opacity-50"
+              >
+                <Archive className="h-4 w-4" />
+                Arsipkan
+              </button>
+              <button
+                type="button"
+                onClick={destroy}
+                disabled={pending}
+                className="inline-flex h-10 items-center gap-1.5 rounded-lg border border-atr-red/30 bg-white px-4 text-sm font-bold text-atr-red transition hover:bg-atr-red/10 disabled:opacity-50"
+              >
+                <Trash2 className="h-4 w-4" />
+                Hapus project
+              </button>
+            </>
+          )}
+        </div>
+        <div className="flex items-center gap-3">
+          {savedFlash && (
+            <span className="inline-flex items-center gap-1.5 text-sm font-bold text-atr-arti">
+              <Check className="h-4 w-4" />
+              Perubahan tersimpan
+            </span>
+          )}
           <button
             type="button"
-            onClick={archive}
-            disabled={pending || project.status === "archived"}
-            className="inline-flex h-10 items-center gap-1.5 rounded-lg border border-atr-outline bg-white px-4 text-sm font-bold text-atr-fg transition hover:bg-atr-bg-soft disabled:opacity-50"
-          >
-            <Archive className="h-4 w-4" />
-            Arsipkan
-          </button>
-          <button
-            type="button"
-            onClick={destroy}
+            onClick={save}
             disabled={pending}
-            className="inline-flex h-10 items-center gap-1.5 rounded-lg border border-atr-red/30 bg-white px-4 text-sm font-bold text-atr-red transition hover:bg-atr-red/10 disabled:opacity-50"
+            className="inline-flex h-10 items-center gap-1.5 rounded-lg bg-atr-purple px-5 text-sm font-bold text-white transition hover:bg-atr-purple-600 disabled:opacity-50"
           >
-            <Trash2 className="h-4 w-4" />
-            Hapus project
+            {pending ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : savedFlash ? (
+              <Check className="h-4 w-4" />
+            ) : (
+              <Save className="h-4 w-4" />
+            )}
+            {savedFlash ? "Tersimpan" : "Simpan perubahan"}
           </button>
         </div>
-        <button
-          type="button"
-          onClick={save}
-          disabled={pending}
-          className="inline-flex h-10 items-center gap-1.5 rounded-lg bg-atr-purple px-5 text-sm font-bold text-white transition hover:bg-atr-purple-600 disabled:opacity-50"
-        >
-          {pending ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
-          ) : (
-            <Save className="h-4 w-4" />
-          )}
-          Simpan perubahan
-        </button>
       </div>
     </div>
   );

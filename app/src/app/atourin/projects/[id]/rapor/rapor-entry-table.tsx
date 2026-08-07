@@ -16,7 +16,11 @@ import {
 } from "lucide-react";
 import { saveRapor } from "@/server/actions/rapor";
 import type { RaporRow } from "@/server/queries/rapor";
-import { hitungNilaiAkhir, BOBOT_LABEL } from "@/lib/rapor/scoring";
+import {
+  hitungNilaiAkhir,
+  bobotLabels,
+  type GradingConfig,
+} from "@/lib/rapor/scoring";
 
 type SortKey =
   | "name"
@@ -44,12 +48,15 @@ export function RaporEntryTable({
   projectId,
   rows,
   scope = "atourin",
+  gradingConfig,
 }: {
   projectId: string;
   rows: RaporRow[];
   scope?: "atourin" | "mitra" | "narasumber";
+  gradingConfig?: Partial<GradingConfig> | null;
 }) {
   const router = useRouter();
+  const labels = bobotLabels(gradingConfig);
   const [editState, setEditState] = useState<EditState>(() => {
     const init: EditState = {};
     for (const r of rows) {
@@ -204,7 +211,7 @@ export function RaporEntryTable({
       </div>
       <div className="rounded-xl border border-atr-outline bg-atr-bg-soft/50 px-3 py-2 text-xs text-atr-fg-muted">
         <strong className="text-atr-fg">Komposisi Nilai Akhir:</strong>{" "}
-        {BOBOT_LABEL.map((b) => `${b.label} ${b.percent}`).join(" + ")}. Nilai
+        {labels.map((b) => `${b.label} ${b.percent}`).join(" + ")}. Nilai
         Akhir muncul setelah keempat komponen terisi. Kolom <strong>Hadir %</strong>{" "}
         terisi otomatis dari check-in per materi dan <strong>tidak</strong>{" "}
         ikut dihitung. Peserta hanya melihat Nilai Akhir, Pre-Test, dan
@@ -251,12 +258,15 @@ export function RaporEntryTable({
               const livePost = e.post === "" ? null : Number(e.post);
               const liveTugas = e.tugas === "" ? null : Number(e.tugas);
               const liveKeaktifan = e.keaktifan === "" ? null : Number(e.keaktifan);
-              const liveFinal = hitungNilaiAkhir({
-                pre_test_score: livePre,
-                post_test_score: livePost,
-                tugas_score: liveTugas,
-                keaktifan_score: liveKeaktifan,
-              });
+              const liveFinal = hitungNilaiAkhir(
+                {
+                  pre_test_score: livePre,
+                  post_test_score: livePost,
+                  tugas_score: liveTugas,
+                  keaktifan_score: liveKeaktifan,
+                },
+                gradingConfig,
+              );
               const isSaving = pendingRowId === r.user_id;
               return (
                 <tr key={r.user_id} className="hover:bg-atr-bg-soft">

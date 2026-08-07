@@ -17,9 +17,11 @@ const TIER_LABEL: Record<string, string> = {
 export function SertifikatDesaView({
   data,
   backHref,
+  extraLogos = [],
 }: {
   data: RaporDesaDetail;
   backHref?: string;
+  extraLogos?: Array<{ path: string; label: string; signed_url: string }>;
 }) {
   const { project, desa, aggregate } = data;
   const checklist = Math.round(aggregate.checklist_completion_pct ?? 0);
@@ -73,34 +75,36 @@ export function SertifikatDesaView({
         <div className="absolute bottom-0 left-0 h-24 w-24 border-b-4 border-l-4 border-atr-yellow" />
         <div className="absolute bottom-0 right-0 h-24 w-24 border-b-4 border-r-4 border-atr-yellow" />
 
-        <header className="flex items-start justify-between">
-          <div className="flex items-center gap-3">
-            <Image
-              src="/logo/vmt/vmt-app-icon.svg"
-              alt="VMT"
-              width={48}
-              height={48}
-            />
-            <div>
-              <div className="text-sm font-bold tracking-wide text-atr-purple-600">
-                Village Milestone Tracker
-              </div>
-              <div className="text-[10px] uppercase tracking-widest text-atr-fg-muted">
-                by Atourin
-              </div>
-            </div>
-          </div>
-          {project.organization?.logo_url ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={project.organization.logo_url}
-              alt={project.organization.name}
-              className="h-14 w-auto"
-            />
+        {/* Header: HANYA logo yang diupload di pengaturan project (extra
+            logos). Logo organisasi/mitra sengaja tidak ditampilkan. Kalau
+            belum ada logo sama sekali, fallback ke brand VMT. */}
+        <header className="flex min-h-[2.75rem] flex-wrap items-center justify-center gap-6">
+          {extraLogos.length > 0 ? (
+            extraLogos.map((logo) => (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                key={logo.path}
+                src={logo.signed_url}
+                alt={logo.label}
+                title={logo.label}
+                className="h-10 w-auto object-contain"
+              />
+            ))
           ) : (
-            <div className="text-right text-xs text-atr-fg-muted">
-              <div className="font-bold text-atr-fg">
-                {project.organization?.name ?? "Atourin"}
+            <div className="flex items-center gap-3">
+              <Image
+                src="/logo/vmt/vmt-app-icon.svg"
+                alt="VMT"
+                width={40}
+                height={40}
+              />
+              <div>
+                <div className="text-sm font-bold tracking-wide text-atr-purple-600">
+                  Village Milestone Tracker
+                </div>
+                <div className="text-[10px] uppercase tracking-widest text-atr-fg-muted">
+                  by Atourin
+                </div>
               </div>
             </div>
           )}
@@ -163,17 +167,12 @@ export function SertifikatDesaView({
           </div>
         </div>
 
-        <footer className="mt-4 grid grid-cols-2 gap-10 px-6 text-center text-xs">
-          <div>
+        {/* Tanda tangan tunggal: pihak mitra penyelenggara saja. */}
+        <footer className="mt-4 flex justify-center px-6 text-center text-xs">
+          <div className="w-72 max-w-full">
             <div className="text-atr-fg-muted">Mengetahui,</div>
             <div className="mt-10 border-t border-atr-fg pt-1 font-bold text-atr-fg">
               {project.organization?.name ?? "Mitra Penyelenggara"}
-            </div>
-          </div>
-          <div>
-            <div className="text-atr-fg-muted">Atourin Mentor</div>
-            <div className="mt-10 border-t border-atr-fg pt-1 font-bold text-atr-fg">
-              Tim Atourin
             </div>
           </div>
         </footer>

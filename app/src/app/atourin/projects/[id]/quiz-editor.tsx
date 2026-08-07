@@ -56,6 +56,7 @@ export function QuizEditor({
   const [passing, setPassing] = useState(initial.passing_score ?? 0);
   const [maxAttempts, setMaxAttempts] = useState(initial.max_attempts);
   const [shuffle, setShuffle] = useState(initial.shuffle_questions);
+  const [collectReg, setCollectReg] = useState(initial.collect_registration);
 
   async function reload() {
     const full = await getQuizFullClient(quiz.id);
@@ -79,6 +80,7 @@ export function QuizEditor({
         passing_score: passing > 0 ? passing : null,
         max_attempts: maxAttempts,
         shuffle_questions: shuffle,
+        collect_registration: collectReg,
       });
       if ("error" in r) {
         setError(r.error);
@@ -151,7 +153,13 @@ export function QuizEditor({
           <Field label="Jenis">
             <select
               value={kind}
-              onChange={(e) => setKind(e.target.value as QuizFull["kind"])}
+              onChange={(e) => {
+                const next = e.target.value as QuizFull["kind"];
+                setKind(next);
+                // Pre-test biasanya diisi peserta yang belum punya akun, jadi
+                // sarankan langsung minta data pendaftaran.
+                if (next === "pre_test") setCollectReg(true);
+              }}
               className="w-full rounded-lg border border-atr-outline px-3 py-2 text-sm"
             >
               <option value="standalone">Mandiri</option>
@@ -216,6 +224,21 @@ export function QuizEditor({
               className="h-4 w-4"
             />
             Acak urutan soal
+          </label>
+          <label className="flex items-start gap-2 text-sm text-atr-fg">
+            <input
+              type="checkbox"
+              checked={collectReg}
+              onChange={(e) => setCollectReg(e.target.checked)}
+              className="mt-0.5 h-4 w-4"
+            />
+            <span>
+              Minta pendaftaran data diri sebelum tes
+              <span className="mt-0.5 block text-xs font-normal text-atr-fg-muted">
+                Untuk pre-test peserta yang belum punya akun. Mereka mengisi data
+                diri dulu, lalu Anda buat akunnya dari tab Pendaftaran.
+              </span>
+            </span>
           </label>
         </div>
         <button

@@ -65,7 +65,12 @@ export default async function MitraRaporIndexPage({
           </p>
         </div>
       ) : (
-        <RaporEntryTable projectId={params.id} rows={rows} scope="mitra" />
+        <RaporEntryTable
+          projectId={params.id}
+          rows={rows}
+          scope="mitra"
+          gradingConfig={project?.grading_config}
+        />
       )}
 
       <div className="rounded-2xl border border-atr-outline bg-atr-bg-soft p-4">

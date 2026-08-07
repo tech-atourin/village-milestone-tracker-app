@@ -25,6 +25,8 @@ export type PublicQuiz = {
   passing_score: number | null;
   max_attempts: number;
   shuffle_questions: boolean;
+  collect_registration: boolean;
+  project_id: string;
   window: PublicQuizWindow;
   question_count: number;
   total_points: number;
@@ -55,7 +57,7 @@ export async function getPublicQuiz(
   const { data: quiz } = await admin
     .from("quizzes")
     .select(
-      "id, title, description, time_limit_seconds, passing_score, max_attempts, shuffle_questions, is_published, opens_at, closes_at, project:projects(extra_logos, organization:organizations(name, logo_url))",
+      "id, title, description, time_limit_seconds, passing_score, max_attempts, shuffle_questions, is_published, opens_at, closes_at, collect_registration, project:projects(id, extra_logos, organization:organizations(name, logo_url))",
     )
     .eq("public_slug", slug)
     .eq("is_published", true)
@@ -116,6 +118,8 @@ export async function getPublicQuiz(
     passing_score: q.passing_score ?? null,
     max_attempts: q.max_attempts ?? 1,
     shuffle_questions: q.shuffle_questions ?? false,
+    collect_registration: q.collect_registration ?? false,
+    project_id: q.project?.id ?? "",
     window: computeWindow(q.opens_at ?? null, q.closes_at ?? null, now),
     question_count: mapped.length,
     total_points: totalPoints,

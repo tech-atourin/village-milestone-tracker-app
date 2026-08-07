@@ -1,24 +1,28 @@
 "use client";
 
 import { useState } from "react";
-import { ClipboardList, FileSpreadsheet } from "lucide-react";
+import { ClipboardList, FileSpreadsheet, UserPlus } from "lucide-react";
 
 /**
- * Merges the native Kuis view and the external Google-Form "Hasil Tes" view
- * under one project tab, switched by a segmented chip. Both sub-views are
- * server-rendered and passed in as slots; only the active one is shown.
+ * Merges the native Kuis view, the pre-test registration list, and the
+ * external Google-Form "Hasil Tes" view under one project tab, switched by a
+ * segmented chip. Sub-views are server-rendered and passed in as slots; only
+ * the active one is shown.
  */
 export function KuisTesTab({
   kuis,
+  pendaftaran,
   gform,
 }: {
   kuis: React.ReactNode;
+  pendaftaran: React.ReactNode;
   gform: React.ReactNode;
 }) {
-  const [active, setActive] = useState<"kuis" | "gform">("kuis");
+  const [active, setActive] = useState<"kuis" | "pendaftaran" | "gform">("kuis");
 
   const chips = [
     { key: "kuis" as const, label: "Kuis", icon: ClipboardList },
+    { key: "pendaftaran" as const, label: "Pendaftaran", icon: UserPlus },
     { key: "gform" as const, label: "Hasil Tes (Google Form)", icon: FileSpreadsheet },
   ];
 
@@ -49,6 +53,9 @@ export function KuisTesTab({
       {/* Keep both mounted; toggle visibility so switching is instant and
           neither sub-view loses local state. */}
       <div className={active === "kuis" ? "" : "hidden"}>{kuis}</div>
+      <div className={active === "pendaftaran" ? "" : "hidden"}>
+        {pendaftaran}
+      </div>
       <div className={active === "gform" ? "" : "hidden"}>{gform}</div>
     </div>
   );

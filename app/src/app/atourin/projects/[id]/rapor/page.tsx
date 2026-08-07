@@ -4,6 +4,7 @@ import Link from "next/link";
 import { ArrowLeft, GraduationCap, FileText } from "lucide-react";
 import { requireRole } from "@/lib/auth/rbac";
 import { listProjectRapor } from "@/server/queries/rapor";
+import { getProject } from "@/server/queries/projects";
 import { RaporEntryTable } from "./rapor-entry-table";
 
 export default async function RaporIndexPage({
@@ -12,7 +13,10 @@ export default async function RaporIndexPage({
   params: { id: string };
 }) {
   await requireRole("superadmin");
-  const rows = await listProjectRapor(params.id);
+  const [rows, project] = await Promise.all([
+    listProjectRapor(params.id),
+    getProject(params.id),
+  ]);
 
   return (
     <div className="space-y-6">
@@ -54,7 +58,11 @@ export default async function RaporIndexPage({
           </p>
         </div>
       ) : (
-        <RaporEntryTable projectId={params.id} rows={rows} />
+        <RaporEntryTable
+          projectId={params.id}
+          rows={rows}
+          gradingConfig={project?.grading_config}
+        />
       )}
 
       <div className="rounded-2xl border border-atr-outline bg-atr-bg-soft p-4">

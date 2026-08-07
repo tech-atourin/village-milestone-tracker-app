@@ -28,9 +28,11 @@ import {
 import { SummaryTab } from "./summary-tab";
 import { KuisTab } from "./kuis-tab";
 import { KuisTesTab } from "./kuis-tes-tab";
+import { PendaftaranPanel } from "./pendaftaran-panel";
 import { KehadiranTab } from "./kehadiran-tab";
 import { MateriTab } from "./materi-tab";
 import { listProjectQuizzes } from "@/server/queries/quizzes";
+import { listProjectRegistrations } from "@/server/queries/quiz-registrations";
 import { ActionPlanBoard } from "@/components/action-plans/action-plan-board";
 import { listActionPlans } from "@/server/queries/action-plans";
 import { listProjectLogoUrls } from "@/server/actions/project-logos";
@@ -203,6 +205,7 @@ export default async function ProjectDetailPage({
       {activeTab === "kuis" && (
         <KuisTesTab
           kuis={<KuisTabLoader projectId={project.id} scope="atourin" />}
+          pendaftaran={<PendaftaranLoader projectId={project.id} />}
           gform={<GformsAndResultsLoader projectId={project.id} />}
         />
       )}
@@ -224,6 +227,7 @@ export default async function ProjectDetailPage({
             total_pendampingan_days: project.total_pendampingan_days,
             status: project.status,
             enabled_modules: project.enabled_modules,
+            grading_config: project.grading_config,
           }}
         />
       )}
@@ -248,6 +252,7 @@ async function SettingsTabLoader({
     total_pendampingan_days: number | null;
     status: "draft" | "active" | "completed" | "archived";
     enabled_modules: Record<string, boolean>;
+    grading_config: Record<string, unknown>;
   };
 }) {
   const extraLogos = await listProjectLogoUrls(project.id);
@@ -460,5 +465,10 @@ async function KuisTabLoader({
       scope={scope}
     />
   );
+}
+
+async function PendaftaranLoader({ projectId }: { projectId: string }) {
+  const rows = await listProjectRegistrations(projectId);
+  return <PendaftaranPanel rows={rows} />;
 }
 

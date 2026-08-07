@@ -113,6 +113,7 @@ const updateMetaSchema = z.object({
   max_attempts: z.number().int().min(0).max(100).optional(),
   opens_at: z.string().optional().nullable(),
   closes_at: z.string().optional().nullable(),
+  collect_registration: z.boolean().optional(),
 });
 
 export async function updateQuizMeta(
@@ -136,6 +137,7 @@ export async function updateQuizMeta(
       max_attempts: parsed.data.max_attempts ?? 1,
       opens_at: parsed.data.opens_at || null,
       closes_at: parsed.data.closes_at || null,
+      collect_registration: parsed.data.collect_registration ?? false,
       updated_at: new Date().toISOString(),
     })
     .eq("id", parsed.data.quiz_id);
