@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/server";
 import { getCurrentUser } from "@/lib/auth/rbac";
 import { generateDesaSummary } from "@/lib/ai/desa-summary";
 import { generateDesaRecommendation } from "@/lib/ai/desa-recommendation";
@@ -13,7 +13,9 @@ async function invalidateInsight(
   projectDesaId: string,
   insightType: "summary" | "recommendation" | "swot",
 ) {
-  const supabase = createClient();
+  // Guarded superadmin/mitra (lihat guard()). ai_insights tidak punya policy
+  // write RLS, jadi pakai admin client supaya invalidasi tidak gagal diam-diam.
+  const supabase = createAdminClient();
   await supabase
     .from("ai_insights")
     .update({ valid_until: new Date(Date.now() - 1000).toISOString() })

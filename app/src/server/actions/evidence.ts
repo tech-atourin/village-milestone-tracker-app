@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { getCurrentUser } from "@/lib/auth/rbac";
 
 const FILE_TYPE_MAP: Record<string, "image" | "video" | "document" | "audio"> = {
@@ -129,7 +129,10 @@ export async function deleteEvidence(input: z.input<typeof deleteSchema>) {
   const parsed = deleteSchema.safeParse(input);
   if (!parsed.success) return { error: "Input tidak valid" };
 
-  const supabase = createClient();
+  // Kepemilikan/superadmin diverifikasi manual di bawah. evidence_files tidak
+  // punya policy DELETE di RLS, jadi pakai admin client supaya penghapusan
+  // tidak gagal diam-diam (baris tak terhapus tapi UI mengira sukses).
+  const supabase = createAdminClient();
 
   // Fetch the row to verify ownership and get the storage path.
   const { data: ev, error: fetchErr } = await supabase

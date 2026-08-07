@@ -18,7 +18,9 @@ export async function addTopik(input: z.input<typeof addTopikSchema>) {
   await requireRole("superadmin");
   const parsed = addTopikSchema.safeParse(input);
   if (!parsed.success) return { error: "Input tidak valid" };
-  const supabase = createClient();
+  // Superadmin-guarded. project_topik & project_checklist_item tidak punya
+  // policy write untuk RLS client, jadi pakai admin client (guard peran di atas).
+  const supabase = createAdminClient();
 
   // Compute next sort_order
   const { data: existing } = await supabase
@@ -53,7 +55,9 @@ export async function renameTopik(input: z.input<typeof renameTopikSchema>) {
   await requireRole("superadmin");
   const parsed = renameTopikSchema.safeParse(input);
   if (!parsed.success) return { error: "Input tidak valid" };
-  const supabase = createClient();
+  // Superadmin-guarded. project_topik & project_checklist_item tidak punya
+  // policy write untuk RLS client, jadi pakai admin client (guard peran di atas).
+  const supabase = createAdminClient();
   const { error } = await supabase
     .from("project_topik")
     .update({
@@ -75,7 +79,9 @@ export async function deleteTopik(input: z.input<typeof deleteTopikSchema>) {
   await requireRole("superadmin");
   const parsed = deleteTopikSchema.safeParse(input);
   if (!parsed.success) return { error: "Input tidak valid" };
-  const supabase = createClient();
+  // Superadmin-guarded. project_topik & project_checklist_item tidak punya
+  // policy write untuk RLS client, jadi pakai admin client (guard peran di atas).
+  const supabase = createAdminClient();
   // CASCADE handles project_checklist_item + desa_topik_instance + checklist_progress
   const { error } = await supabase
     .from("project_topik")
@@ -101,7 +107,9 @@ export async function addChecklistItem(input: z.input<typeof addItemSchema>) {
   await requireRole("superadmin");
   const parsed = addItemSchema.safeParse(input);
   if (!parsed.success) return { error: "Input tidak valid" };
-  const supabase = createClient();
+  // Superadmin-guarded. project_topik & project_checklist_item tidak punya
+  // policy write untuk RLS client, jadi pakai admin client (guard peran di atas).
+  const supabase = createAdminClient();
   const { data: existing } = await supabase
     .from("project_checklist_item")
     .select("sort_order")
@@ -137,7 +145,9 @@ export async function updateChecklistItem(
   await requireRole("superadmin");
   const parsed = updateItemSchema.safeParse(input);
   if (!parsed.success) return { error: "Input tidak valid" };
-  const supabase = createClient();
+  // Superadmin-guarded. project_topik & project_checklist_item tidak punya
+  // policy write untuk RLS client, jadi pakai admin client (guard peran di atas).
+  const supabase = createAdminClient();
   const { error } = await supabase
     .from("project_checklist_item")
     .update({
@@ -162,7 +172,9 @@ export async function deleteChecklistItem(
   await requireRole("superadmin");
   const parsed = deleteItemSchema.safeParse(input);
   if (!parsed.success) return { error: "Input tidak valid" };
-  const supabase = createClient();
+  // Superadmin-guarded. project_topik & project_checklist_item tidak punya
+  // policy write untuk RLS client, jadi pakai admin client (guard peran di atas).
+  const supabase = createAdminClient();
   const { error } = await supabase
     .from("project_checklist_item")
     .delete()
