@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2, LockOpen, Lock, Clock } from "lucide-react";
 import { setTopikCheckinWindow } from "@/server/actions/topik-checkin";
@@ -38,10 +38,35 @@ export function CheckinWindowControls({
   // Nilai input datetime-local per modul (untuk auto-tutup opsional).
   const [closesAt, setClosesAt] = useState<Record<string, string>>({});
   const [error, setError] = useState<string | null>(null);
+  // Status optimistis: langsung flip badge/tombol saat diklik, sebelum
+  // router.refresh() (yang lebih lambat) membawa data terbaru.
+  const [optimistic, setOptimistic] = useState<
+    Record<string, { open: boolean; closes_at: string | null }>
+  >({});
+
+  // Bersihkan override optimistis begitu prop dari server sudah cocok.
+  useEffect(() => {
+    setOptimistic((prev) => {
+      let changed = false;
+      const next = { ...prev };
+      for (const t of topik) {
+        const o = next[t.id];
+        if (o && o.open === t.checkin_open) {
+          delete next[t.id];
+          changed = true;
+        }
+      }
+      return changed ? next : prev;
+    });
+  }, [topik]);
 
   function apply(topikId: string, open: boolean) {
     setError(null);
     setBusyId(topikId);
+    setOptimistic((s) => ({
+      ...s,
+      [topikId]: { open, closes_at: open ? closesAt[topikId] || null : null },
+    }));
     startTransition(async () => {
       try {
         const r = await setTopikCheckinWindow({
@@ -50,8 +75,17 @@ export function CheckinWindowControls({
           open,
           closes_at: open ? closesAt[topikId] || null : null,
         });
-        if ("error" in r) setError(r.error);
-        else router.refresh();
+        if ("error" in r) {
+          setError(r.error);
+          // Batalkan optimistic bila gagal.
+          setOptimistic((s) => {
+            const next = { ...s };
+            delete next[topikId];
+            return next;
+          });
+        } else {
+          router.refresh();
+        }
       } finally {
         setBusyId(null);
       }
@@ -76,7 +110,11 @@ export function CheckinWindowControls({
       <ul className="mt-3 space-y-2">
         {topik.map((t, i) => {
           const busy = busyId === t.id;
-          const closesLabel = fmtTime(t.checkin_closes_at);
+          const ov = optimistic[t.id];
+          const isOpen = ov ? ov.open : t.checkin_open;
+          const closesLabel = fmtTime(
+            ov ? ov.closes_at : t.checkin_closes_at,
+          );
           return (
             <li
               key={t.id}
@@ -89,20 +127,20 @@ export function CheckinWindowControls({
                   </span>
                   <span
                     className={`inline-flex items-center gap-1 rounded-full border px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide ${
-                      t.checkin_open
+                      isOpen
                         ? "border-atr-arti/30 bg-atr-arti/15 text-atr-arti"
                         : "border-atr-outline bg-white text-atr-fg-muted"
                     }`}
                   >
-                    {t.checkin_open ? (
+                    {isOpen ? (
                       <LockOpen className="h-2.5 w-2.5" />
                     ) : (
                       <Lock className="h-2.5 w-2.5" />
                     )}
-                    {t.checkin_open ? "Buka" : "Tutup"}
+                    {isOpen ? "Buka" : "Tutup"}
                   </span>
                 </div>
-                {t.checkin_open && closesLabel && (
+                {isOpen && closesLabel && (
                   <div className="mt-0.5 inline-flex items-center gap-1 text-[11px] text-atr-fg-muted">
                     <Clock className="h-3 w-3" />
                     Auto-tutup: {closesLabel}
@@ -111,7 +149,7 @@ export function CheckinWindowControls({
               </div>
 
               <div className="flex items-center gap-2">
-                {!t.checkin_open && (
+                {!isOpen && (
                   <label className="flex items-center gap-1 text-[11px] text-atr-fg-muted">
                     Auto-tutup
                     <input
@@ -126,22 +164,26 @@ export function CheckinWindowControls({
                 )}
                 <button
                   type="button"
-                  onClick={() => apply(t.id, !t.checkin_open)}
+                  onClick={() => apply(t.id, !isOpen)}
                   disabled={busy}
                   className={`inline-flex h-8 items-center gap-1.5 rounded-lg px-3 text-xs font-bold text-white transition disabled:opacity-50 ${
-                    t.checkin_open
+                    isOpen
                       ? "bg-atr-red hover:bg-atr-red/90"
                       : "bg-atr-purple hover:bg-atr-purple-600"
                   }`}
                 >
                   {busy ? (
                     <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                  ) : t.checkin_open ? (
+                  ) : isOpen ? (
                     <Lock className="h-3.5 w-3.5" />
                   ) : (
                     <LockOpen className="h-3.5 w-3.5" />
                   )}
-                  {t.checkin_open ? "Tutup check-in" : "Buka check-in"}
+                  {busy
+                    ? "Menyimpan..."
+                    : isOpen
+                      ? "Tutup check-in"
+                      : "Buka check-in"}
                 </button>
               </div>
             </li>

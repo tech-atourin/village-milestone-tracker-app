@@ -379,3 +379,112 @@ export async function resolveAttemptMatch(
   revalidateProject(quiz.project_id);
   return { ok: true };
 }
+
+// =====================================================
+// Duplikat kuis (mis. Pre-test -> Post-test) beserta semua soal + opsi.
+// Konsep pre/post pakai soal yang sama, jadi tombol ini mempermudah bikin
+// pasangannya tanpa input ulang. Kuis hasil clone: draft, belum publish.
+// =====================================================
+const duplicateSchema = z.object({
+  quiz_id: z.string().uuid(),
+  target_kind: z.enum(["pre_test", "post_test", "standalone"]),
+});
+
+function retitleForKind(
+  src: string,
+  targetKind: "pre_test" | "post_test" | "standalone",
+): string {
+  if (targetKind === "post_test") {
+    const swapped = src.replace(/pre[\s-]?test/gi, "Post-test");
+    return swapped !== src ? swapped : `Post-test - ${src}`;
+  }
+  if (targetKind === "pre_test") {
+    const swapped = src.replace(/post[\s-]?test/gi, "Pre-test");
+    return swapped !== src ? swapped : `Pre-test - ${src}`;
+  }
+  return `Salinan - ${src}`;
+}
+
+export async function duplicateQuiz(
+  input: z.input<typeof duplicateSchema>,
+): Promise<Ok<{ id: string }> | Err> {
+  const parsed = duplicateSchema.safeParse(input);
+  if (!parsed.success) return { error: "Input tidak valid" };
+  const access = await assertQuizAccess(parsed.data.quiz_id);
+  if ("error" in access) return access;
+  const admin = createAdminClient();
+
+  const { data: srcRow } = await admin
+    .from("quizzes")
+    .select(
+      "project_id, title, description, topik_id, time_limit_seconds, passing_score, shuffle_questions, max_attempts, collect_registration",
+    )
+    .eq("id", parsed.data.quiz_id)
+    .maybeSingle();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const src = srcRow as any;
+  if (!src) return { error: "Kuis sumber tidak ditemukan" };
+
+  const { data: newRow, error: insErr } = await admin
+    .from("quizzes")
+    .insert({
+      project_id: src.project_id,
+      title: retitleForKind(src.title as string, parsed.data.target_kind),
+      description: src.description ?? null,
+      kind: parsed.data.target_kind,
+      topik_id: src.topik_id ?? null,
+      time_limit_seconds: src.time_limit_seconds ?? null,
+      passing_score: src.passing_score ?? null,
+      shuffle_questions: src.shuffle_questions ?? false,
+      max_attempts: src.max_attempts ?? 1,
+      collect_registration: src.collect_registration ?? false,
+      is_published: false,
+      created_by: access.actor.id,
+    })
+    .select("id")
+    .single();
+  if (insErr || !newRow)
+    return { error: insErr?.message ?? "Gagal menduplikat kuis" };
+  const newQuizId = (newRow as { id: string }).id;
+
+  const { data: qRows } = await admin
+    .from("quiz_questions")
+    .select("id, prompt, question_type, points, sort_order, topik_id")
+    .eq("quiz_id", parsed.data.quiz_id)
+    .order("sort_order", { ascending: true });
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const questions = (qRows ?? []) as any[];
+
+  for (const q of questions) {
+    const { data: nq, error: qErr } = await admin
+      .from("quiz_questions")
+      .insert({
+        quiz_id: newQuizId,
+        prompt: q.prompt,
+        question_type: q.question_type,
+        points: q.points,
+        sort_order: q.sort_order,
+        topik_id: q.topik_id ?? null,
+      })
+      .select("id")
+      .single();
+    if (qErr || !nq) continue;
+    const { data: opts } = await admin
+      .from("quiz_options")
+      .select("label, is_correct, sort_order")
+      .eq("question_id", q.id)
+      .order("sort_order", { ascending: true });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const optRows = ((opts ?? []) as any[]).map((o) => ({
+      question_id: (nq as { id: string }).id,
+      label: o.label,
+      is_correct: o.is_correct,
+      sort_order: o.sort_order,
+    }));
+    if (optRows.length > 0)
+      await admin.from("quiz_options").insert(optRows);
+  }
+
+  revalidateProject(access.projectId);
+  return { ok: true, id: newQuizId };
+}

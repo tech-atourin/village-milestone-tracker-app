@@ -21,7 +21,9 @@ import {
   createQuiz,
   deleteQuiz,
   togglePublishQuiz,
+  duplicateQuiz,
 } from "@/server/actions/quizzes";
+import { CopyPlus } from "lucide-react";
 import type { QuizListRow } from "@/server/queries/quizzes";
 import type { QuizFull } from "@/server/queries/quizzes";
 import { getQuizFullClient } from "./quiz-editor-data";
@@ -108,6 +110,34 @@ export function KuisTab({
     startTransition(async () => {
       try {
         const r = await togglePublishQuiz(q.id, !q.is_published);
+        if ("error" in r) setError(r.error);
+        else router.refresh();
+      } finally {
+        setBusyId(null);
+      }
+    });
+  }
+
+  // Duplikat kuis ke pasangannya (pre <-> post) memakai soal yang sama.
+  function duplicate(q: QuizListRow) {
+    const targetKind =
+      q.kind === "pre_test"
+        ? "post_test"
+        : q.kind === "post_test"
+          ? "pre_test"
+          : "standalone";
+    const label =
+      targetKind === "post_test"
+        ? "Post-test"
+        : targetKind === "pre_test"
+          ? "Pre-test"
+          : "salinan";
+    if (!confirm(`Duplikat kuis ini jadi ${label} (soal disalin sama persis)?`))
+      return;
+    setBusyId(q.id);
+    startTransition(async () => {
+      try {
+        const r = await duplicateQuiz({ quiz_id: q.id, target_kind: targetKind });
         if ("error" in r) setError(r.error);
         else router.refresh();
       } finally {
@@ -271,6 +301,30 @@ export function KuisTab({
                     <Eye className="h-3 w-3" />
                   )}
                   {q.is_published ? "Unpublish" : "Publish"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => duplicate(q)}
+                  disabled={busyId === q.id}
+                  title={
+                    q.kind === "pre_test"
+                      ? "Duplikat jadi Post-test (soal sama)"
+                      : q.kind === "post_test"
+                        ? "Duplikat jadi Pre-test (soal sama)"
+                        : "Duplikat kuis"
+                  }
+                  className="inline-flex h-8 items-center gap-1 rounded-md border border-atr-outline bg-white px-2.5 text-xs font-bold text-atr-fg transition hover:bg-atr-bg-soft disabled:opacity-50"
+                >
+                  {busyId === q.id ? (
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                  ) : (
+                    <CopyPlus className="h-3 w-3" />
+                  )}
+                  {q.kind === "pre_test"
+                    ? "Jadikan Post-test"
+                    : q.kind === "post_test"
+                      ? "Jadikan Pre-test"
+                      : "Duplikat"}
                 </button>
                 {q.is_published && q.public_slug && (
                   <button

@@ -616,7 +616,7 @@ export async function getPesertaTrainingDetail(
   const { data: gformTrs } = await supabase
     .from("peserta_test_results")
     .select(
-      "score, form_type, project_topik_id, project_topik:project_topik(name, sort_order), gform:project_gforms!inner(project_id)",
+      "score, max_score, form_type, project_topik_id, project_topik:project_topik(name, sort_order), gform:project_gforms!inner(project_id)",
     )
     .eq("user_id", userId)
     .eq("source", "gform")
@@ -625,7 +625,7 @@ export async function getPesertaTrainingDetail(
   const { data: quizTrs } = await supabase
     .from("peserta_test_results")
     .select(
-      "score, form_type, project_topik_id, project_topik:project_topik(name, sort_order), attempt:quiz_attempts!inner(quiz:quizzes!inner(project_id))",
+      "score, max_score, form_type, project_topik_id, project_topik:project_topik(name, sort_order), attempt:quiz_attempts!inner(quiz:quizzes!inner(project_id))",
     )
     .eq("user_id", userId)
     .eq("source", "quiz")
@@ -650,9 +650,13 @@ export async function getPesertaTrainingDetail(
         pre: null,
         post: null,
       } as MatRow);
-    const score = Number(r.score);
-    if (r.form_type === "pre_test") cur.pre = score;
-    else if (r.form_type === "post_test") cur.post = score;
+    // Normalisasi ke persen (0-100). Nilai mentah disimpan per modul sebagai
+    // jumlah benar / max, jadi harus dibagi max supaya konsisten dgn NILAI.
+    const max = Number(r.max_score);
+    const pct =
+      max > 0 ? Math.round((Number(r.score) / max) * 100) : Number(r.score);
+    if (r.form_type === "pre_test") cur.pre = pct;
+    else if (r.form_type === "post_test") cur.post = pct;
     matMap.set(id, cur);
   }
   const materi_scores = Array.from(matMap.entries())
