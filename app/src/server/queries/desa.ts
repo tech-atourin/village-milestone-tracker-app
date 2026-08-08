@@ -21,6 +21,9 @@ export async function listDesa(q?: string): Promise<DesaRow[]> {
       "id, name, desa_kelurahan, kecamatan, kabupaten, provinsi, current_classification, created_at",
     )
     .is("deleted_at", null)
+    // Unit peserta individu (pelaku_pariwisata) bukan desa nyata - sembunyikan
+    // dari master desa.
+    .eq("is_individual_unit", false)
     .order("name")
     .limit(500);
 

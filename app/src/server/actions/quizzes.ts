@@ -87,6 +87,8 @@ export async function createQuiz(
   const access = await assertProjectAccess(parsed.data.project_id);
   if ("error" in access) return access;
   const admin = createAdminClient();
+  if (await isTitleTaken(admin, parsed.data.project_id, parsed.data.title))
+    return { error: "Nama tes sudah dipakai di project ini. Pakai nama lain." };
   const { data, error } = await admin
     .from("quizzes")
     .insert({
@@ -124,6 +126,15 @@ export async function updateQuizMeta(
   const access = await assertQuizAccess(parsed.data.quiz_id);
   if ("error" in access) return access;
   const admin = createAdminClient();
+  if (
+    await isTitleTaken(
+      admin,
+      access.projectId,
+      parsed.data.title,
+      parsed.data.quiz_id,
+    )
+  )
+    return { error: "Nama tes sudah dipakai di project ini. Pakai nama lain." };
   const { error } = await admin
     .from("quizzes")
     .update({
@@ -180,19 +191,14 @@ export async function togglePublishQuiz(
 
   const { data: existing } = await admin
     .from("quizzes")
-    .select("public_slug")
+    .select("public_slug, title")
     .eq("id", quizId)
     .maybeSingle();
-  let slug =
-    (existing as { public_slug: string | null } | null)?.public_slug ?? null;
+  const ex = existing as { public_slug: string | null; title: string } | null;
+  let slug = ex?.public_slug ?? null;
+  // Slug dibentuk otomatis dari nama tes (readable) saat pertama dipublish.
   if (publish && !slug) {
-    slug = randomBytes(12).toString("base64url");
-    const dup = await admin
-      .from("quizzes")
-      .select("id")
-      .eq("public_slug", slug)
-      .maybeSingle();
-    if (dup.data) slug = randomBytes(12).toString("base64url");
+    slug = await buildUniqueSlug(admin, ex?.title ?? "kuis");
   }
 
   const { error } = await admin
@@ -425,11 +431,23 @@ export async function duplicateQuiz(
   const src = srcRow as any;
   if (!src) return { error: "Kuis sumber tidak ditemukan" };
 
+  // Judul hasil clone harus unik di project; tambahkan sufiks bila bentrok.
+  let newTitle = retitleForKind(src.title as string, parsed.data.target_kind);
+  if (await isTitleTaken(admin, src.project_id, newTitle)) {
+    for (let n = 2; n <= 50; n++) {
+      const candidate = `${newTitle} (${n})`;
+      if (!(await isTitleTaken(admin, src.project_id, candidate))) {
+        newTitle = candidate;
+        break;
+      }
+    }
+  }
+
   const { data: newRow, error: insErr } = await admin
     .from("quizzes")
     .insert({
       project_id: src.project_id,
-      title: retitleForKind(src.title as string, parsed.data.target_kind),
+      title: newTitle,
       description: src.description ?? null,
       kind: parsed.data.target_kind,
       topik_id: src.topik_id ?? null,
@@ -487,4 +505,55 @@ export async function duplicateQuiz(
 
   revalidateProject(access.projectId);
   return { ok: true, id: newQuizId };
+}
+
+// =====================================================
+// Slug link publik: dibuat otomatis dari nama tes (readable), bukan acak.
+// Nama tes wajib unik agar linknya juga enak & tidak bentrok.
+// =====================================================
+function slugifyTitle(s: string): string {
+  return s
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "")
+    .slice(0, 60);
+}
+
+// Cek nama tes unik di dalam satu project (case-insensitive).
+// excludeId dipakai saat rename supaya kuis itu sendiri tidak dianggap duplikat.
+async function isTitleTaken(
+  admin: ReturnType<typeof createAdminClient>,
+  projectId: string,
+  title: string,
+  excludeId?: string,
+): Promise<boolean> {
+  let q = admin
+    .from("quizzes")
+    .select("id")
+    .eq("project_id", projectId)
+    .ilike("title", title.trim());
+  if (excludeId) q = q.neq("id", excludeId);
+  const { data } = await q.maybeSingle();
+  return !!data;
+}
+
+// Bangun slug unik-global dari judul; kalau bentrok tambahkan sufiks pendek.
+async function buildUniqueSlug(
+  admin: ReturnType<typeof createAdminClient>,
+  title: string,
+): Promise<string> {
+  const base = slugifyTitle(title) || "kuis";
+  let candidate = base;
+  for (let i = 0; i < 6; i++) {
+    const { data } = await admin
+      .from("quizzes")
+      .select("id")
+      .eq("public_slug", candidate)
+      .maybeSingle();
+    if (!data) return candidate;
+    candidate = `${base}-${randomBytes(3).toString("hex")}`;
+  }
+  return `${base}-${randomBytes(4).toString("hex")}`;
 }

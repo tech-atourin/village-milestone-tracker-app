@@ -9,11 +9,20 @@ import {
   CalendarRange,
   BookOpen,
   MapPin,
+  Target,
+  FolderOpen,
+  ChevronRight,
+  CheckCircle2,
+  Clock,
 } from "lucide-react";
 import { getCurrentUser } from "@/lib/auth/rbac";
-import { getPesertaTrainingDetail } from "@/server/queries/peserta";
+import {
+  getPesertaTrainingDetail,
+  listPesertaTopik,
+} from "@/server/queries/peserta";
 import { getMyCheckinTopikIds } from "@/server/queries/checkin";
 import { TopikCheckinButton } from "./topik-checkin-button";
+import { ensurePesertaUnit } from "@/server/actions/peserta-unit";
 import { createAdminClient } from "@/lib/supabase/server";
 import { predikat } from "@/lib/rapor/scoring";
 
@@ -40,6 +49,17 @@ export default async function PesertaTrainingPage({
   const checkinIds = await getMyCheckinTopikIds(params.projectId, user.id);
   const { project, membership, topik, materi_scores, sessions } = data;
   const isOnline = membership.attendance_mode === "online";
+
+  // Provision unit pribadi peserta (reuse mesin desa) supaya checklist,
+  // upload bukti, dan rencana aksi punya tempat. Idempotent.
+  const projectDesaId = await ensurePesertaUnit(params.projectId, user.id);
+  // Progres checklist per modul (status + item counts) untuk unit peserta.
+  const checklistTopik = projectDesaId
+    ? await listPesertaTopik(projectDesaId)
+    : [];
+  const progressByTopik = new Map(
+    checklistTopik.map((t) => [t.project_topik_id, t]),
+  );
 
   // Peserta hanya melihat Nilai Akhir. Rincian komponen penilaian
   // (Pre/Post/Tugas/Keaktifan) sengaja tidak ditampilkan ke peserta.
@@ -154,6 +174,44 @@ export default async function PesertaTrainingPage({
         </section>
       )}
 
+      {/* Aksi peserta: rencana aksi + kumpulan bukti (unit pribadi peserta) */}
+      {projectDesaId && (
+        <div className="grid gap-3 sm:grid-cols-2">
+          <Link
+            href={`/peserta/projects/${projectDesaId}/rencana-aksi`}
+            className="flex items-center gap-3 rounded-2xl border border-atr-outline bg-white p-4 shadow-atr-1 transition hover:bg-atr-bg-soft"
+          >
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-atr-purple-50 text-atr-purple">
+              <Target className="h-5 w-5" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="text-sm font-bold text-atr-fg">Rencana Aksi</div>
+              <div className="text-xs text-atr-fg-muted">
+                Susun rencana tindak lanjut setelah pelatihan.
+              </div>
+            </div>
+            <ChevronRight className="h-4 w-4 shrink-0 text-atr-fg-muted" />
+          </Link>
+          <Link
+            href={`/peserta/projects/${projectDesaId}/evidence`}
+            className="flex items-center gap-3 rounded-2xl border border-atr-outline bg-white p-4 shadow-atr-1 transition hover:bg-atr-bg-soft"
+          >
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-atr-yellow/20 text-atr-fg">
+              <FolderOpen className="h-5 w-5" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="text-sm font-bold text-atr-fg">
+                Kumpulan Bukti
+              </div>
+              <div className="text-xs text-atr-fg-muted">
+                Semua dokumen/tugas yang Anda unggah.
+              </div>
+            </div>
+            <ChevronRight className="h-4 w-4 shrink-0 text-atr-fg-muted" />
+          </Link>
+        </div>
+      )}
+
       {/* Nilai akhir + skor tes. Rincian bobot penilaian tidak ditampilkan. */}
       <section className="rounded-2xl border border-atr-outline bg-white p-5 shadow-atr-1">
         <div className="text-center">
@@ -182,27 +240,35 @@ export default async function PesertaTrainingPage({
         </div>
       </section>
 
-      {/* Modul / topik (read-only) */}
+      {/* Modul / topik: klik untuk isi checklist + unggah bukti per modul */}
       <section className="rounded-2xl border border-atr-outline bg-white p-5 shadow-atr-1">
-        <h2 className="mb-3 inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wide text-atr-fg-muted">
+        <h2 className="mb-1 inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wide text-atr-fg-muted">
           <BookOpen className="h-3.5 w-3.5" />
           Modul Pelatihan ({topik.length})
         </h2>
+        {projectDesaId && (
+          <p className="mb-3 text-xs text-atr-fg-muted">
+            Klik modul untuk mengisi checklist tugas dan mengunggah bukti.
+          </p>
+        )}
         {topik.length === 0 ? (
           <p className="text-sm text-atr-fg-muted">Belum ada modul terdaftar.</p>
         ) : (
           <ul className="space-y-3">
             {topik.map((t) => {
               const scoreRow = materi_scores.find((m) => m.topik_id === t.id);
-              return (
-                <li
-                  key={t.id}
-                  className="rounded-xl border border-atr-outline bg-atr-bg-soft/40 p-3"
-                >
+              const prog = progressByTopik.get(t.id);
+              const body = (
+                <>
                   <div className="flex flex-wrap items-start justify-between gap-2">
                     <div className="min-w-0 flex-1">
-                      <div className="text-sm font-bold text-atr-fg">
-                        {t.sort_order}. {t.name}
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-bold text-atr-fg">
+                          {t.sort_order}. {t.name}
+                        </span>
+                        {projectDesaId && (
+                          <ChevronRight className="h-4 w-4 shrink-0 text-atr-fg-muted" />
+                        )}
                       </div>
                       {t.description && (
                         <p className="mt-0.5 text-xs text-atr-fg-muted">
@@ -221,14 +287,44 @@ export default async function PesertaTrainingPage({
                       </div>
                     )}
                   </div>
-                  {t.items.length > 0 && (
-                    <ul className="mt-2 space-y-1 pl-3 text-xs text-atr-fg-muted">
-                      {t.items.map((it) => (
-                        <li key={it.id} className="list-disc">
-                          {it.title}
-                        </li>
-                      ))}
-                    </ul>
+                  {prog && prog.total_items > 0 ? (
+                    <div className="mt-2 flex items-center gap-3 text-[11px] text-atr-fg-muted">
+                      <span className="inline-flex items-center gap-1">
+                        <CheckCircle2 className="h-3 w-3 text-atr-arti" />
+                        {prog.approved_items} disetujui
+                      </span>
+                      <span className="inline-flex items-center gap-1">
+                        <Clock className="h-3 w-3 text-atr-yellow" />
+                        {prog.pending_items} menunggu
+                      </span>
+                      <span>{prog.total_items} tugas</span>
+                    </div>
+                  ) : (
+                    t.items.length > 0 && (
+                      <ul className="mt-2 space-y-1 pl-3 text-xs text-atr-fg-muted">
+                        {t.items.map((it) => (
+                          <li key={it.id} className="list-disc">
+                            {it.title}
+                          </li>
+                        ))}
+                      </ul>
+                    )
+                  )}
+                </>
+              );
+              return (
+                <li key={t.id}>
+                  {projectDesaId ? (
+                    <Link
+                      href={`/peserta/projects/${projectDesaId}/topik/${t.id}`}
+                      className="block rounded-xl border border-atr-outline bg-atr-bg-soft/40 p-3 transition hover:bg-atr-bg-soft"
+                    >
+                      {body}
+                    </Link>
+                  ) : (
+                    <div className="rounded-xl border border-atr-outline bg-atr-bg-soft/40 p-3">
+                      {body}
+                    </div>
                   )}
                 </li>
               );

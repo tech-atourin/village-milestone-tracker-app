@@ -22,7 +22,7 @@ export async function listPesertaProjectDesa(
     .select(
       `
       id, project_id, desa_id,
-      project:projects(id, name, status),
+      project:projects(id, name, status, program_type),
       desa:desa(id, name, kabupaten, provinsi)
     `,
     )
@@ -36,11 +36,16 @@ export async function listPesertaProjectDesa(
     return [];
   }
 
-  const rows = (data ?? []) as unknown as Array<{
+  const allRows = (data ?? []) as unknown as Array<{
     id: string;
     project_id: string;
     desa_id: string;
-    project: { id: string; name: string; status: string };
+    project: {
+      id: string;
+      name: string;
+      status: string;
+      program_type: string | null;
+    };
     desa: {
       id: string;
       name: string;
@@ -48,6 +53,12 @@ export async function listPesertaProjectDesa(
       provinsi: string | null;
     };
   }>;
+
+  // Project individu (pelaku_pariwisata) tampil di bagian "Pelatihan Saya",
+  // bukan "Pendampingan Desa" - jangan ganda.
+  const rows = allRows.filter(
+    (r) => r.project?.program_type !== "pelaku_pariwisata",
+  );
 
   // For each membership, find the project_desa.id
   const results: PesertaProjectDesa[] = [];
@@ -495,21 +506,62 @@ export async function listPesertaTraining(
     topikCountMap.set(t.project_id, (topikCountMap.get(t.project_id) ?? 0) + 1);
   }
 
+  // Fallback Pre/Post untuk kartu beranda: kalau rapor_peserta belum diisi admin
+  // (skor akhir belum dihitung), pakai hasil tes yang sudah tersinkron dari
+  // kuis (peserta_test_results), dinormalisasi ke persen lalu dirata-rata
+  // antar-materi. Supaya kartu tidak menampilkan "-" padahal peserta sudah tes.
+  const { data: ptr } = await createAdminClient()
+    .from("peserta_test_results")
+    .select("project_id, form_type, score, max_score")
+    .eq("user_id", userId)
+    .in("project_id", projectIds)
+    .in("form_type", ["pre_test", "post_test"]);
+  const preAcc = new Map<string, number[]>();
+  const postAcc = new Map<string, number[]>();
+  for (const row of (ptr ?? []) as Array<{
+    project_id: string;
+    form_type: string;
+    score: number | null;
+    max_score: number | null;
+  }>) {
+    const max = Number(row.max_score);
+    const pct =
+      max > 0 ? Math.round((Number(row.score) / max) * 100) : Number(row.score);
+    if (!Number.isFinite(pct)) continue;
+    const acc = row.form_type === "pre_test" ? preAcc : postAcc;
+    const arr = acc.get(row.project_id) ?? [];
+    arr.push(pct);
+    acc.set(row.project_id, arr);
+  }
+  const avgMap = (m: Map<string, number[]>, pid: string): number | null => {
+    const arr = m.get(pid);
+    if (!arr || arr.length === 0) return null;
+    return Math.round(arr.reduce((a, b) => a + b, 0) / arr.length);
+  };
+
   return rows.map((r) => {
     const rap = raporMap.get(r.project.id);
+    const pid = r.project.id as string;
+    const pre = rap?.pre_test_score ?? avgMap(preAcc, pid);
+    const post = rap?.post_test_score ?? avgMap(postAcc, pid);
+    const improvement =
+      rap?.improvement_percent ??
+      (pre != null && post != null
+        ? Math.round(((post - pre) / Math.max(pre, 1)) * 100)
+        : null);
     return {
       membership_id: r.id as string,
-      project_id: r.project.id as string,
+      project_id: pid,
       project_name: r.project.name as string,
       project_description: (r.project.description as string) ?? null,
       period_start: (r.project.period_start as string) ?? null,
       period_end: (r.project.period_end as string) ?? null,
       status: r.project.status as string,
       attendance_mode: (r.attendance_mode ?? "offline") as "offline" | "online",
-      pre_test_score: rap?.pre_test_score ?? null,
-      post_test_score: rap?.post_test_score ?? null,
-      improvement_percent: rap?.improvement_percent ?? null,
-      topik_count: topikCountMap.get(r.project.id as string) ?? 0,
+      pre_test_score: pre,
+      post_test_score: post,
+      improvement_percent: improvement,
+      topik_count: topikCountMap.get(pid) ?? 0,
     };
   });
 }

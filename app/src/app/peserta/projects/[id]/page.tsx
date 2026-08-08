@@ -11,7 +11,7 @@ import {
   Star,
   Target,
 } from "lucide-react";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { listPesertaTopik } from "@/server/queries/peserta";
 import { createClient } from "@/lib/supabase/server";
 import { listNarasumberToRate } from "@/server/actions/narasumber-rating";
@@ -42,7 +42,7 @@ async function fetchHeader(projectDesaId: string) {
   const { data } = await supabase
     .from("project_desa")
     .select(
-      `id, project:projects(id, name), desa:desa(id, name, kabupaten, provinsi)`,
+      `id, project:projects(id, name), desa:desa(id, name, kabupaten, provinsi, is_individual_unit)`,
     )
     .eq("id", projectDesaId)
     .maybeSingle();
@@ -54,6 +54,7 @@ async function fetchHeader(projectDesaId: string) {
       name: string;
       kabupaten: string | null;
       provinsi: string | null;
+      is_individual_unit: boolean | null;
     };
   } | null;
 }
@@ -65,6 +66,11 @@ export default async function PesertaProjectPage({
 }) {
   const header = await fetchHeader(params.id);
   if (!header) notFound();
+
+  // Unit peserta individu: alihkan ke halaman pelatihan (bukan tampilan desa).
+  if (header.desa.is_individual_unit) {
+    redirect(`/peserta/training/${header.project.id}`);
+  }
 
   const topik = await listPesertaTopik(params.id);
   const narasumberToRate = await listNarasumberToRate(header.project.id);
