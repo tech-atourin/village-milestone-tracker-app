@@ -580,8 +580,8 @@ export function AnalyticsCharts({
         )}
       </div>
 
-      {/* Top desa */}
-      {data.top_desa.length > 0 && (
+      {/* Top desa - hanya untuk project berbasis desa */}
+      {isDesaBased && data.top_desa.length > 0 && (
         <section className="flex h-full flex-col rounded-2xl border border-atr-outline bg-white p-6 shadow-atr-1">
           <header className="mb-4">
             <h3 className="text-sm font-bold uppercase tracking-wide text-atr-fg">
