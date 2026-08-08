@@ -29,9 +29,13 @@ export type GformRow = {
 const TYPE_LABEL: Record<string, string> = {
   pre_test: "Pre-test",
   post_test: "Post-test",
-  survey_kepuasan: "Survey Kepuasan",
-  survey_lainnya: "Survey Lainnya",
+  survey_kepuasan: "Survei Kepuasan",
+  survey_lainnya: "Survei Lainnya",
 };
+
+// Pre-test/post-test kini lewat kuis VMT, jadi Google Form hanya untuk survei.
+// (TYPE_LABEL tetap simpan pre/post untuk menampilkan data lama bila ada.)
+const ADD_TYPES = ["survey_kepuasan", "survey_lainnya"] as const;
 
 export function GformsPanel({
   projectId,
@@ -55,7 +59,7 @@ export function GformsPanel({
   } | null>(null);
 
   const [form, setForm] = useState({
-    form_type: "pre_test" as
+    form_type: "survey_kepuasan" as
       | "pre_test"
       | "post_test"
       | "survey_kepuasan"
@@ -83,7 +87,7 @@ export function GformsPanel({
         else {
           setShowAdd(false);
           setForm({
-            form_type: "pre_test",
+            form_type: "survey_kepuasan",
             form_label: "",
             gform_id: "",
             sheet_id: "",
@@ -168,9 +172,9 @@ export function GformsPanel({
                 }
                 className="h-9 rounded-md border border-atr-outline bg-white px-2 text-sm outline-none focus:border-atr-purple focus:ring-2 focus:ring-atr-purple/15"
               >
-                {Object.entries(TYPE_LABEL).map(([k, v]) => (
+                {ADD_TYPES.map((k) => (
                   <option key={k} value={k}>
-                    {v}
+                    {TYPE_LABEL[k]}
                   </option>
                 ))}
               </select>

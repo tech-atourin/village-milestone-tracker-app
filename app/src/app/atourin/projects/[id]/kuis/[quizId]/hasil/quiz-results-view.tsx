@@ -53,6 +53,9 @@ export function QuizResultsView({
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [resolvingId, setResolvingId] = useState<string | null>(null);
+  // Pisah tabel nilai peserta dari analisis soal supaya tidak perlu scroll
+  // jauh ke bawah saat soalnya banyak.
+  const [tab, setTab] = useState<"peserta" | "soal">("peserta");
   const { quiz, attempts, stats, item_analysis } = results;
   const maxDist = Math.max(1, ...stats.distribution.map((d) => d.count));
 
@@ -209,7 +212,31 @@ export function QuizResultsView({
             </section>
           </div>
 
+          {/* Tab: Nilai Peserta vs Analisis Soal */}
+          <div className="flex gap-1 border-b border-atr-outline">
+            {(
+              [
+                ["peserta", `Nilai Peserta (${attempts.length})`],
+                ["soal", `Analisis Soal (${item_analysis.length})`],
+              ] as const
+            ).map(([key, label]) => (
+              <button
+                key={key}
+                type="button"
+                onClick={() => setTab(key)}
+                className={`-mb-px border-b-2 px-3 py-2 text-sm font-bold transition ${
+                  tab === key
+                    ? "border-atr-purple text-atr-purple-700"
+                    : "border-transparent text-atr-fg-muted hover:text-atr-fg"
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+
           {/* Item analysis */}
+          {tab === "soal" && (
           <section className="rounded-2xl border border-atr-outline bg-white p-5 shadow-atr-1">
             <h3 className="mb-3 text-xs font-bold uppercase tracking-wide text-atr-fg-muted">
               Analisis Soal (tingkat jawaban benar)
@@ -249,8 +276,10 @@ export function QuizResultsView({
               ))}
             </div>
           </section>
+          )}
 
           {/* Attempts table */}
+          {tab === "peserta" && (
           <section className="overflow-x-auto rounded-2xl border border-atr-outline bg-white shadow-atr-1">
             <table className="w-full text-sm">
               <thead className="bg-atr-bg-soft text-left text-xs font-bold uppercase tracking-wide text-atr-fg-muted">
@@ -336,6 +365,7 @@ export function QuizResultsView({
               </tbody>
             </table>
           </section>
+          )}
         </>
       )}
     </div>

@@ -104,13 +104,15 @@ export function GformsTab({
     return out;
   }, [testResults, narasumberRatings.length]);
 
+  // Pre-test & post-test kini lewat kuis VMT (bukan Google Form), jadi
+  // section ini fokus ke survei peserta saja.
   const chipKeys: ChipKey[] = hideKuisionerNarasumber
-    ? ["pre_test", "post_test", "survey_kepuasan"]
-    : ["pre_test", "post_test", "survey_kepuasan", "kuisioner_narasumber"];
+    ? ["survey_kepuasan"]
+    : ["survey_kepuasan", "kuisioner_narasumber"];
 
-  // Default to first chip with data (else Pre-test).
+  // Default ke chip pertama yang ada datanya (else survei kepuasan).
   const initialChip: ChipKey =
-    chipKeys.find((k) => counts[k] > 0) ?? "pre_test";
+    chipKeys.find((k) => counts[k] > 0) ?? "survey_kepuasan";
   const [active, setActive] = useState<ChipKey>(initialChip);
 
   return (
@@ -119,7 +121,7 @@ export function GformsTab({
       <section className="space-y-4 rounded-2xl border border-atr-outline bg-white p-6 shadow-atr-1">
         <header className="flex items-center gap-2">
           <FileSpreadsheet className="h-4 w-4 text-atr-purple" />
-          <h3 className="text-sm font-bold text-atr-fg">Hasil Tes</h3>
+          <h3 className="text-sm font-bold text-atr-fg">Survei Peserta</h3>
         </header>
 
         <nav className="flex flex-wrap gap-2">

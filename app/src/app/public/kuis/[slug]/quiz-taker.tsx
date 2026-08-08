@@ -346,7 +346,10 @@ export function QuizTaker({
           <TextField
             label="No. HP (opsional)"
             value={phone}
-            onChange={setPhone}
+            type="tel"
+            // Hanya izinkan angka + simbol telepon (0-9, +, spasi, tanda hubung).
+            onChange={(v) => setPhone(v.replace(/[^0-9+\-\s]/g, ""))}
+            hint="Contoh: 081234567890"
           />
           {/* Honeypot - visually hidden, ignored by humans */}
           <input

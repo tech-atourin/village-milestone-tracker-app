@@ -23,7 +23,7 @@ export function KuisTesTab({
   const chips = [
     { key: "kuis" as const, label: "Kuis", icon: ClipboardList },
     { key: "pendaftaran" as const, label: "Pendaftaran", icon: UserPlus },
-    { key: "gform" as const, label: "Hasil Tes (Google Form)", icon: FileSpreadsheet },
+    { key: "gform" as const, label: "Survei Peserta", icon: FileSpreadsheet },
   ];
 
   return (
