@@ -31,6 +31,8 @@ export function AddDesaButton() {
   const [open, setOpen] = useState(false);
   const [mode, setMode] = useState<Mode>("menu");
   const [pending, startTransition] = useTransition();
+  // Kunci import per-hasil supaya tombol import lain tidak ikut spin
+  const [busyHubId, setBusyHubId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
 
@@ -110,17 +112,22 @@ export function AddDesaButton() {
   function importFromHub(hubId: string) {
     setError(null);
     setNotice(null);
+    setBusyHubId(hubId);
     startTransition(async () => {
-      const r = await importHubDesaToMaster({ hub_desa_id: hubId });
-      if ("error" in r) {
-        setError(r.error);
-        return;
-      }
-      router.refresh();
-      if (r.already_existed) {
-        setNotice("Desa ini sudah ada di master, tidak ditambah ulang.");
-      } else {
-        close();
+      try {
+        const r = await importHubDesaToMaster({ hub_desa_id: hubId });
+        if ("error" in r) {
+          setError(r.error);
+          return;
+        }
+        router.refresh();
+        if (r.already_existed) {
+          setNotice("Desa ini sudah ada di master, tidak ditambah ulang.");
+        } else {
+          close();
+        }
+      } finally {
+        setBusyHubId(null);
       }
     });
   }
@@ -392,10 +399,10 @@ export function AddDesaButton() {
                         <button
                           type="button"
                           onClick={() => importFromHub(d.id)}
-                          disabled={pending}
+                          disabled={busyHubId !== null}
                           className="inline-flex h-8 shrink-0 items-center gap-1 rounded-md bg-atr-purple px-2.5 text-xs font-bold text-white transition hover:bg-atr-purple-600 disabled:opacity-50"
                         >
-                          {pending ? (
+                          {busyHubId === d.id ? (
                             <Loader2 className="h-3 w-3 animate-spin" />
                           ) : (
                             <Check className="h-3 w-3" />

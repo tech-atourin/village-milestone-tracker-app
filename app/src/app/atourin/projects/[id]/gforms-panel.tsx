@@ -41,7 +41,10 @@ export function GformsPanel({
   gforms: GformRow[];
 }) {
   const router = useRouter();
-  const [pending, startTransition] = useTransition();
+  const [, startTransition] = useTransition();
+  // Flag terpisah: proses tambah form vs sync per-baris.
+  const [adding, setAdding] = useState(false);
+  const [syncingId, setSyncingId] = useState<string | null>(null);
   const [showAdd, setShowAdd] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [syncReport, setSyncReport] = useState<{
@@ -65,26 +68,31 @@ export function GformsPanel({
 
   function addForm() {
     setError(null);
+    setAdding(true);
     startTransition(async () => {
-      const r = await addProjectGform({
-        project_id: projectId,
-        form_type: form.form_type,
-        form_label: form.form_label || null,
-        gform_id: form.gform_id.trim(),
-        sheet_id: form.sheet_id.trim(),
-        identifier_field: form.identifier_field || "Email Address",
-      });
-      if (r.error) setError(r.error);
-      else {
-        setShowAdd(false);
-        setForm({
-          form_type: "pre_test",
-          form_label: "",
-          gform_id: "",
-          sheet_id: "",
-          identifier_field: "Email Address",
+      try {
+        const r = await addProjectGform({
+          project_id: projectId,
+          form_type: form.form_type,
+          form_label: form.form_label || null,
+          gform_id: form.gform_id.trim(),
+          sheet_id: form.sheet_id.trim(),
+          identifier_field: form.identifier_field || "Email Address",
         });
-        router.refresh();
+        if (r.error) setError(r.error);
+        else {
+          setShowAdd(false);
+          setForm({
+            form_type: "pre_test",
+            form_label: "",
+            gform_id: "",
+            sheet_id: "",
+            identifier_field: "Email Address",
+          });
+          router.refresh();
+        }
+      } finally {
+        setAdding(false);
       }
     });
   }
@@ -92,15 +100,20 @@ export function GformsPanel({
   function sync(gformId: string) {
     setError(null);
     setSyncReport(null);
+    setSyncingId(gformId);
     startTransition(async () => {
-      const r = await triggerGformSync(gformId);
-      setSyncReport({
-        gformId,
-        matched: r.matched,
-        unmatched: r.unmatched,
-        errors: r.errors,
-      });
-      router.refresh();
+      try {
+        const r = await triggerGformSync(gformId);
+        setSyncReport({
+          gformId,
+          matched: r.matched,
+          unmatched: r.unmatched,
+          errors: r.errors,
+        });
+        router.refresh();
+      } finally {
+        setSyncingId(null);
+      }
     });
   }
 
@@ -234,10 +247,10 @@ export function GformsPanel({
             <button
               type="button"
               onClick={addForm}
-              disabled={pending || !form.gform_id || !form.sheet_id}
+              disabled={adding || !form.gform_id || !form.sheet_id}
               className="inline-flex h-8 items-center gap-1 rounded-md bg-atr-purple px-3 text-xs font-bold text-white transition hover:bg-atr-purple-600 disabled:opacity-50"
             >
-              {pending && <Loader2 className="h-3 w-3 animate-spin" />}
+              {adding && <Loader2 className="h-3 w-3 animate-spin" />}
               Simpan
             </button>
           </div>
@@ -301,10 +314,10 @@ export function GformsPanel({
                 <button
                   type="button"
                   onClick={() => sync(g.id)}
-                  disabled={pending}
+                  disabled={syncingId === g.id}
                   className="inline-flex h-8 shrink-0 items-center gap-1 rounded-md border border-atr-outline bg-white px-2.5 text-xs font-bold text-atr-fg transition hover:bg-atr-bg-soft disabled:opacity-50"
                 >
-                  {pending ? (
+                  {syncingId === g.id ? (
                     <Loader2 className="h-3 w-3 animate-spin" />
                   ) : (
                     <RefreshCw className="h-3 w-3" />

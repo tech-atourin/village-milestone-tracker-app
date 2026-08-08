@@ -49,7 +49,9 @@ export function TopikTab({
   const [editingTopik, setEditingTopik] = useState<string | null>(null);
   const [addingItemTo, setAddingItemTo] = useState<string | null>(null);
   const [editingItem, setEditingItem] = useState<string | null>(null);
-  const [pending, setPending] = useState(false);
+  // Loading per-aksi (bukan satu flag global) supaya tombol yang tidak diklik
+  // tidak ikut spinning/disabled.
+  const [busyKey, setBusyKey] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [selectedTemplate, setSelectedTemplate] = useState<string>("");
 
@@ -61,7 +63,7 @@ export function TopikTab({
       )
     )
       return;
-    run(async () =>
+    run("template", async () =>
       applyTemplateToProject({
         project_id: projectId,
         template_id: selectedTemplate,
@@ -69,14 +71,14 @@ export function TopikTab({
     );
   }
 
-  function run(fn: () => Promise<{ error?: string } | undefined>) {
+  function run(key: string, fn: () => Promise<{ error?: string } | undefined>) {
     setError(null);
-    setPending(true);
+    setBusyKey(key);
     startTransition(async () => {
       const r = await fn();
       if (r?.error) setError(r.error);
       else router.refresh();
-      setPending(false);
+      setBusyKey(null);
     });
   }
 
@@ -153,10 +155,10 @@ export function TopikTab({
                   <button
                     type="button"
                     onClick={applyTemplate}
-                    disabled={!selectedTemplate || pending}
+                    disabled={!selectedTemplate || busyKey === "template"}
                     className="inline-flex h-9 items-center gap-1.5 rounded-md bg-atr-purple px-3 text-sm font-bold text-white transition hover:bg-atr-purple-600 disabled:opacity-50"
                   >
-                    {pending ? (
+                    {busyKey === "template" ? (
                       <Loader2 className="h-3.5 w-3.5 animate-spin" />
                     ) : (
                       <Sparkles className="h-3.5 w-3.5" />
@@ -201,9 +203,9 @@ export function TopikTab({
               </button>
               <button
                 type="button"
-                disabled={pending || newTopikName.trim().length < 2}
+                disabled={busyKey === "add-topik" || newTopikName.trim().length < 2}
                 onClick={() =>
-                  run(async () => {
+                  run("add-topik", async () => {
                     const r = await addTopik({
                       project_id: projectId,
                       name: newTopikName.trim(),
@@ -219,7 +221,9 @@ export function TopikTab({
                 }
                 className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-atr-purple px-3 text-sm font-bold text-white transition hover:bg-atr-purple-600 disabled:opacity-50"
               >
-                {pending && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+                {busyKey === "add-topik" && (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                )}
                 Simpan
               </button>
             </div>
@@ -279,7 +283,7 @@ export function TopikTab({
                             `Hapus topik "${t.name}"? Semua checklist + progress akan ikut terhapus.`,
                           )
                         ) {
-                          run(() =>
+                          run(`del-topik:${t.id}`, () =>
                             deleteTopik({ id: t.id, project_id: projectId }),
                           );
                         }
@@ -300,13 +304,13 @@ export function TopikTab({
                 topik={t}
                 onCancel={() => setEditingTopik(null)}
                 onSave={(input) =>
-                  run(async () => {
+                  run(`rename:${t.id}`, async () => {
                     const r = await renameTopik(input);
                     if (!r.error) setEditingTopik(null);
                     return r;
                   })
                 }
-                pending={pending}
+                pending={busyKey === `rename:${t.id}`}
               />
             )}
 
@@ -323,13 +327,13 @@ export function TopikTab({
                         item={item}
                         onCancel={() => setEditingItem(null)}
                         onSave={(input) =>
-                          run(async () => {
+                          run(`edit-item:${item.id}`, async () => {
                             const r = await updateChecklistItem(input);
                             if (!r.error) setEditingItem(null);
                             return r;
                           })
                         }
-                        pending={pending}
+                        pending={busyKey === `edit-item:${item.id}`}
                       />
                     ) : (
                       <>
@@ -363,7 +367,7 @@ export function TopikTab({
                               type="button"
                               onClick={() => {
                                 if (confirm(`Hapus "${item.title}"?`)) {
-                                  run(() =>
+                                  run(`del-item:${item.id}`, () =>
                                     deleteChecklistItem({
                                       id: item.id,
                                       project_id: projectId,
@@ -391,13 +395,13 @@ export function TopikTab({
                     projectId={projectId}
                     onCancel={() => setAddingItemTo(null)}
                     onSave={(input) =>
-                      run(async () => {
+                      run(`add-item:${t.id}`, async () => {
                         const r = await addChecklistItem(input);
                         if (!r.error) setAddingItemTo(null);
                         return r;
                       })
                     }
-                    pending={pending}
+                    pending={busyKey === `add-item:${t.id}`}
                   />
                 ) : (
                   <button

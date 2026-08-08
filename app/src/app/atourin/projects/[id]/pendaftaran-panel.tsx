@@ -25,7 +25,10 @@ export function PendaftaranPanel({
   rows: QuizRegistrationRow[];
 }) {
   const router = useRouter();
-  const [pending, startTransition] = useTransition();
+  const [, startTransition] = useTransition();
+  // Loading terpisah per-aksi: tombol massal dan tombol per-baris tidak saling
+  // memengaruhi indikator loading/disabled-nya.
+  const [bulkBusy, setBulkBusy] = useState(false);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState<string | null>(null);
@@ -60,23 +63,28 @@ export function PendaftaranPanel({
     if (ids.length === 0) return;
     setError(null);
     setBulkNote(null);
+    setBulkBusy(true);
     startTransition(async () => {
-      const r = await createAccountsFromRegistrations(ids);
-      setCreds((c) => {
-        const next = { ...c };
-        for (const cr of r.credentials)
-          next[cr.registration_id] = {
-            email: cr.email,
-            password: cr.password,
-          };
-        return next;
-      });
-      const parts = [`${r.created} akun baru dibuat`];
-      if (r.reused) parts.push(`${r.reused} pakai akun lama`);
-      if (r.failed) parts.push(`${r.failed} gagal`);
-      setBulkNote(parts.join(", ") + ".");
-      setSelected(new Set());
-      router.refresh();
+      try {
+        const r = await createAccountsFromRegistrations(ids);
+        setCreds((c) => {
+          const next = { ...c };
+          for (const cr of r.credentials)
+            next[cr.registration_id] = {
+              email: cr.email,
+              password: cr.password,
+            };
+          return next;
+        });
+        const parts = [`${r.created} akun baru dibuat`];
+        if (r.reused) parts.push(`${r.reused} pakai akun lama`);
+        if (r.failed) parts.push(`${r.failed} gagal`);
+        setBulkNote(parts.join(", ") + ".");
+        setSelected(new Set());
+        router.refresh();
+      } finally {
+        setBulkBusy(false);
+      }
     });
   }
 
@@ -156,10 +164,10 @@ export function PendaftaranPanel({
               <button
                 type="button"
                 onClick={buatAkunMassal}
-                disabled={pending}
+                disabled={bulkBusy}
                 className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-atr-purple px-3.5 text-xs font-bold text-white transition hover:bg-atr-purple-600 disabled:opacity-50"
               >
-                {pending ? (
+                {bulkBusy ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
                 ) : (
                   <UserPlus className="h-4 w-4" />
@@ -298,7 +306,7 @@ export function PendaftaranPanel({
                           <button
                             type="button"
                             onClick={() => buatAkun(r)}
-                            disabled={pending && busyId === r.id}
+                            disabled={busyId === r.id}
                             className="inline-flex h-8 items-center gap-1 rounded-md bg-atr-purple px-2.5 text-xs font-bold text-white transition hover:bg-atr-purple-600 disabled:opacity-50"
                           >
                             {busyId === r.id ? (

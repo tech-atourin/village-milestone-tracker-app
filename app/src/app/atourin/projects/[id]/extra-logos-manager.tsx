@@ -27,7 +27,10 @@ export function ExtraLogosManager({
   initialLogos: ExtraLogo[];
 }) {
   const router = useRouter();
-  const [pending, startTransition] = useTransition();
+  const [, startTransition] = useTransition();
+  // Flag terpisah: proses upload vs hapus per-logo.
+  const [uploading, setUploading] = useState(false);
+  const [removingPath, setRemovingPath] = useState<string | null>(null);
   const [logos, setLogos] = useState<ExtraLogo[]>(initialLogos);
   const [label, setLabel] = useState("");
   const [file, setFile] = useState<File | null>(null);
@@ -48,41 +51,51 @@ export function ExtraLogosManager({
     let binary = "";
     for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
     const base64 = btoa(binary);
+    setUploading(true);
     startTransition(async () => {
-      const r = await uploadProjectLogo({
-        project_id: projectId,
-        label: label.trim(),
-        filename: file.name,
-        mime_type: file.type || "image/png",
-        base64,
-      });
-      if (r.error) {
-        setError(r.error);
-        return;
+      try {
+        const r = await uploadProjectLogo({
+          project_id: projectId,
+          label: label.trim(),
+          filename: file.name,
+          mime_type: file.type || "image/png",
+          base64,
+        });
+        if (r.error) {
+          setError(r.error);
+          return;
+        }
+        // Tampilkan logo baru langsung tanpa perlu refresh manual.
+        if (r.path) {
+          setLogos((l) => [
+            ...l,
+            { path: r.path!, label: r.label ?? "", signed_url: r.signed_url ?? "" },
+          ]);
+        }
+        setLabel("");
+        setFile(null);
+        router.refresh();
+      } finally {
+        setUploading(false);
       }
-      // Tampilkan logo baru langsung tanpa perlu refresh manual.
-      if (r.path) {
-        setLogos((l) => [
-          ...l,
-          { path: r.path!, label: r.label ?? "", signed_url: r.signed_url ?? "" },
-        ]);
-      }
-      setLabel("");
-      setFile(null);
-      router.refresh();
     });
   }
 
   function handleRemove(path: string) {
     if (!confirm("Hapus logo ini dari sertifikat project?")) return;
+    setRemovingPath(path);
     startTransition(async () => {
-      const r = await removeProjectLogo({ project_id: projectId, path });
-      if (r.error) {
-        setError(r.error);
-        return;
+      try {
+        const r = await removeProjectLogo({ project_id: projectId, path });
+        if (r.error) {
+          setError(r.error);
+          return;
+        }
+        setLogos((l) => l.filter((x) => x.path !== path));
+        router.refresh();
+      } finally {
+        setRemovingPath(null);
       }
-      setLogos((l) => l.filter((x) => x.path !== path));
-      router.refresh();
     });
   }
 
@@ -129,11 +142,15 @@ export function ExtraLogosManager({
               <button
                 type="button"
                 onClick={() => handleRemove(logo.path)}
-                disabled={pending}
+                disabled={removingPath === logo.path}
                 className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-atr-outline text-atr-fg-muted hover:bg-atr-red/5 hover:text-atr-red disabled:opacity-50"
                 title="Hapus logo"
               >
-                <X className="h-4 w-4" />
+                {removingPath === logo.path ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <X className="h-4 w-4" />
+                )}
               </button>
             </li>
           ))}
@@ -167,10 +184,10 @@ export function ExtraLogosManager({
           <button
             type="button"
             onClick={handleUpload}
-            disabled={pending || !file || !label.trim()}
+            disabled={uploading || !file || !label.trim()}
             className="inline-flex h-10 items-center gap-1.5 rounded-lg bg-atr-purple px-4 text-sm font-bold text-white transition hover:bg-atr-purple-600 disabled:opacity-50"
           >
-            {pending ? (
+            {uploading ? (
               <Loader2 className="h-4 w-4 animate-spin" />
             ) : (
               <Upload className="h-4 w-4" />

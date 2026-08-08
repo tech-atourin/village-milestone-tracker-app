@@ -47,10 +47,11 @@ export function KuisTab({
   scope: "atourin" | "mitra";
 }) {
   const router = useRouter();
-  const [pending, startTransition] = useTransition();
+  const [, startTransition] = useTransition();
   const [editing, setEditing] = useState<QuizFull | null>(null);
   const [loadingEditId, setLoadingEditId] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [creating, setCreating] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -58,16 +59,21 @@ export function KuisTab({
     setError(null);
     const title = prompt("Judul kuis baru:");
     if (!title || title.trim().length < 2) return;
+    setCreating(true);
     startTransition(async () => {
-      const r = await createQuiz({ project_id: projectId, title: title.trim() });
-      if ("error" in r) {
-        setError(r.error);
-        return;
+      try {
+        const r = await createQuiz({ project_id: projectId, title: title.trim() });
+        if ("error" in r) {
+          setError(r.error);
+          return;
+        }
+        // Open the editor immediately for the fresh quiz.
+        const full = await getQuizFullClient(r.id);
+        if (full) setEditing(full);
+        router.refresh();
+      } finally {
+        setCreating(false);
       }
-      // Open the editor immediately for the fresh quiz.
-      const full = await getQuizFullClient(r.id);
-      if (full) setEditing(full);
-      router.refresh();
     });
   }
 
@@ -145,10 +151,10 @@ export function KuisTab({
         <button
           type="button"
           onClick={create}
-          disabled={pending}
+          disabled={creating}
           className="inline-flex h-10 items-center gap-2 rounded-lg bg-atr-purple px-4 text-sm font-bold text-white transition hover:bg-atr-purple-600 disabled:opacity-50"
         >
-          {pending ? (
+          {creating ? (
             <Loader2 className="h-4 w-4 animate-spin" />
           ) : (
             <Plus className="h-4 w-4" />

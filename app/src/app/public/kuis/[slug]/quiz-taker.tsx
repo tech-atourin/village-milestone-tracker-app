@@ -168,7 +168,7 @@ export function QuizTaker({
     quiz.branding.extra_logos.length > 0 ||
     quiz.branding.org_name;
   const LogoHeader = hasBranding ? (
-    <div className="mb-4 flex flex-wrap items-center justify-center gap-x-5 gap-y-3">
+    <div className="mb-8 flex flex-wrap items-center justify-center gap-x-5 gap-y-3">
       {quiz.branding.extra_logos.map((l) => (
         // eslint-disable-next-line @next/next/no-img-element
         <img
@@ -176,7 +176,7 @@ export function QuizTaker({
           src={l.signed_url}
           alt={l.label}
           title={l.label}
-          className="h-10 w-auto object-contain"
+          className="h-8 w-auto object-contain"
         />
       ))}
       {quiz.branding.org_logo_url ? (
@@ -185,7 +185,7 @@ export function QuizTaker({
           src={quiz.branding.org_logo_url}
           alt={quiz.branding.org_name ?? "Mitra"}
           title={quiz.branding.org_name ?? undefined}
-          className="h-10 w-auto object-contain"
+          className="h-8 w-auto object-contain"
         />
       ) : (
         quiz.branding.org_name &&

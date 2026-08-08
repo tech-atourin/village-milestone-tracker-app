@@ -61,7 +61,12 @@ export function SettingsTab({
   canManageLifecycle?: boolean;
 }) {
   const router = useRouter();
-  const [pending, startTransition] = useTransition();
+  const [, startTransition] = useTransition();
+  // Kunci per-aksi supaya tombol lain tidak ikut spinner/disabled.
+  const [busyAction, setBusyAction] = useState<
+    "save" | "archive" | "delete" | null
+  >(null);
+  const pending = busyAction !== null;
   const [error, setError] = useState<string | null>(null);
   const [savedFlash, setSavedFlash] = useState(false);
   const [name, setName] = useState(project.name);
@@ -110,7 +115,9 @@ export function SettingsTab({
 
   function save() {
     setError(null);
+    setBusyAction("save");
     startTransition(async () => {
+      try {
       const r = await updateProject({
         id: project.id,
         name,
@@ -148,14 +155,22 @@ export function SettingsTab({
         setTimeout(() => setSavedFlash(false), 2500);
         router.refresh();
       }
+      } finally {
+        setBusyAction(null);
+      }
     });
   }
 
   function archive() {
     if (!confirm("Arsipkan project ini? Status akan ke 'archived'.")) return;
+    setBusyAction("archive");
     startTransition(async () => {
-      await archiveProject(project.id);
-      router.refresh();
+      try {
+        await archiveProject(project.id);
+        router.refresh();
+      } finally {
+        setBusyAction(null);
+      }
     });
   }
 
@@ -166,10 +181,16 @@ export function SettingsTab({
       )
     )
       return;
+    setBusyAction("delete");
     startTransition(async () => {
-      await deleteProject(project.id);
-      startRouteProgress();
-      router.push("/atourin/projects");
+      try {
+        await deleteProject(project.id);
+        startRouteProgress();
+        router.push("/atourin/projects");
+      } finally {
+        // Navigasi keluar; reset tetap aman bila push gagal.
+        setBusyAction(null);
+      }
     });
   }
 
@@ -391,7 +412,11 @@ export function SettingsTab({
                 disabled={pending || project.status === "archived"}
                 className="inline-flex h-10 items-center gap-1.5 rounded-lg border border-atr-outline bg-white px-4 text-sm font-bold text-atr-fg transition hover:bg-atr-bg-soft disabled:opacity-50"
               >
-                <Archive className="h-4 w-4" />
+                {busyAction === "archive" ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Archive className="h-4 w-4" />
+                )}
                 Arsipkan
               </button>
               <button
@@ -400,7 +425,11 @@ export function SettingsTab({
                 disabled={pending}
                 className="inline-flex h-10 items-center gap-1.5 rounded-lg border border-atr-red/30 bg-white px-4 text-sm font-bold text-atr-red transition hover:bg-atr-red/10 disabled:opacity-50"
               >
-                <Trash2 className="h-4 w-4" />
+                {busyAction === "delete" ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Trash2 className="h-4 w-4" />
+                )}
                 Hapus project
               </button>
             </>
@@ -419,7 +448,7 @@ export function SettingsTab({
             disabled={pending}
             className="inline-flex h-10 items-center gap-1.5 rounded-lg bg-atr-purple px-5 text-sm font-bold text-white transition hover:bg-atr-purple-600 disabled:opacity-50"
           >
-            {pending ? (
+            {busyAction === "save" ? (
               <Loader2 className="h-4 w-4 animate-spin" />
             ) : savedFlash ? (
               <Check className="h-4 w-4" />

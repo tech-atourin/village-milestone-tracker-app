@@ -8,7 +8,9 @@ import type { OrgRow } from "@/server/queries/orgs";
 
 export function OrgCard({ org }: { org: OrgRow }) {
   const router = useRouter();
-  const [pending, startTransition] = useTransition();
+  const [, startTransition] = useTransition();
+  // Kunci busy per-aksi supaya tombol upload dan simpan tidak saling spin
+  const [busyAction, setBusyAction] = useState<"upload" | "save" | null>(null);
   const [name, setName] = useState(org.name);
   const [color, setColor] = useState(org.brand_color_primary ?? "#7068D5");
   const [error, setError] = useState<string | null>(null);
@@ -26,29 +28,39 @@ export function OrgCard({ org }: { org: OrgRow }) {
       binary += String.fromCharCode(bytes[i]);
     }
     const base64 = btoa(binary);
+    setBusyAction("upload");
     startTransition(async () => {
-      const r = await uploadOrgLogo({
-        org_id: org.id,
-        filename: file.name,
-        mime_type: file.type || "image/png",
-        base64,
-      });
-      if (r.error) setError(r.error);
-      else router.refresh();
+      try {
+        const r = await uploadOrgLogo({
+          org_id: org.id,
+          filename: file.name,
+          mime_type: file.type || "image/png",
+          base64,
+        });
+        if (r.error) setError(r.error);
+        else router.refresh();
+      } finally {
+        setBusyAction(null);
+      }
     });
   }
 
   function save() {
     setError(null);
+    setBusyAction("save");
     startTransition(async () => {
-      const r = await updateOrg({
-        id: org.id,
-        name,
-        brand_color_primary: color,
-        brand_color_secondary: null,
-      });
-      if (r.error) setError(r.error);
-      else router.refresh();
+      try {
+        const r = await updateOrg({
+          id: org.id,
+          name,
+          brand_color_primary: color,
+          brand_color_secondary: null,
+        });
+        if (r.error) setError(r.error);
+        else router.refresh();
+      } finally {
+        setBusyAction(null);
+      }
     });
   }
 
@@ -103,13 +115,13 @@ export function OrgCard({ org }: { org: OrgRow }) {
       </label>
 
       <label className="flex cursor-pointer flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed border-atr-outline bg-white p-4 text-center transition hover:border-atr-purple/40 hover:bg-atr-purple-50/40">
-        {pending ? (
+        {busyAction === "upload" ? (
           <Loader2 className="h-5 w-5 animate-spin text-atr-purple" />
         ) : (
           <Upload className="h-5 w-5 text-atr-fg-muted" />
         )}
         <span className="text-xs font-bold text-atr-fg">
-          {pending ? "Mengupload…" : "Upload logo"}
+          {busyAction === "upload" ? "Mengupload…" : "Upload logo"}
         </span>
         <span className="text-[10px] text-atr-fg-muted">
           PNG/SVG, maks 5 MB
@@ -117,7 +129,7 @@ export function OrgCard({ org }: { org: OrgRow }) {
         <input
           type="file"
           accept="image/png,image/jpeg,image/webp,image/svg+xml"
-          disabled={pending}
+          disabled={busyAction !== null}
           onChange={(e) => {
             const f = e.target.files?.[0];
             if (f) handleUpload(f);
@@ -135,10 +147,10 @@ export function OrgCard({ org }: { org: OrgRow }) {
       <button
         type="button"
         onClick={save}
-        disabled={pending}
+        disabled={busyAction !== null}
         className="inline-flex h-9 w-full items-center justify-center gap-1.5 rounded-lg bg-atr-purple px-3 text-sm font-bold text-white transition hover:bg-atr-purple-600 disabled:opacity-50"
       >
-        {pending ? (
+        {busyAction === "save" ? (
           <Loader2 className="h-3.5 w-3.5 animate-spin" />
         ) : (
           <Save className="h-3.5 w-3.5" />

@@ -67,7 +67,13 @@ export function SesiDetailEditor({
 }) {
   const router = useRouter();
   const [tab, setTab] = useState<(typeof TABS)[number]["key"]>("informasi");
-  const [pending, startTransition] = useTransition();
+  const [, startTransition] = useTransition();
+  // Kunci busy per-aksi supaya aksi independen tidak saling spin/disable
+  const [busyAction, setBusyAction] = useState<
+    "submit" | "attendance" | "laporan" | "kondisi" | null
+  >(null);
+  // Kunci hapus per-foto (evidence path)
+  const [busyDeletePath, setBusyDeletePath] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   // Form state
@@ -114,47 +120,62 @@ export function SesiDetailEditor({
 
   function saveLaporan() {
     setError(null);
+    setBusyAction("laporan");
     startTransition(async () => {
-      const r = await updateSession({
-        id: data.id,
-        materi: materi || null,
-        maksud_tujuan: maksudTujuan || null,
-        aktivitas: aktivitas.filter((s) => s.trim()),
-        output_sesi: outputSesi.filter((s) => s.trim()),
-        tindak_lanjut: tindakLanjut.filter((s) => s.trim()),
-      });
-      if (r.error) setError(r.error);
-      else router.refresh();
+      try {
+        const r = await updateSession({
+          id: data.id,
+          materi: materi || null,
+          maksud_tujuan: maksudTujuan || null,
+          aktivitas: aktivitas.filter((s) => s.trim()),
+          output_sesi: outputSesi.filter((s) => s.trim()),
+          tindak_lanjut: tindakLanjut.filter((s) => s.trim()),
+        });
+        if (r.error) setError(r.error);
+        else router.refresh();
+      } finally {
+        setBusyAction(null);
+      }
     });
   }
 
   function saveKondisi() {
     setError(null);
+    setBusyAction("kondisi");
     startTransition(async () => {
-      const r = await updateSession({
-        id: data.id,
-        kondisi_sebelum: sebelum.filter((s) => s.trim()),
-        kondisi_setelah: setelah.filter((s) => s.trim()),
-        rekomendasi: rekomendasi.filter((s) => s.trim()),
-      });
-      if (r.error) setError(r.error);
-      else router.refresh();
+      try {
+        const r = await updateSession({
+          id: data.id,
+          kondisi_sebelum: sebelum.filter((s) => s.trim()),
+          kondisi_setelah: setelah.filter((s) => s.trim()),
+          rekomendasi: rekomendasi.filter((s) => s.trim()),
+        });
+        if (r.error) setError(r.error);
+        else router.refresh();
+      } finally {
+        setBusyAction(null);
+      }
     });
   }
 
   function saveAttendance() {
     setError(null);
+    setBusyAction("attendance");
     startTransition(async () => {
-      const r = await setAttendance({
-        session_id: data.id,
-        entries: Array.from(att.entries()).map(([user_id, v]) => ({
-          user_id,
-          status: v.status as "hadir" | "izin" | "sakit" | "tidak_hadir",
-          note: v.note || null,
-        })),
-      });
-      if (r.error) setError(r.error);
-      else router.refresh();
+      try {
+        const r = await setAttendance({
+          session_id: data.id,
+          entries: Array.from(att.entries()).map(([user_id, v]) => ({
+            user_id,
+            status: v.status as "hadir" | "izin" | "sakit" | "tidak_hadir",
+            note: v.note || null,
+          })),
+        });
+        if (r.error) setError(r.error);
+        else router.refresh();
+      } finally {
+        setBusyAction(null);
+      }
     });
   }
 
@@ -232,13 +253,18 @@ export function SesiDetailEditor({
 
   async function onDeleteEvidence(filePath: string) {
     if (!confirm("Hapus foto ini? Tidak bisa dibatalkan.")) return;
+    setBusyDeletePath(filePath);
     startTransition(async () => {
-      const r = await deleteSessionEvidence({
-        session_id: data.id,
-        file_path: filePath,
-      });
-      if (r.error) setError(r.error);
-      else router.refresh();
+      try {
+        const r = await deleteSessionEvidence({
+          session_id: data.id,
+          file_path: filePath,
+        });
+        if (r.error) setError(r.error);
+        else router.refresh();
+      } finally {
+        setBusyDeletePath(null);
+      }
     });
   }
 
@@ -249,10 +275,15 @@ export function SesiDetailEditor({
       )
     )
       return;
+    setBusyAction("submit");
     startTransition(async () => {
-      const r = await submitSession(data.id);
-      if (r.error) setError(r.error);
-      else router.refresh();
+      try {
+        const r = await submitSession(data.id);
+        if (r.error) setError(r.error);
+        else router.refresh();
+      } finally {
+        setBusyAction(null);
+      }
     });
   }
 
@@ -324,10 +355,14 @@ export function SesiDetailEditor({
               <button
                 type="button"
                 onClick={doSubmit}
-                disabled={pending}
+                disabled={busyAction === "submit"}
                 className="inline-flex h-10 items-center gap-2 rounded-lg bg-atr-arti px-4 text-sm font-bold text-white hover:opacity-90 disabled:opacity-50"
               >
-                <Send className="h-4 w-4" />
+                {busyAction === "submit" ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Send className="h-4 w-4" />
+                )}
                 Submit laporan (final)
               </button>
             </div>
@@ -432,10 +467,10 @@ export function SesiDetailEditor({
                 <button
                   type="button"
                   onClick={saveAttendance}
-                  disabled={pending}
+                  disabled={busyAction === "attendance"}
                   className="inline-flex h-9 items-center gap-1.5 rounded-md bg-atr-purple px-3 text-xs font-bold text-white hover:bg-atr-purple-600 disabled:opacity-50"
                 >
-                  {pending ? (
+                  {busyAction === "attendance" ? (
                     <Loader2 className="h-3.5 w-3.5 animate-spin" />
                   ) : (
                     <Save className="h-3.5 w-3.5" />
@@ -475,11 +510,15 @@ export function SesiDetailEditor({
                       <button
                         type="button"
                         onClick={() => onDeleteEvidence(p)}
-                        disabled={pending}
+                        disabled={busyDeletePath === p}
                         title="Hapus foto"
                         className="absolute right-1.5 top-1.5 inline-flex h-6 w-6 items-center justify-center rounded-full bg-atr-red text-white opacity-0 shadow-md transition group-hover:opacity-100 hover:bg-atr-red/90 disabled:opacity-50"
                       >
-                        <X className="h-3.5 w-3.5" />
+                        {busyDeletePath === p ? (
+                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        ) : (
+                          <X className="h-3.5 w-3.5" />
+                        )}
                       </button>
                     </div>
                   );
@@ -581,10 +620,10 @@ export function SesiDetailEditor({
               <button
                 type="button"
                 onClick={saveLaporan}
-                disabled={pending}
+                disabled={busyAction === "laporan"}
                 className="inline-flex h-9 items-center gap-1.5 rounded-md bg-atr-purple px-3 text-xs font-bold text-white hover:bg-atr-purple-600 disabled:opacity-50"
               >
-                {pending ? (
+                {busyAction === "laporan" ? (
                   <Loader2 className="h-3.5 w-3.5 animate-spin" />
                 ) : (
                   <Save className="h-3.5 w-3.5" />
@@ -618,10 +657,10 @@ export function SesiDetailEditor({
             <button
               type="button"
               onClick={saveKondisi}
-              disabled={pending}
+              disabled={busyAction === "kondisi"}
               className="inline-flex h-9 items-center gap-1.5 rounded-md bg-atr-purple px-3 text-xs font-bold text-white hover:bg-atr-purple-600 disabled:opacity-50"
             >
-              {pending ? (
+              {busyAction === "kondisi" ? (
                 <Loader2 className="h-3.5 w-3.5 animate-spin" />
               ) : (
                 <Save className="h-3.5 w-3.5" />

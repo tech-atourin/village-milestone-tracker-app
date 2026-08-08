@@ -153,9 +153,14 @@ function ResourceRow({
   onEdit: () => void;
   onChanged: () => void;
 }) {
-  const [pending, startTransition] = useTransition();
+  const [, startTransition] = useTransition();
+  // Kunci busy per aksi, biar hanya tombol yang diklik yang spin/disabled.
+  const [busyAction, setBusyAction] = useState<
+    null | "open" | "publish" | "delete"
+  >(null);
   const [err, setErr] = useState<string | null>(null);
   const Icon = iconFor(r);
+  const busy = busyAction !== null;
 
   function open() {
     setErr(null);
@@ -163,10 +168,15 @@ function ResourceRow({
       window.open(r.url, "_blank", "noopener,noreferrer");
       return;
     }
+    setBusyAction("open");
     startTransition(async () => {
-      const res = await signResourceDownload(r.id);
-      if ("error" in res) setErr(res.error);
-      else window.open(res.url, "_blank", "noopener,noreferrer");
+      try {
+        const res = await signResourceDownload(r.id);
+        if ("error" in res) setErr(res.error);
+        else window.open(res.url, "_blank", "noopener,noreferrer");
+      } finally {
+        setBusyAction(null);
+      }
     });
   }
 
@@ -204,11 +214,11 @@ function ResourceRow({
           <button
             type="button"
             onClick={open}
-            disabled={pending}
+            disabled={busy}
             title={r.kind === "link" ? "Buka" : "Unduh"}
             className="flex h-8 w-8 items-center justify-center rounded-lg text-atr-fg-muted transition hover:bg-atr-bg-soft hover:text-atr-purple disabled:opacity-50"
           >
-            {pending ? (
+            {busyAction === "open" ? (
               <Loader2 className="h-4 w-4 animate-spin" />
             ) : r.kind === "link" ? (
               <ExternalLink className="h-4 w-4" />
@@ -218,13 +228,18 @@ function ResourceRow({
           </button>
           <button
             type="button"
-            onClick={() =>
+            onClick={() => {
+              setBusyAction("publish");
               startTransition(async () => {
-                await togglePublishResource(r.id, !r.is_published);
-                onChanged();
-              })
-            }
-            disabled={pending}
+                try {
+                  await togglePublishResource(r.id, !r.is_published);
+                  onChanged();
+                } finally {
+                  setBusyAction(null);
+                }
+              });
+            }}
+            disabled={busy}
             title={r.is_published ? "Sembunyikan (draft)" : "Terbitkan"}
             className="flex h-8 w-8 items-center justify-center rounded-lg text-atr-fg-muted transition hover:bg-atr-bg-soft hover:text-atr-fg disabled:opacity-50"
           >
@@ -246,12 +261,17 @@ function ResourceRow({
             type="button"
             onClick={() => {
               if (!confirm(`Hapus "${r.title}"?`)) return;
+              setBusyAction("delete");
               startTransition(async () => {
-                await deleteResource(r.id);
-                onChanged();
+                try {
+                  await deleteResource(r.id);
+                  onChanged();
+                } finally {
+                  setBusyAction(null);
+                }
               });
             }}
-            disabled={pending}
+            disabled={busy}
             title="Hapus"
             className="flex h-8 w-8 items-center justify-center rounded-lg text-atr-red transition hover:bg-atr-red/10 disabled:opacity-50"
           >

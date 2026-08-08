@@ -42,6 +42,8 @@ export function QuizEditor({
     null,
   );
   const [pending, startTransition] = useTransition();
+  // Spinner Save khusus aksi simpan meta, biar tak ikut spin saat reorder/hapus.
+  const [savingMeta, setSavingMeta] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [savedFlash, setSavedFlash] = useState(false);
 
@@ -75,25 +77,30 @@ export function QuizEditor({
       );
       return;
     }
+    setSavingMeta(true);
     startTransition(async () => {
-      const r = await updateQuizMeta({
-        quiz_id: quiz.id,
-        title,
-        description: description || null,
-        kind,
-        topik_id: topikId || null,
-        time_limit_seconds: timerMin > 0 ? timerMin * 60 : null,
-        passing_score: passing > 0 ? passing : null,
-        max_attempts: maxAttempts,
-        shuffle_questions: shuffle,
-        collect_registration: collectReg,
-      });
-      if ("error" in r) {
-        setError(r.error);
-        return;
+      try {
+        const r = await updateQuizMeta({
+          quiz_id: quiz.id,
+          title,
+          description: description || null,
+          kind,
+          topik_id: topikId || null,
+          time_limit_seconds: timerMin > 0 ? timerMin * 60 : null,
+          passing_score: passing > 0 ? passing : null,
+          max_attempts: maxAttempts,
+          shuffle_questions: shuffle,
+          collect_registration: collectReg,
+        });
+        if ("error" in r) {
+          setError(r.error);
+          return;
+        }
+        setSavedFlash(true);
+        setTimeout(() => setSavedFlash(false), 1800);
+      } finally {
+        setSavingMeta(false);
       }
-      setSavedFlash(true);
-      setTimeout(() => setSavedFlash(false), 1800);
     });
   }
 
@@ -250,10 +257,10 @@ export function QuizEditor({
         <button
           type="button"
           onClick={saveMeta}
-          disabled={pending}
+          disabled={savingMeta}
           className="mt-4 inline-flex h-10 items-center gap-2 rounded-lg bg-atr-purple px-4 text-sm font-bold text-white transition hover:bg-atr-purple-600 disabled:opacity-50"
         >
-          {pending ? (
+          {savingMeta ? (
             <Loader2 className="h-4 w-4 animate-spin" />
           ) : savedFlash ? (
             <Check className="h-4 w-4" />
@@ -282,10 +289,12 @@ export function QuizEditor({
           )}
         </div>
 
-        {editingQ !== null && (
+        {/* Form "Tambah Soal" tampil di atas. Edit soal tampil inline di posisi
+            soalnya (lihat map di bawah) supaya tidak perlu scroll ke atas. */}
+        {editingQ === "new" && (
           <QuestionForm
             quizId={quiz.id}
-            initial={editingQ === "new" ? null : editingQ}
+            initial={null}
             topikOptions={topikOptions}
             onCancel={() => setEditingQ(null)}
             onSaved={async () => {
@@ -301,7 +310,28 @@ export function QuizEditor({
           </p>
         ) : (
           <ul className="space-y-2">
-            {quiz.questions.map((q, idx) => (
+            {quiz.questions.map((q, idx) => {
+              const isEditing =
+                editingQ !== null &&
+                editingQ !== "new" &&
+                editingQ.id === q.id;
+              if (isEditing) {
+                return (
+                  <li key={q.id}>
+                    <QuestionForm
+                      quizId={quiz.id}
+                      initial={q}
+                      topikOptions={topikOptions}
+                      onCancel={() => setEditingQ(null)}
+                      onSaved={async () => {
+                        setEditingQ(null);
+                        await reload();
+                      }}
+                    />
+                  </li>
+                );
+              }
+              return (
               <li
                 key={q.id}
                 className="rounded-xl border border-atr-outline bg-atr-bg-soft/40 p-3"
@@ -383,7 +413,8 @@ export function QuizEditor({
                   </div>
                 </div>
               </li>
-            ))}
+              );
+            })}
           </ul>
         )}
       </section>
