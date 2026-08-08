@@ -539,6 +539,56 @@ async function isTitleTaken(
   return !!data;
 }
 
+// Set slug manual (custom) untuk link publik. Default slug otomatis dari
+// judul, tapi judul panjang menghasilkan link panjang - ini memberi admin
+// kontrol memilih slug pendek yang enak dibagikan.
+const setSlugSchema = z.object({
+  quiz_id: z.string().uuid(),
+  slug: z.string().min(1).max(80),
+});
+
+export async function setQuizSlug(
+  input: z.input<typeof setSlugSchema>,
+): Promise<Ok<{ slug: string }> | Err> {
+  const parsed = setSlugSchema.safeParse(input);
+  if (!parsed.success) return { error: "Input tidak valid" };
+  const access = await assertQuizAccess(parsed.data.quiz_id);
+  if ("error" in access) return access;
+  const norm = slugifyTitle(parsed.data.slug);
+  if (norm.length < 3)
+    return {
+      error: "Link minimal 3 karakter (huruf kecil, angka, atau tanda hubung).",
+    };
+  const admin = createAdminClient();
+
+  const { data: cur } = await admin
+    .from("quizzes")
+    .select("public_slug")
+    .eq("id", parsed.data.quiz_id)
+    .maybeSingle();
+  const oldSlug =
+    (cur as { public_slug: string | null } | null)?.public_slug ?? null;
+
+  const { data: dup } = await admin
+    .from("quizzes")
+    .select("id")
+    .eq("public_slug", norm)
+    .neq("id", parsed.data.quiz_id)
+    .maybeSingle();
+  if (dup) return { error: "Link ini sudah dipakai kuis lain, coba yang lain." };
+
+  const { error } = await admin
+    .from("quizzes")
+    .update({ public_slug: norm, updated_at: new Date().toISOString() })
+    .eq("id", parsed.data.quiz_id);
+  if (error) return { error: error.message };
+
+  revalidateProject(access.projectId);
+  if (oldSlug) revalidatePath(`/public/kuis/${oldSlug}`);
+  revalidatePath(`/public/kuis/${norm}`);
+  return { ok: true, slug: norm };
+}
+
 // Bangun slug unik-global dari judul; kalau bentrok tambahkan sufiks pendek.
 async function buildUniqueSlug(
   admin: ReturnType<typeof createAdminClient>,

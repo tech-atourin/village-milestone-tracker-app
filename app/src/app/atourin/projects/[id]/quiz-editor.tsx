@@ -18,6 +18,7 @@ import {
   upsertQuestion,
   deleteQuestion,
   reorderQuestions,
+  setQuizSlug,
 } from "@/server/actions/quizzes";
 import { getQuizFullClient } from "./quiz-editor-data";
 import type {
@@ -59,6 +60,31 @@ export function QuizEditor({
   const [maxAttempts, setMaxAttempts] = useState(initial.max_attempts);
   const [shuffle, setShuffle] = useState(initial.shuffle_questions);
   const [collectReg, setCollectReg] = useState(initial.collect_registration);
+  // Slug link publik (custom). Default otomatis dari judul saat publish.
+  const [slug, setSlug] = useState(initial.public_slug ?? "");
+  const [savingSlug, setSavingSlug] = useState(false);
+  const [slugSaved, setSlugSaved] = useState(false);
+
+  function saveSlug() {
+    setError(null);
+    setSlugSaved(false);
+    setSavingSlug(true);
+    startTransition(async () => {
+      try {
+        const r = await setQuizSlug({ quiz_id: quiz.id, slug });
+        if ("error" in r) {
+          setError(r.error);
+          return;
+        }
+        setSlug(r.slug);
+        setSlugSaved(true);
+        setTimeout(() => setSlugSaved(false), 1800);
+        await reload();
+      } finally {
+        setSavingSlug(false);
+      }
+    });
+  }
 
   async function reload() {
     const full = await getQuizFullClient(quiz.id);
@@ -162,6 +188,43 @@ export function QuizEditor({
               rows={2}
               className="w-full rounded-lg border border-atr-outline px-3 py-2 text-sm"
             />
+          </Field>
+          <Field
+            label="Link publik (slug) - opsional, untuk link pendek"
+            className="sm:col-span-2"
+          >
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="flex min-w-0 flex-1 items-center rounded-lg border border-atr-outline bg-white pl-2.5">
+                <span className="shrink-0 text-xs text-atr-fg-muted">
+                  /public/kuis/
+                </span>
+                <input
+                  value={slug}
+                  onChange={(e) => setSlug(e.target.value)}
+                  placeholder="mis. pre-test-ota"
+                  className="min-w-0 flex-1 border-0 px-1 py-2 text-sm outline-none"
+                />
+              </div>
+              <button
+                type="button"
+                onClick={saveSlug}
+                disabled={savingSlug || slug.trim().length < 3}
+                className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-lg border border-atr-outline bg-white px-3 text-xs font-bold text-atr-fg transition hover:bg-atr-bg-soft disabled:opacity-50"
+              >
+                {savingSlug ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : slugSaved ? (
+                  <Check className="h-3.5 w-3.5 text-atr-arti" />
+                ) : (
+                  <Save className="h-3.5 w-3.5" />
+                )}
+                {slugSaved ? "Tersimpan" : "Simpan link"}
+              </button>
+            </div>
+            <span className="mt-1 block text-[11px] text-atr-fg-muted">
+              Kosongkan untuk otomatis dari judul saat publish. Huruf kecil,
+              angka, dan tanda hubung; harus unik antar-kuis.
+            </span>
           </Field>
           <Field label="Jenis">
             <select

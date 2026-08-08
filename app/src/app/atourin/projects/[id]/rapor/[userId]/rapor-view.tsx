@@ -525,8 +525,11 @@ export function RaporView({
       <footer className="mt-12 grid grid-cols-2 gap-12 border-t border-atr-outline pt-8 text-xs">
         <div className="text-center">
           <div className="text-atr-fg-muted">Mengetahui,</div>
-          <div className="mt-16 border-t border-atr-fg pt-1 font-bold uppercase text-atr-fg">
-            {project.organization?.name ?? "Mitra"}
+          <div className="mt-16 border-t border-atr-fg pt-1 font-bold text-atr-fg">
+            Sudarmanto
+          </div>
+          <div className="mt-1 text-atr-fg-muted">
+            Plt Direktur Layanan TI Masyarakat dan Pemerintah
           </div>
         </div>
         <div className="text-center">

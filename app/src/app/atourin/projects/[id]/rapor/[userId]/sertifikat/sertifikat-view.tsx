@@ -189,10 +189,10 @@ export function SertifikatView({
             <div className="text-atr-fg-muted">Mengetahui,</div>
             {/* Ruang untuk tanda tangan digital + cap */}
             <div className="mt-24 border-t border-atr-fg pt-2 font-bold text-atr-fg">
-              Dr. Fadhilah Mathar, M.Pd.
+              Sudarmanto
             </div>
             <div className="mt-1.5 text-atr-fg-muted">
-              Direktur Utama BAKTI KOMDIGI
+              Plt Direktur Layanan TI Masyarakat dan Pemerintah
             </div>
           </div>
         </footer>
