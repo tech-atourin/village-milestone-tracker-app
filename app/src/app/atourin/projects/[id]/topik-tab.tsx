@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import {
   CheckCircle2,
@@ -42,7 +42,11 @@ export function TopikTab({
   templates?: TopikTemplateLite[];
 }) {
   const router = useRouter();
-  const [, startTransition] = useTransition();
+  const [isPending, startTransition] = useTransition();
+  // Aksi yang dijalankan setelah router.refresh() benar-benar commit (bukan
+  // langsung), supaya panel editor tetap tampil + spinner selama menyimpan
+  // dan tidak ada jeda kosong dengan teks basah.
+  const onCommitRef = useRef<null | (() => void)>(null);
   const [showAddTopik, setShowAddTopik] = useState(false);
   const [newTopikName, setNewTopikName] = useState("");
   const [newTopikDesc, setNewTopikDesc] = useState("");
@@ -71,16 +75,36 @@ export function TopikTab({
     );
   }
 
-  function run(key: string, fn: () => Promise<{ error?: string } | undefined>) {
+  function run(
+    key: string,
+    fn: () => Promise<{ error?: string } | undefined>,
+    onCommit?: () => void,
+  ) {
     setError(null);
     setBusyKey(key);
     startTransition(async () => {
       const r = await fn();
-      if (r?.error) setError(r.error);
-      else router.refresh();
-      setBusyKey(null);
+      if (r?.error) {
+        setError(r.error);
+        setBusyKey(null);
+        return;
+      }
+      // Tutup panel & bersihkan busy setelah refresh commit (lihat useEffect),
+      // bukan sekarang - biar spinner tetap terlihat sampai data baru muncul.
+      onCommitRef.current = onCommit ?? null;
+      router.refresh();
     });
   }
+
+  // router.refresh() di dalam transition membuat isPending tetap true sampai UI
+  // ter-refresh. Saat selesai, jalankan onCommit (tutup panel) + hentikan busy.
+  useEffect(() => {
+    if (!isPending && busyKey) {
+      onCommitRef.current?.();
+      onCommitRef.current = null;
+      setBusyKey(null);
+    }
+  }, [isPending, busyKey]);
 
   if (topik.length === 0 && !editable) {
     return (
@@ -205,19 +229,20 @@ export function TopikTab({
                 type="button"
                 disabled={busyKey === "add-topik" || newTopikName.trim().length < 2}
                 onClick={() =>
-                  run("add-topik", async () => {
-                    const r = await addTopik({
-                      project_id: projectId,
-                      name: newTopikName.trim(),
-                      description: newTopikDesc.trim() || null,
-                    });
-                    if (!r.error) {
+                  run(
+                    "add-topik",
+                    async () =>
+                      addTopik({
+                        project_id: projectId,
+                        name: newTopikName.trim(),
+                        description: newTopikDesc.trim() || null,
+                      }),
+                    () => {
                       setShowAddTopik(false);
                       setNewTopikName("");
                       setNewTopikDesc("");
-                    }
-                    return r;
-                  })
+                    },
+                  )
                 }
                 className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-atr-purple px-3 text-sm font-bold text-white transition hover:bg-atr-purple-600 disabled:opacity-50"
               >
@@ -304,11 +329,11 @@ export function TopikTab({
                 topik={t}
                 onCancel={() => setEditingTopik(null)}
                 onSave={(input) =>
-                  run(`rename:${t.id}`, async () => {
-                    const r = await renameTopik(input);
-                    if (!r.error) setEditingTopik(null);
-                    return r;
-                  })
+                  run(
+                    `rename:${t.id}`,
+                    async () => renameTopik(input),
+                    () => setEditingTopik(null),
+                  )
                 }
                 pending={busyKey === `rename:${t.id}`}
               />
@@ -327,11 +352,11 @@ export function TopikTab({
                         item={item}
                         onCancel={() => setEditingItem(null)}
                         onSave={(input) =>
-                          run(`edit-item:${item.id}`, async () => {
-                            const r = await updateChecklistItem(input);
-                            if (!r.error) setEditingItem(null);
-                            return r;
-                          })
+                          run(
+                            `edit-item:${item.id}`,
+                            async () => updateChecklistItem(input),
+                            () => setEditingItem(null),
+                          )
                         }
                         pending={busyKey === `edit-item:${item.id}`}
                       />
@@ -395,11 +420,11 @@ export function TopikTab({
                     projectId={projectId}
                     onCancel={() => setAddingItemTo(null)}
                     onSave={(input) =>
-                      run(`add-item:${t.id}`, async () => {
-                        const r = await addChecklistItem(input);
-                        if (!r.error) setAddingItemTo(null);
-                        return r;
-                      })
+                      run(
+                        `add-item:${t.id}`,
+                        async () => addChecklistItem(input),
+                        () => setAddingItemTo(null),
+                      )
                     }
                     pending={busyKey === `add-item:${t.id}`}
                   />

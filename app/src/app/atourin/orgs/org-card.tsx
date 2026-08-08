@@ -2,7 +2,15 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Upload, Save, Loader2, Building2, KeyRound, Check } from "lucide-react";
+import {
+  Upload,
+  Save,
+  Loader2,
+  Building2,
+  KeyRound,
+  Check,
+  ChevronDown,
+} from "lucide-react";
 import {
   uploadOrgLogo,
   updateOrg,
@@ -20,14 +28,17 @@ export function OrgCard({ org }: { org: OrgRow }) {
   const [name, setName] = useState(org.name);
   const [color, setColor] = useState(org.brand_color_primary ?? "#7068D5");
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
   // Akun admin (mitra_admin) organisasi ini
   const [adminEmail, setAdminEmail] = useState(org.admin_email ?? "");
   const [newPassword, setNewPassword] = useState("");
   const [accountSaved, setAccountSaved] = useState(false);
+  const [showAccount, setShowAccount] = useState(false);
 
   function saveAccount() {
     if (!org.admin_user_id) return;
     setError(null);
+    setSuccess(null);
     setAccountSaved(false);
     const emailChanged =
       adminEmail.trim() !== "" && adminEmail.trim() !== (org.admin_email ?? "");
@@ -49,6 +60,7 @@ export function OrgCard({ org }: { org: OrgRow }) {
         else {
           setNewPassword("");
           setAccountSaved(true);
+          setSuccess("Akun admin berhasil disimpan.");
           router.refresh();
         }
       } finally {
@@ -180,13 +192,26 @@ export function OrgCard({ org }: { org: OrgRow }) {
         />
       </label>
 
-      {/* Akun admin: edit email + set password login */}
+      {/* Akun admin: collapse dulu, muncul saat diklik */}
       {org.admin_user_id && (
-        <div className="space-y-2 rounded-xl border border-atr-outline bg-atr-bg-soft/40 p-3">
-          <div className="flex items-center gap-1.5 text-xs font-bold text-atr-fg">
-            <KeyRound className="h-3.5 w-3.5 text-atr-purple" />
-            Akun Admin Mitra
-          </div>
+        <div className="rounded-xl border border-atr-outline bg-atr-bg-soft/40">
+          <button
+            type="button"
+            onClick={() => setShowAccount((s) => !s)}
+            className="flex w-full items-center justify-between gap-1.5 p-3 text-xs font-bold text-atr-fg"
+          >
+            <span className="inline-flex items-center gap-1.5">
+              <KeyRound className="h-3.5 w-3.5 text-atr-purple" />
+              Akun Admin Mitra
+            </span>
+            <ChevronDown
+              className={`h-4 w-4 text-atr-fg-muted transition-transform ${
+                showAccount ? "rotate-180" : ""
+              }`}
+            />
+          </button>
+          {showAccount && (
+        <div className="space-y-2 px-3 pb-3">
           <label className="block text-[11px] font-bold text-atr-fg-muted">
             Email login
             <input
@@ -222,11 +247,19 @@ export function OrgCard({ org }: { org: OrgRow }) {
             {accountSaved ? "Akun tersimpan" : "Simpan akun admin"}
           </button>
         </div>
+          )}
+        </div>
       )}
 
       {error && (
         <div className="rounded-lg border border-atr-red/30 bg-atr-red/10 p-2 text-xs text-atr-red">
           {error}
+        </div>
+      )}
+
+      {success && (
+        <div className="rounded-lg border border-atr-arti/30 bg-atr-arti/10 p-2 text-xs font-bold text-atr-arti">
+          {success}
         </div>
       )}
 
