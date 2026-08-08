@@ -27,20 +27,29 @@ export async function listProjectRapor(projectId: string): Promise<RaporRow[]> {
   const { data: members } = await supabase
     .from("project_memberships")
     .select(
-      "user_id, attendance_mode, user:users!project_memberships_user_id_fkey(id, full_name, email), desa:desa(name)",
+      "user_id, attendance_mode, user:users!project_memberships_user_id_fkey(id, full_name, email, address, kota), desa:desa(name, is_individual_unit)",
     )
     .eq("project_id", projectId)
     .eq("role", "peserta")
     .eq("status", "active");
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const memberRows = ((members ?? []) as any[]).map((r) => ({
-    user_id: r.user_id as string,
-    full_name: r.user?.full_name ?? "-",
-    email: r.user?.email ?? null,
-    desa_name: r.desa?.name ?? null,
-    attendance_mode: (r.attendance_mode ?? "offline") as "offline" | "online",
-  }));
+  const memberRows = ((members ?? []) as any[]).map((r) => {
+    // Peserta individu tidak punya desa nyata: unit tersembunyi (is_individual_unit)
+    // dinamai sesuai nama peserta, jadi jangan dipakai sebagai "Desa". Pakai
+    // desa asal peserta (address/kota) - konsisten dengan halaman data peserta.
+    const asal =
+      [r.user?.address, r.user?.kota].filter(Boolean).join(", ") || null;
+    const desaName =
+      r.desa && !r.desa.is_individual_unit ? r.desa.name : asal;
+    return {
+      user_id: r.user_id as string,
+      full_name: r.user?.full_name ?? "-",
+      email: r.user?.email ?? null,
+      desa_name: desaName,
+      attendance_mode: (r.attendance_mode ?? "offline") as "offline" | "online",
+    };
+  });
 
   if (memberRows.length === 0) return [];
 

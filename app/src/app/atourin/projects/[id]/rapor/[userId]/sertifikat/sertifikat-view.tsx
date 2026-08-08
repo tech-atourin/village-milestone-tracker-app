@@ -188,7 +188,7 @@ export function SertifikatView({
           <div className="w-80 max-w-full">
             <div className="text-atr-fg-muted">Mengetahui,</div>
             {/* Ruang untuk tanda tangan digital + cap */}
-            <div className="mt-24 border-t border-atr-fg pt-2 font-bold text-atr-fg">
+            <div className="mt-16 border-t border-atr-fg pt-2 font-bold text-atr-fg">
               Sudarmanto
             </div>
             <div className="mt-1.5 text-atr-fg-muted">
