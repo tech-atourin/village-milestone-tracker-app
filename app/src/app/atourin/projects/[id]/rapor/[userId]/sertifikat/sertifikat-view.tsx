@@ -184,7 +184,7 @@ export function SertifikatView({
         </div>
 
         {/* Tanda tangan tunggal: pejabat penyelenggara. */}
-        <footer className="mt-2 flex justify-center px-6 text-center text-xs">
+        <footer className="mt-10 flex justify-center px-6 text-center text-xs">
           <div className="w-80 max-w-full">
             <div className="text-atr-fg-muted">Mengetahui,</div>
             {/* Ruang untuk tanda tangan digital + cap */}

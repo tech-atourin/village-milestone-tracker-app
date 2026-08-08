@@ -224,6 +224,8 @@ export function QuizResultsView({
                 key={key}
                 type="button"
                 onClick={() => setTab(key)}
+                // Matikan ligatur font: "(2)" bisa jadi karakter ② di font tertentu.
+                style={{ fontVariantLigatures: "none" }}
                 className={`-mb-px border-b-2 px-3 py-2 text-sm font-bold transition ${
                   tab === key
                     ? "border-atr-purple text-atr-purple-700"

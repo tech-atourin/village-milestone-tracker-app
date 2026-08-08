@@ -109,8 +109,9 @@ export function AnalyticsCharts({
 
   return (
     <div className="space-y-6">
-      {/* Row: tier ladder + demografi donut */}
-      <div className={`grid gap-4 ${isDesaBased ? "lg:grid-cols-2" : ""}`}>
+      {/* Semua chart dalam satu grid 2 kolom yang mengalir. Urutan pasangan
+          diatur via class order supaya tidak makan tempat / kolom kosong. */}
+      <div className="grid items-start gap-4 lg:grid-cols-2">
         {/* Tier ladder - khusus project berbasis desa */}
         {isDesaBased && (
         <section className="flex h-full flex-col rounded-2xl border border-atr-outline bg-white p-6 shadow-atr-1">
@@ -212,11 +213,8 @@ export function AnalyticsCharts({
             </div>
           )}
         </section>
-      </div>
 
-      {/* Keberhasilan checklist per materi (khusus desa) + kuisioner materi */}
-      {(isDesaBased || SHOW_KUISIONER_MATERI) && (
-      <div className={`grid gap-4 ${isDesaBased && SHOW_KUISIONER_MATERI ? "lg:grid-cols-2" : ""}`}>
+        {/* Keberhasilan checklist per materi (khusus desa) */}
         {isDesaBased && (
         <section className="flex h-full flex-col rounded-2xl border border-atr-outline bg-white p-6 shadow-atr-1">
           <header className="mb-4 flex items-center gap-2">
@@ -382,13 +380,10 @@ export function AnalyticsCharts({
           )}
         </section>
         )}
-      </div>
-      )}
 
-      {/* Rating distribution + Pre/Post growth per materi, side-by-side */}
-      <div className={`grid gap-4 ${hideNarasumberInternals ? "" : "lg:grid-cols-2"}`}>
+        {/* Sebaran rating kuisioner narasumber */}
         {!hideNarasumberInternals && (
-        <section className="flex h-full flex-col rounded-2xl border border-atr-outline bg-white p-6 shadow-atr-1">
+        <section className="order-2 flex h-full flex-col rounded-2xl border border-atr-outline bg-white p-6 shadow-atr-1">
           <header className="mb-4 flex items-center justify-between gap-2">
             <div className="inline-flex items-center gap-2">
               <Star className="h-4 w-4 fill-atr-yellow text-atr-yellow" />
@@ -440,7 +435,7 @@ export function AnalyticsCharts({
         </section>
         )}
 
-        <section className="flex h-full flex-col rounded-2xl border border-atr-outline bg-white p-6 shadow-atr-1">
+        <section className="order-1 flex h-full flex-col rounded-2xl border border-atr-outline bg-white p-6 shadow-atr-1">
           <header className="mb-4 flex items-center gap-2">
             <TrendingUp className="h-4 w-4 text-atr-arti" />
             <h3 className="text-sm font-bold uppercase tracking-wide text-atr-fg">
@@ -518,11 +513,9 @@ export function AnalyticsCharts({
             </div>
           )}
         </section>
-      </div>
 
-      {/* Rencana aksi + sesi status */}
-      <div className={`grid gap-4 ${SHOW_STATUS_SESI && !hideNarasumberInternals ? "lg:grid-cols-2" : ""}`}>
-        <section className="flex h-full flex-col rounded-2xl border border-atr-outline bg-white p-6 shadow-atr-1">
+        {/* Status rencana aksi */}
+        <section className="order-3 flex h-full flex-col rounded-2xl border border-atr-outline bg-white p-6 shadow-atr-1">
           <header className="mb-4 flex items-center gap-2">
             <h3 className="text-sm font-bold uppercase tracking-wide text-atr-fg">
               Status Rencana Aksi

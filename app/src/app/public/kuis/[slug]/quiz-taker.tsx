@@ -202,7 +202,9 @@ export function QuizTaker({
   if (phase === "result" && result) {
     const isPass = result.passed;
     return (
-      <Card>
+      <>
+        {LogoHeader}
+        <Card>
         <div className="flex flex-col items-center gap-3 py-6 text-center">
           {isPass === true ? (
             <CheckCircle2 className="h-14 w-14 text-atr-arti" />
@@ -284,7 +286,8 @@ export function QuizTaker({
             </ul>
           </div>
         )}
-      </Card>
+        </Card>
+      </>
     );
   }
 
