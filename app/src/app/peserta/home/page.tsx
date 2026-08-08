@@ -30,8 +30,9 @@ export default async function PesertaHomePage() {
           Halo, {user.full_name} 👋
         </h1>
         <p className="text-sm text-atr-fg-muted">
-          Pilih project di bawah untuk lanjut isi checklist. Progress di-share
-          dengan peserta lain dari desa yang sama.
+          {projects.length === 0
+            ? "Pilih project di bawah untuk lanjut isi checklist kemajuan peserta."
+            : "Pilih project di bawah untuk lanjut isi checklist. Progress di-share dengan peserta lain dari desa yang sama."}
         </p>
       </header>
 
