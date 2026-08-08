@@ -133,7 +133,7 @@ export function SertifikatView({
           )}
         </header>
 
-        <div className="mt-4 flex-1 text-center">
+        <div className="mt-10 flex-1 text-center">
           <h1 className="text-2xl font-bold uppercase tracking-[0.25em] text-atr-purple-600">
             {membership?.attendance_mode === "online"
               ? "Sertifikat Penyelesaian - Peserta Online"
@@ -184,13 +184,16 @@ export function SertifikatView({
         </div>
 
         {/* Tanda tangan tunggal: pejabat penyelenggara. */}
-        <footer className="mt-4 flex justify-center px-6 text-center text-xs">
+        <footer className="mt-2 flex justify-center px-6 text-center text-xs">
           <div className="w-80 max-w-full">
             <div className="text-atr-fg-muted">Mengetahui,</div>
-            <div className="mt-10 border-t border-atr-fg pt-1 font-bold text-atr-fg">
+            {/* Ruang untuk tanda tangan digital + cap */}
+            <div className="mt-24 border-t border-atr-fg pt-2 font-bold text-atr-fg">
               Dr. Fadhilah Mathar, M.Pd.
             </div>
-            <div className="text-atr-fg-muted">Direktur Utama BAKTI KOMDIGI</div>
+            <div className="mt-1.5 text-atr-fg-muted">
+              Direktur Utama BAKTI KOMDIGI
+            </div>
           </div>
         </footer>
 

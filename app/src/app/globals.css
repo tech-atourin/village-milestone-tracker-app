@@ -3,7 +3,7 @@
 @tailwind utilities;
 
 /* =====================================================
- * Atourin brand tokens — sourced from /design-system/atr-tokens.css
+ * Atourin brand tokens - sourced from /design-system/atr-tokens.css
  * (copied inline so Next can compile without filesystem imports).
  * Keep in sync with the canonical file.
  * ===================================================== */
@@ -92,8 +92,10 @@
     -moz-osx-font-smoothing: grayscale;
     /* Prevent any element wider than viewport from causing horizontal page
        scroll. Tables/dialogs that genuinely need horizontal scroll must use
-       their own overflow-x-auto wrapper. */
-    overflow-x: hidden;
+       their own overflow-x-auto wrapper. Pakai clip (bukan hidden) supaya
+       body tidak jadi scroll-container yang mematikan position: sticky
+       (sidebar kiri). */
+    overflow-x: clip;
   }
 
   /* Long unbroken strings (URLs, hashes, emails) commonly cause mobile

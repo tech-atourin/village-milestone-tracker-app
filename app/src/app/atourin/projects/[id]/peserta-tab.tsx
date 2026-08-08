@@ -134,9 +134,8 @@ export function PesertaTab({
         ) : (
           <>
             💡 <strong>Project Pelaku Pariwisata.</strong> Peserta personal
-            tanpa afiliasi desa. Tandai mode kehadiran tiap peserta:{" "}
-            <em>offline</em> (full kegiatan sampai rencana aksi) atau{" "}
-            <em>online</em> (hanya pre-test, materi, dan post-test).
+            tanpa afiliasi desa. Lengkapi data diri tiap peserta (desa asal,
+            jenis kelamin, jabatan) lewat Bulk Import atau Tambah Peserta.
           </>
         )}
       </div>
@@ -216,7 +215,7 @@ export function PesertaTab({
               </select>
             </label>
           )}
-          {selUser && (
+          {selUser && isDesaBased && (
             <label className="flex flex-col gap-1.5">
               <span className="text-xs font-bold text-atr-fg">
                 Mode kehadiran
@@ -336,6 +335,16 @@ function MembersTable({
     full_name: m.user.full_name,
     email: m.user.email ?? "",
     desa_name: m.desa?.name ?? "-",
+    // Asal peserta individu (bukan desa binaan): desa + kabupaten dari profil.
+    asal:
+      [m.user.address, m.user.kota].filter(Boolean).join(", ") || "-",
+    jenis_kelamin:
+      m.user.gender === "L"
+        ? "Laki-laki"
+        : m.user.gender === "P"
+          ? "Perempuan"
+          : "-",
+    jabatan: m.user.jabatan || "-",
     attendance_mode: m.attendance_mode ?? "offline",
   }));
   type Row = (typeof rows)[number];
@@ -362,6 +371,28 @@ function MembersTable({
     accessorKey: "desa_name",
     header: "Desa",
   };
+  // Untuk project individu: tampilkan desa/kabupaten asal peserta.
+  const asalColumn: MembersColumnDef<Row, unknown> = {
+    accessorKey: "asal",
+    header: "Desa Asal",
+    cell: ({ row }) => (
+      <span className="text-sm text-atr-fg">{row.original.asal}</span>
+    ),
+  };
+  const genderColumn: MembersColumnDef<Row, unknown> = {
+    accessorKey: "jenis_kelamin",
+    header: "Jenis Kelamin",
+    cell: ({ row }) => (
+      <span className="text-sm text-atr-fg">{row.original.jenis_kelamin}</span>
+    ),
+  };
+  const jabatanColumn: MembersColumnDef<Row, unknown> = {
+    accessorKey: "jabatan",
+    header: "Jabatan",
+    cell: ({ row }) => (
+      <span className="text-sm text-atr-fg">{row.original.jabatan}</span>
+    ),
+  };
   const modeColumn: MembersColumnDef<Row, unknown> = {
     accessorKey: "attendance_mode",
     header: "Mode",
@@ -382,8 +413,11 @@ function MembersTable({
   };
   const columns: MembersColumnDef<Row, unknown>[] = [
     ...baseColumns,
-    ...(isDesaBased ? [desaColumn] : []),
-    modeColumn,
+    // Desa binaan: kolom Desa + Mode. Individu: Desa Asal + Jenis Kelamin +
+    // Jabatan (Mode offline/online tidak ditampilkan supaya tidak membingungkan).
+    ...(isDesaBased
+      ? [desaColumn, modeColumn]
+      : [asalColumn, genderColumn, jabatanColumn]),
     {
       accessorKey: "invited_at",
       header: "Diundang",
@@ -440,10 +474,10 @@ function MembersTable({
     <MembersDataTable<Row>
       data={rows}
       columns={columns}
-      searchKeys={["full_name", "email", "desa_name"]}
+      searchKeys={["full_name", "email", isDesaBased ? "desa_name" : "asal"]}
       searchPlaceholder="Cari nama, email, atau desa…"
       filters={
-        desaOptions.length > 0
+        isDesaBased && desaOptions.length > 0
           ? [{ key: "desa_name", label: "Desa", options: desaOptions }]
           : []
       }

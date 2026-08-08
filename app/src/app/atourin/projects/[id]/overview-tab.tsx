@@ -26,10 +26,12 @@ export async function OverviewTab({
   project,
   projectId,
   hideNarasumberInternals = false,
+  isDesaBased = true,
 }: {
   project: Project;
   projectId: string;
   hideNarasumberInternals?: boolean;
+  isDesaBased?: boolean;
 }) {
   const data = await getProjectAnalytics(projectId);
 
@@ -128,10 +130,15 @@ export async function OverviewTab({
     },
   ];
 
+  // Project individu tidak punya desa binaan, sembunyikan kartu Desa.
+  const visibleStats = stats.filter(
+    (s) => isDesaBased || s.label !== "Desa",
+  );
+
   return (
     <div className="space-y-6">
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        {stats.map((s) => {
+        {visibleStats.map((s) => {
           const Icon = s.icon;
           return (
             <article
@@ -161,7 +168,11 @@ export async function OverviewTab({
         })}
       </div>
 
-      <AnalyticsCharts data={data} hideNarasumberInternals={hideNarasumberInternals} />
+      <AnalyticsCharts
+        data={data}
+        hideNarasumberInternals={hideNarasumberInternals}
+        isDesaBased={isDesaBased}
+      />
     </div>
   );
 }

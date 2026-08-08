@@ -177,7 +177,11 @@ export default async function ProjectDetailPage({
 
       {/* Tab content */}
       {activeTab === "overview" && (
-        <OverviewTab project={project} projectId={project.id} />
+        <OverviewTab
+          project={project}
+          projectId={project.id}
+          isDesaBased={isDesaBased}
+        />
       )}
       {activeTab === "summary" && (
         <SummaryTab projectId={project.id} scope="atourin" />

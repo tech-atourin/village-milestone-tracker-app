@@ -55,9 +55,13 @@ const SHOW_STATUS_SESI = false;
 export function AnalyticsCharts({
   data,
   hideNarasumberInternals = false,
+  isDesaBased = true,
 }: {
   data: ProjectAnalytics;
   hideNarasumberInternals?: boolean;
+  // Project individu (pelaku pariwisata) tidak punya desa binaan, jadi
+  // chart berbasis desa (Klasifikasi, checklist lintas desa) disembunyikan.
+  isDesaBased?: boolean;
 }) {
   const genderData = [
     { name: "Laki-laki", value: data.peserta_gender.L, color: PURPLE },
@@ -106,9 +110,10 @@ export function AnalyticsCharts({
   return (
     <div className="space-y-6">
       {/* Row: tier ladder + demografi donut */}
-      <div className="grid gap-4 lg:grid-cols-2">
-        {/* Tier ladder */}
-        <section className="rounded-2xl border border-atr-outline bg-white p-6 shadow-atr-1">
+      <div className={`grid gap-4 ${isDesaBased ? "lg:grid-cols-2" : ""}`}>
+        {/* Tier ladder - khusus project berbasis desa */}
+        {isDesaBased && (
+        <section className="flex h-full flex-col rounded-2xl border border-atr-outline bg-white p-6 shadow-atr-1">
           <header className="mb-4 flex items-center gap-2">
             <Award className="h-4 w-4 text-atr-purple" />
             <h3 className="text-sm font-bold uppercase tracking-wide text-atr-fg">
@@ -161,9 +166,10 @@ export function AnalyticsCharts({
             )}
           </div>
         </section>
+        )}
 
         {/* Demografi peserta */}
-        <section className="rounded-2xl border border-atr-outline bg-white p-6 shadow-atr-1">
+        <section className="flex h-full flex-col rounded-2xl border border-atr-outline bg-white p-6 shadow-atr-1">
           <header className="mb-4 flex items-center gap-2">
             <Sparkles className="h-4 w-4 text-atr-purple" />
             <h3 className="text-sm font-bold uppercase tracking-wide text-atr-fg">
@@ -208,9 +214,11 @@ export function AnalyticsCharts({
         </section>
       </div>
 
-      {/* Materi radar + top narasumber side-by-side */}
-      <div className="grid gap-4 lg:grid-cols-2">
-        <section className="rounded-2xl border border-atr-outline bg-white p-6 shadow-atr-1">
+      {/* Keberhasilan checklist per materi (khusus desa) + kuisioner materi */}
+      {(isDesaBased || SHOW_KUISIONER_MATERI) && (
+      <div className={`grid gap-4 ${isDesaBased && SHOW_KUISIONER_MATERI ? "lg:grid-cols-2" : ""}`}>
+        {isDesaBased && (
+        <section className="flex h-full flex-col rounded-2xl border border-atr-outline bg-white p-6 shadow-atr-1">
           <header className="mb-4 flex items-center gap-2">
             <TrendingUp className="h-4 w-4 text-atr-purple" />
             <h3 className="text-sm font-bold uppercase tracking-wide text-atr-fg">
@@ -285,9 +293,10 @@ export function AnalyticsCharts({
             </>
           )}
         </section>
+        )}
 
         {SHOW_KUISIONER_MATERI && (
-        <section className="rounded-2xl border border-atr-outline bg-white p-6 shadow-atr-1">
+        <section className="flex h-full flex-col rounded-2xl border border-atr-outline bg-white p-6 shadow-atr-1">
           <header className="mb-4 flex items-center justify-between gap-2">
             <div className="inline-flex items-center gap-2">
               <Star className="h-4 w-4 fill-atr-yellow text-atr-yellow" />
@@ -374,11 +383,12 @@ export function AnalyticsCharts({
         </section>
         )}
       </div>
+      )}
 
       {/* Rating distribution + Pre/Post growth per materi, side-by-side */}
       <div className={`grid gap-4 ${hideNarasumberInternals ? "" : "lg:grid-cols-2"}`}>
         {!hideNarasumberInternals && (
-        <section className="rounded-2xl border border-atr-outline bg-white p-6 shadow-atr-1">
+        <section className="flex h-full flex-col rounded-2xl border border-atr-outline bg-white p-6 shadow-atr-1">
           <header className="mb-4 flex items-center justify-between gap-2">
             <div className="inline-flex items-center gap-2">
               <Star className="h-4 w-4 fill-atr-yellow text-atr-yellow" />
@@ -430,7 +440,7 @@ export function AnalyticsCharts({
         </section>
         )}
 
-        <section className="rounded-2xl border border-atr-outline bg-white p-6 shadow-atr-1">
+        <section className="flex h-full flex-col rounded-2xl border border-atr-outline bg-white p-6 shadow-atr-1">
           <header className="mb-4 flex items-center gap-2">
             <TrendingUp className="h-4 w-4 text-atr-arti" />
             <h3 className="text-sm font-bold uppercase tracking-wide text-atr-fg">
@@ -511,8 +521,8 @@ export function AnalyticsCharts({
       </div>
 
       {/* Rencana aksi + sesi status */}
-      <div className={`grid gap-4 ${hideNarasumberInternals ? "" : "lg:grid-cols-2"}`}>
-        <section className="rounded-2xl border border-atr-outline bg-white p-6 shadow-atr-1">
+      <div className={`grid gap-4 ${SHOW_STATUS_SESI && !hideNarasumberInternals ? "lg:grid-cols-2" : ""}`}>
+        <section className="flex h-full flex-col rounded-2xl border border-atr-outline bg-white p-6 shadow-atr-1">
           <header className="mb-4 flex items-center gap-2">
             <h3 className="text-sm font-bold uppercase tracking-wide text-atr-fg">
               Status Rencana Aksi
@@ -554,7 +564,7 @@ export function AnalyticsCharts({
         </section>
 
         {SHOW_STATUS_SESI && !hideNarasumberInternals && (
-        <section className="rounded-2xl border border-atr-outline bg-white p-6 shadow-atr-1">
+        <section className="flex h-full flex-col rounded-2xl border border-atr-outline bg-white p-6 shadow-atr-1">
           <header className="mb-4 flex items-center gap-2">
             <h3 className="text-sm font-bold uppercase tracking-wide text-atr-fg">
               Status Sesi Pendampingan
@@ -579,7 +589,7 @@ export function AnalyticsCharts({
 
       {/* Top desa */}
       {data.top_desa.length > 0 && (
-        <section className="rounded-2xl border border-atr-outline bg-white p-6 shadow-atr-1">
+        <section className="flex h-full flex-col rounded-2xl border border-atr-outline bg-white p-6 shadow-atr-1">
           <header className="mb-4">
             <h3 className="text-sm font-bold uppercase tracking-wide text-atr-fg">
               Top 5 Desa berdasarkan Progress Checklist

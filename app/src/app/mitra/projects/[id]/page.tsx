@@ -184,7 +184,11 @@ export default async function MitraProjectDetailPage({
 
       {/* Tab content */}
       {activeTab === "overview" && (
-        <OverviewTab project={project} projectId={project.id} />
+        <OverviewTab
+          project={project}
+          projectId={project.id}
+          isDesaBased={isDesaBased}
+        />
       )}
       {activeTab === "summary" && (
         <SummaryTab projectId={project.id} scope="mitra" />

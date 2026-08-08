@@ -99,10 +99,21 @@ export async function KehadiranTab({ projectId }: { projectId: string }) {
               </tbody>
             </table>
           </div>
-          <p className="text-[11px] text-atr-fg-muted">
-            Kolom T1..T{total_topik} sesuai urutan topik. Arahkan kursor ke
-            judul kolom untuk melihat nama topik.
-          </p>
+          <div className="rounded-xl border border-atr-outline bg-atr-bg-soft/40 p-3">
+            <div className="mb-1.5 text-[10px] font-bold uppercase tracking-wide text-atr-fg-muted">
+              Keterangan kolom
+            </div>
+            <ul className="flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-atr-fg">
+              {topik.map((t, i) => (
+                <li key={t.id} className="inline-flex items-center gap-1.5">
+                  <span className="inline-flex h-4 min-w-[1.5rem] items-center justify-center rounded bg-atr-purple-50 px-1 text-[10px] font-bold text-atr-purple-700">
+                    T{i + 1}
+                  </span>
+                  {t.name}
+                </li>
+              ))}
+            </ul>
+          </div>
         </>
       )}
     </div>
