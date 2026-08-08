@@ -2,18 +2,60 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Upload, Save, Loader2, Building2 } from "lucide-react";
-import { uploadOrgLogo, updateOrg } from "@/server/actions/orgs";
+import { Upload, Save, Loader2, Building2, KeyRound, Check } from "lucide-react";
+import {
+  uploadOrgLogo,
+  updateOrg,
+  updateOrgAdminAccount,
+} from "@/server/actions/orgs";
 import type { OrgRow } from "@/server/queries/orgs";
 
 export function OrgCard({ org }: { org: OrgRow }) {
   const router = useRouter();
   const [, startTransition] = useTransition();
   // Kunci busy per-aksi supaya tombol upload dan simpan tidak saling spin
-  const [busyAction, setBusyAction] = useState<"upload" | "save" | null>(null);
+  const [busyAction, setBusyAction] = useState<
+    "upload" | "save" | "account" | null
+  >(null);
   const [name, setName] = useState(org.name);
   const [color, setColor] = useState(org.brand_color_primary ?? "#7068D5");
   const [error, setError] = useState<string | null>(null);
+  // Akun admin (mitra_admin) organisasi ini
+  const [adminEmail, setAdminEmail] = useState(org.admin_email ?? "");
+  const [newPassword, setNewPassword] = useState("");
+  const [accountSaved, setAccountSaved] = useState(false);
+
+  function saveAccount() {
+    if (!org.admin_user_id) return;
+    setError(null);
+    setAccountSaved(false);
+    const emailChanged =
+      adminEmail.trim() !== "" && adminEmail.trim() !== (org.admin_email ?? "");
+    const pwChanged = newPassword.trim() !== "";
+    if (!emailChanged && !pwChanged) {
+      setError("Ubah email atau isi password baru dulu");
+      return;
+    }
+    setBusyAction("account");
+    startTransition(async () => {
+      try {
+        const r = await updateOrgAdminAccount({
+          org_id: org.id,
+          user_id: org.admin_user_id!,
+          email: emailChanged ? adminEmail.trim() : null,
+          new_password: pwChanged ? newPassword.trim() : null,
+        });
+        if (r.error) setError(r.error);
+        else {
+          setNewPassword("");
+          setAccountSaved(true);
+          router.refresh();
+        }
+      } finally {
+        setBusyAction(null);
+      }
+    });
+  }
 
   async function handleUpload(file: File) {
     setError(null);
@@ -137,6 +179,50 @@ export function OrgCard({ org }: { org: OrgRow }) {
           className="hidden"
         />
       </label>
+
+      {/* Akun admin: edit email + set password login */}
+      {org.admin_user_id && (
+        <div className="space-y-2 rounded-xl border border-atr-outline bg-atr-bg-soft/40 p-3">
+          <div className="flex items-center gap-1.5 text-xs font-bold text-atr-fg">
+            <KeyRound className="h-3.5 w-3.5 text-atr-purple" />
+            Akun Admin Mitra
+          </div>
+          <label className="block text-[11px] font-bold text-atr-fg-muted">
+            Email login
+            <input
+              type="email"
+              value={adminEmail}
+              onChange={(e) => setAdminEmail(e.target.value)}
+              className="mt-1 h-9 w-full rounded-lg border border-atr-outline bg-white px-2 text-sm font-normal text-atr-fg outline-none focus:border-atr-purple focus:ring-2 focus:ring-atr-purple/15"
+            />
+          </label>
+          <label className="block text-[11px] font-bold text-atr-fg-muted">
+            Password baru
+            <input
+              type="text"
+              value={newPassword}
+              placeholder="Kosongkan bila tidak diubah"
+              onChange={(e) => setNewPassword(e.target.value)}
+              className="mt-1 h-9 w-full rounded-lg border border-atr-outline bg-white px-2 text-sm font-normal text-atr-fg outline-none focus:border-atr-purple focus:ring-2 focus:ring-atr-purple/15"
+            />
+          </label>
+          <button
+            type="button"
+            onClick={saveAccount}
+            disabled={busyAction !== null}
+            className="inline-flex h-8 w-full items-center justify-center gap-1.5 rounded-lg border border-atr-purple/40 bg-white px-3 text-xs font-bold text-atr-purple-700 transition hover:bg-atr-purple-50 disabled:opacity-50"
+          >
+            {busyAction === "account" ? (
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            ) : accountSaved ? (
+              <Check className="h-3.5 w-3.5" />
+            ) : (
+              <KeyRound className="h-3.5 w-3.5" />
+            )}
+            {accountSaved ? "Akun tersimpan" : "Simpan akun admin"}
+          </button>
+        </div>
+      )}
 
       {error && (
         <div className="rounded-lg border border-atr-red/30 bg-atr-red/10 p-2 text-xs text-atr-red">

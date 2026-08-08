@@ -52,6 +52,64 @@ export async function updateOrg(input: z.input<typeof updateSchema>) {
   return { ok: true };
 }
 
+// Edit email/password akun admin (mitra_admin) sebuah organisasi.
+const adminAccountSchema = z
+  .object({
+    org_id: z.string().uuid(),
+    user_id: z.string().uuid(),
+    email: z.string().email().max(200).optional().nullable(),
+    new_password: z.string().min(6).max(200).optional().nullable(),
+  })
+  .refine((v) => v.email || v.new_password, {
+    message: "Isi email atau password baru",
+  });
+
+export async function updateOrgAdminAccount(
+  input: z.input<typeof adminAccountSchema>,
+) {
+  await requireRole("superadmin");
+  const parsed = adminAccountSchema.safeParse(input);
+  if (!parsed.success)
+    return { error: parsed.error.issues[0]?.message ?? "Input tidak valid" };
+  const admin = createAdminClient();
+
+  // Pastikan user memang admin dari organisasi ini (hindari salah target).
+  const { data: uRow } = await admin
+    .from("users")
+    .select("id, organization_id, global_role")
+    .eq("id", parsed.data.user_id)
+    .maybeSingle();
+  const u = uRow as {
+    id: string;
+    organization_id: string | null;
+    global_role: string;
+  } | null;
+  if (!u || u.organization_id !== parsed.data.org_id || u.global_role !== "mitra_admin")
+    return { error: "Akun admin tidak cocok dengan organisasi ini" };
+
+  // Update di Supabase Auth (sumber login).
+  const authPayload: { email?: string; password?: string } = {};
+  if (parsed.data.email) authPayload.email = parsed.data.email.trim();
+  if (parsed.data.new_password) authPayload.password = parsed.data.new_password;
+  const { error: authErr } = await admin.auth.admin.updateUserById(
+    parsed.data.user_id,
+    authPayload,
+  );
+  if (authErr) return { error: authErr.message };
+
+  // Sinkronkan email di tabel profil.
+  if (parsed.data.email) {
+    const { error: pErr } = await admin
+      .from("users")
+      .update({ email: parsed.data.email.trim() })
+      .eq("id", parsed.data.user_id);
+    if (pErr) return { error: pErr.message };
+  }
+
+  revalidatePath("/atourin/orgs");
+  return { ok: true };
+}
+
 const uploadLogoSchema = z.object({
   org_id: z.string().uuid(),
   filename: z.string().max(200),

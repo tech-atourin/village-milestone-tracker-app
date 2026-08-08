@@ -11,6 +11,8 @@ export type OrgRow = {
   brand_color_secondary: string | null;
   project_count: number;
   user_count: number;
+  admin_user_id: string | null;
+  admin_email: string | null;
 };
 
 export async function listOrgsDetailed(): Promise<OrgRow[]> {
@@ -58,9 +60,33 @@ export async function listOrgsDetailed(): Promise<OrgRow[]> {
       );
     }
   }
+  // Akun admin (mitra_admin) per organisasi - untuk edit email/password.
+  const adminByOrg = new Map<string, { id: string; email: string | null }>();
+  if (rows.length) {
+    const { data: admins } = await supabase
+      .from("users")
+      .select("id, email, organization_id, created_at")
+      .in(
+        "organization_id",
+        rows.map((r) => r.id),
+      )
+      .eq("global_role", "mitra_admin")
+      .is("deleted_at", null)
+      .order("created_at", { ascending: true });
+    for (const a of (admins ?? []) as Array<{
+      id: string;
+      email: string | null;
+      organization_id: string | null;
+    }>) {
+      if (!a.organization_id || adminByOrg.has(a.organization_id)) continue;
+      adminByOrg.set(a.organization_id, { id: a.id, email: a.email });
+    }
+  }
   return rows.map((r) => ({
     ...r,
     project_count: projCounts.get(r.id) ?? 0,
     user_count: userCounts.get(r.id) ?? 0,
+    admin_user_id: adminByOrg.get(r.id)?.id ?? null,
+    admin_email: adminByOrg.get(r.id)?.email ?? null,
   }));
 }
