@@ -1,5 +1,6 @@
 import { Check, Users } from "lucide-react";
 import { getProjectCheckinMatrix } from "@/server/queries/checkin";
+import { CheckinWindowControls } from "./checkin-window-controls";
 
 export async function KehadiranTab({ projectId }: { projectId: string }) {
   const { topik, rows, total_topik } = await getProjectCheckinMatrix(projectId);
@@ -14,9 +15,13 @@ export async function KehadiranTab({ projectId }: { projectId: string }) {
         <h3 className="text-base font-bold text-atr-fg">Kehadiran (Check-in)</h3>
         <p className="text-sm text-atr-fg-muted">
           Pantau peserta yang sudah check-in di tiap topik pelatihan. Peserta
-          check-in mandiri dari akunnya.
+          check-in mandiri dari akunnya, hanya saat check-in dibuka panitia.
         </p>
       </div>
+
+      {topik.length > 0 && (
+        <CheckinWindowControls projectId={projectId} topik={topik} />
+      )}
 
       {topik.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-atr-outline bg-atr-bg-soft/40 p-10 text-center text-sm text-atr-fg-muted">

@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Check, Loader2, MapPin } from "lucide-react";
+import { Check, Loader2, MapPin, Lock } from "lucide-react";
 import { checkInTopik } from "@/server/actions/topik-checkin";
 import { runOrQueue, isQueued } from "@/lib/offline/run";
 
@@ -10,10 +10,12 @@ export function TopikCheckinButton({
   projectId,
   topikId,
   checkedIn,
+  open,
 }: {
   projectId: string;
   topikId: string;
   checkedIn: boolean;
+  open: boolean;
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -25,6 +27,17 @@ export function TopikCheckinButton({
       <span className="inline-flex items-center gap-1 rounded-full border border-atr-arti/30 bg-atr-arti/15 px-2.5 py-1 text-[11px] font-bold text-atr-arti">
         <Check className="h-3 w-3" />
         {queued ? "Tersimpan (menunggu sinyal)" : "Sudah check-in"}
+      </span>
+    );
+  }
+
+  // Check-in ditutup panitia: tombol tidak ditampilkan supaya tidak ada
+  // yang check-in di luar jam sesi.
+  if (!open) {
+    return (
+      <span className="inline-flex items-center gap-1 rounded-full border border-atr-outline bg-atr-bg-soft px-2.5 py-1 text-[11px] font-bold text-atr-fg-muted">
+        <Lock className="h-3 w-3" />
+        Belum dibuka
       </span>
     );
   }

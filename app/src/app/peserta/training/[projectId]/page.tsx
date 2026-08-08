@@ -146,6 +146,7 @@ export default async function PesertaTrainingPage({
                   projectId={project.id}
                   topikId={t.id}
                   checkedIn={checkinIds.has(t.id)}
+                  open={t.checkin_open}
                 />
               </li>
             ))}

@@ -20,7 +20,13 @@ export async function getMyCheckinTopikIds(
 }
 
 export type CheckinMatrix = {
-  topik: { id: string; name: string; sort_order: number }[];
+  topik: {
+    id: string;
+    name: string;
+    sort_order: number;
+    checkin_open: boolean;
+    checkin_closes_at: string | null;
+  }[];
   rows: {
     user_id: string;
     name: string;
@@ -42,7 +48,7 @@ export async function getProjectCheckinMatrix(
 
   const { data: topikRows } = await admin
     .from("project_topik")
-    .select("id, name, sort_order")
+    .select("id, name, sort_order, checkin_open, checkin_closes_at")
     .eq("project_id", projectId)
     .order("sort_order", { ascending: true });
   const topik = (
@@ -52,6 +58,8 @@ export async function getProjectCheckinMatrix(
     id: t.id as string,
     name: t.name as string,
     sort_order: t.sort_order as number,
+    checkin_open: !!t.checkin_open,
+    checkin_closes_at: (t.checkin_closes_at as string | null) ?? null,
   }));
 
   const { data: members } = await admin

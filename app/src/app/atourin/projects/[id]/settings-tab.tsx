@@ -366,29 +366,25 @@ export function SettingsTab({
             </Field>
           ))}
         </div>
-        <div className="mt-3 flex flex-wrap items-center gap-4">
-          <span
-            className={`text-xs font-bold ${
-              Math.round(bobotTotal) === 100
-                ? "text-atr-arti"
-                : "text-atr-red"
-            }`}
-          >
-            Total bobot: {Math.round(bobotTotal)}%
-            {Math.round(bobotTotal) !== 100 && " (harus 100%)"}
-          </span>
-          <div className="w-40">
-            <Field label="Batas lulus (Nilai Akhir >=)">
-              <input
-                type="number"
-                min={0}
-                max={100}
-                value={passingScore}
-                onChange={(e) => setPassingScore(e.target.value)}
-                className={inputCls}
-              />
-            </Field>
-          </div>
+        <div
+          className={`mt-2 text-xs font-bold ${
+            Math.round(bobotTotal) === 100 ? "text-atr-arti" : "text-atr-red"
+          }`}
+        >
+          Total bobot: {Math.round(bobotTotal)}%
+          {Math.round(bobotTotal) !== 100 && " (harus 100%)"}
+        </div>
+        <div className="mt-4 max-w-xs">
+          <Field label="Batas lulus (Nilai Akhir >=)">
+            <input
+              type="number"
+              min={0}
+              max={100}
+              value={passingScore}
+              onChange={(e) => setPassingScore(e.target.value)}
+              className={inputCls}
+            />
+          </Field>
         </div>
       </section>
 

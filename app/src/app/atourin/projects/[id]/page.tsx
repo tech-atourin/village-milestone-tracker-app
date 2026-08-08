@@ -70,15 +70,16 @@ const STATUS_LABEL = {
 
 const ALL_TABS = [
   { key: "overview", label: "Ringkasan" },
-  { key: "summary", label: "Analisis" },
+  // Analisis (ringkasan AI + SWOT) berbasis desa, sembunyikan untuk project individu.
+  { key: "summary", label: "Analisis", desaOnly: true },
   { key: "desa", label: "Desa", desaOnly: true },
   { key: "topik", label: "Topik" },
   { key: "peserta", label: "Peserta" },
   { key: "narasumber", label: "Narasumber" },
-  { key: "rencana-aksi", label: "Rencana Aksi" },
-  { key: "evidence", label: "Bukti" },
   { key: "kuis", label: "Kuis & Tes" },
   { key: "kehadiran", label: "Kehadiran" },
+  { key: "rencana-aksi", label: "Rencana Aksi" },
+  { key: "evidence", label: "Bukti" },
   { key: "materi", label: "Materi & Tautan" },
   { key: "settings", label: "Pengaturan" },
 ] as const;

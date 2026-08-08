@@ -535,6 +535,7 @@ export type PesertaTrainingDetail = {
     name: string;
     description: string | null;
     sort_order: number;
+    checkin_open: boolean; // efektif: dibuka admin DAN belum lewat auto-tutup
     items: Array<{ id: string; title: string; description: string | null }>;
   }>;
   materi_scores: Array<{
@@ -582,16 +583,21 @@ export async function getPesertaTrainingDetail(
   const { data: topikRows } = await supabase
     .from("project_topik")
     .select(
-      "id, name, description, sort_order, checklist_items:project_checklist_item(id, title, description, sort_order)",
+      "id, name, description, sort_order, checkin_open, checkin_closes_at, checklist_items:project_checklist_item(id, title, description, sort_order)",
     )
     .eq("project_id", projectId)
     .order("sort_order", { ascending: true });
+  const nowMs = Date.now();
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const topik = ((topikRows ?? []) as any[]).map((t) => ({
     id: t.id,
     name: t.name,
     description: t.description ?? null,
     sort_order: t.sort_order,
+    checkin_open:
+      !!t.checkin_open &&
+      (!t.checkin_closes_at ||
+        nowMs < new Date(t.checkin_closes_at).getTime()),
     items: ((t.checklist_items ?? []) as Array<{
       id: string;
       title: string;

@@ -134,12 +134,12 @@ export function SertifikatView({
         </header>
 
         <div className="mt-4 flex-1 text-center">
-          <h1 className="text-sm font-bold uppercase tracking-[0.25em] text-atr-purple-600">
+          <h1 className="text-2xl font-bold uppercase tracking-[0.25em] text-atr-purple-600">
             {membership?.attendance_mode === "online"
               ? "Sertifikat Penyelesaian - Peserta Online"
               : "Sertifikat Penghargaan"}
           </h1>
-          <p className="mt-1 text-xs uppercase tracking-widest text-atr-fg-muted">
+          <p className="mt-5 text-xs uppercase tracking-widest text-atr-fg-muted">
             Diberikan kepada
           </p>
           <h2 className="mt-3 text-4xl font-bold tracking-tight text-atr-fg">
@@ -155,12 +155,12 @@ export function SertifikatView({
           </p>
 
           <p className="mx-auto mt-5 max-w-2xl text-sm leading-relaxed text-atr-fg">
-            Atas partisipasi aktif dan{" "}
-            {eligible ? "pencapaian signifikan" : "kontribusi"} dalam program
+            Atas partisipasi aktif dan kontribusi dalam rangkaian program
             <br />
             <strong className="text-atr-purple-600">{project.name}</strong>
             <br />
-            periode {dateFmt(project.period_start)} – {dateFmt(project.period_end)}.
+            yang diselenggarakan oleh BAKTI KOMDIGI dan Atourin selama periode{" "}
+            {dateFmt(project.period_start)} – {dateFmt(project.period_end)}.
           </p>
 
           {pre != null && post != null && (
@@ -183,13 +183,14 @@ export function SertifikatView({
           )}
         </div>
 
-        {/* Tanda tangan tunggal: pihak mitra penyelenggara saja. */}
+        {/* Tanda tangan tunggal: pejabat penyelenggara. */}
         <footer className="mt-4 flex justify-center px-6 text-center text-xs">
-          <div className="w-72 max-w-full">
+          <div className="w-80 max-w-full">
             <div className="text-atr-fg-muted">Mengetahui,</div>
             <div className="mt-10 border-t border-atr-fg pt-1 font-bold text-atr-fg">
-              {project.organization?.name ?? "Mitra Penyelenggara"}
+              Dr. Fadhilah Mathar, M.Pd.
             </div>
+            <div className="text-atr-fg-muted">Direktur Utama BAKTI KOMDIGI</div>
           </div>
         </footer>
 

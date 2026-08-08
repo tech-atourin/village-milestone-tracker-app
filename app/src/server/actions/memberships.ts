@@ -49,16 +49,39 @@ const removeMemberSchema = z.object({
 export async function removeProjectMember(
   input: z.input<typeof removeMemberSchema>,
 ) {
-  await requireRole("superadmin");
   const parsed = removeMemberSchema.safeParse(input);
   if (!parsed.success) return { error: "Input tidak valid" };
-  const supabase = createClient();
-  const { error } = await supabase
+
+  const actor = await getCurrentUser();
+  if (!actor) return { error: "Tidak terautentikasi" };
+  if (actor.global_role !== "superadmin" && actor.global_role !== "mitra_admin")
+    return { error: "Tidak diizinkan" };
+
+  // Admin client: project_memberships tak punya policy write untuk RLS client,
+  // jadi update lewat RLS diam-diam kena 0 baris (tidak ada reaksi).
+  const admin = createAdminClient();
+
+  // Guard kepemilikan untuk mitra_admin.
+  if (actor.global_role === "mitra_admin") {
+    const { data: proj } = await admin
+      .from("projects")
+      .select("organization_id")
+      .eq("id", parsed.data.project_id)
+      .maybeSingle();
+    const orgId = (proj as { organization_id: string | null } | null)
+      ?.organization_id;
+    if (!orgId || orgId !== actor.organization_id)
+      return { error: "Project bukan milik organisasi Anda." };
+  }
+
+  const { error } = await admin
     .from("project_memberships")
     .update({ status: "removed" })
-    .eq("id", parsed.data.membership_id);
+    .eq("id", parsed.data.membership_id)
+    .eq("project_id", parsed.data.project_id);
   if (error) return { error: error.message };
   revalidatePath(`/atourin/projects/${parsed.data.project_id}`);
+  revalidatePath(`/mitra/projects/${parsed.data.project_id}`);
   return { ok: true };
 }
 
