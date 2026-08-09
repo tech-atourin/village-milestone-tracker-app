@@ -64,9 +64,11 @@ export function QuizEditor({
   const [slug, setSlug] = useState(initial.public_slug ?? "");
   const [savingSlug, setSavingSlug] = useState(false);
   const [slugSaved, setSlugSaved] = useState(false);
+  const [okMsg, setOkMsg] = useState<string | null>(null);
 
   function saveSlug() {
     setError(null);
+    setOkMsg(null);
     setSlugSaved(false);
     setSavingSlug(true);
     startTransition(async () => {
@@ -78,7 +80,7 @@ export function QuizEditor({
         }
         setSlug(r.slug);
         setSlugSaved(true);
-        setTimeout(() => setSlugSaved(false), 1800);
+        setOkMsg(`Link publik disimpan: /public/kuis/${r.slug}`);
         await reload();
       } finally {
         setSavingSlug(false);
@@ -167,6 +169,12 @@ export function QuizEditor({
       {error && (
         <div className="rounded-lg border border-atr-red/30 bg-atr-red/10 px-3.5 py-2.5 text-xs text-atr-red">
           {error}
+        </div>
+      )}
+
+      {okMsg && (
+        <div className="rounded-lg border border-atr-arti/30 bg-atr-arti/10 px-3.5 py-2.5 text-xs font-bold text-atr-arti">
+          {okMsg}
         </div>
       )}
 

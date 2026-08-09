@@ -25,7 +25,7 @@ export default async function UserDetailPage({
   const { data } = await admin
     .from("users")
     .select(
-      "id, full_name, email, phone, global_role, organization:organizations(id, name), created_at, last_login_at",
+      "id, full_name, email, phone, global_role, gender, jabatan, kota, address, birth_date, organization:organizations(id, name), created_at, last_login_at",
     )
     .eq("id", params.id)
     .is("deleted_at", null)
@@ -59,6 +59,31 @@ export default async function UserDetailPage({
         <div className="mt-3 grid grid-cols-2 gap-3 text-sm sm:grid-cols-4">
           <Detail label="Email" value={u.email} />
           <Detail label="HP" value={u.phone} />
+          <Detail
+            label="Jenis Kelamin"
+            value={
+              u.gender === "L"
+                ? "Laki-laki"
+                : u.gender === "P"
+                  ? "Perempuan"
+                  : (u.gender ?? null)
+            }
+          />
+          <Detail
+            label="Tanggal Lahir"
+            value={
+              u.birth_date
+                ? new Date(u.birth_date).toLocaleDateString("id-ID", {
+                    day: "numeric",
+                    month: "long",
+                    year: "numeric",
+                  })
+                : null
+            }
+          />
+          <Detail label="Jabatan" value={u.jabatan} />
+          <Detail label="Desa Asal" value={u.address} />
+          <Detail label="Kabupaten" value={u.kota} />
           <Detail
             label="Login Terakhir"
             value={u.last_login_at ? new Date(u.last_login_at).toLocaleString("id-ID") : "Belum pernah"}

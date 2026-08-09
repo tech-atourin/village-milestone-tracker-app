@@ -52,7 +52,9 @@ export function KuisTab({
   const [, startTransition] = useTransition();
   const [editing, setEditing] = useState<QuizFull | null>(null);
   const [loadingEditId, setLoadingEditId] = useState<string | null>(null);
-  const [busyId, setBusyId] = useState<string | null>(null);
+  // Busy per-aksi (mis. "pub:<id>", "dup:<id>", "del:<id>") supaya hanya tombol
+  // yang diklik yang menampilkan spinner, bukan semua tombol di kartu itu.
+  const [busyKey, setBusyKey] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -93,27 +95,27 @@ export function KuisTab({
 
   function remove(quizId: string) {
     if (!confirm("Hapus kuis ini beserta semua soal & hasilnya?")) return;
-    setBusyId(quizId);
+    setBusyKey(`del:${quizId}`);
     startTransition(async () => {
       try {
         const r = await deleteQuiz(quizId);
         if ("error" in r) setError(r.error);
         else router.refresh();
       } finally {
-        setBusyId(null);
+        setBusyKey(null);
       }
     });
   }
 
   function togglePublish(q: QuizListRow) {
-    setBusyId(q.id);
+    setBusyKey(`pub:${q.id}`);
     startTransition(async () => {
       try {
         const r = await togglePublishQuiz(q.id, !q.is_published);
         if ("error" in r) setError(r.error);
         else router.refresh();
       } finally {
-        setBusyId(null);
+        setBusyKey(null);
       }
     });
   }
@@ -134,14 +136,14 @@ export function KuisTab({
           : "salinan";
     if (!confirm(`Duplikat kuis ini jadi ${label} (soal disalin sama persis)?`))
       return;
-    setBusyId(q.id);
+    setBusyKey(`dup:${q.id}`);
     startTransition(async () => {
       try {
         const r = await duplicateQuiz({ quiz_id: q.id, target_kind: targetKind });
         if ("error" in r) setError(r.error);
         else router.refresh();
       } finally {
-        setBusyId(null);
+        setBusyKey(null);
       }
     });
   }
@@ -290,10 +292,10 @@ export function KuisTab({
                 <button
                   type="button"
                   onClick={() => togglePublish(q)}
-                  disabled={busyId === q.id}
+                  disabled={busyKey === `pub:${q.id}`}
                   className="inline-flex h-8 items-center gap-1 rounded-md border border-atr-outline bg-white px-2.5 text-xs font-bold text-atr-fg transition hover:bg-atr-bg-soft disabled:opacity-50"
                 >
-                  {busyId === q.id ? (
+                  {busyKey === `pub:${q.id}` ? (
                     <Loader2 className="h-3 w-3 animate-spin" />
                   ) : q.is_published ? (
                     <EyeOff className="h-3 w-3" />
@@ -305,7 +307,7 @@ export function KuisTab({
                 <button
                   type="button"
                   onClick={() => duplicate(q)}
-                  disabled={busyId === q.id}
+                  disabled={busyKey === `dup:${q.id}`}
                   title={
                     q.kind === "pre_test"
                       ? "Duplikat jadi Post-test (soal sama)"
@@ -315,7 +317,7 @@ export function KuisTab({
                   }
                   className="inline-flex h-8 items-center gap-1 rounded-md border border-atr-outline bg-white px-2.5 text-xs font-bold text-atr-fg transition hover:bg-atr-bg-soft disabled:opacity-50"
                 >
-                  {busyId === q.id ? (
+                  {busyKey === `dup:${q.id}` ? (
                     <Loader2 className="h-3 w-3 animate-spin" />
                   ) : (
                     <CopyPlus className="h-3 w-3" />
@@ -343,11 +345,11 @@ export function KuisTab({
                 <button
                   type="button"
                   onClick={() => remove(q.id)}
-                  disabled={busyId === q.id}
+                  disabled={busyKey === `del:${q.id}`}
                   className="ml-auto inline-flex h-8 w-8 items-center justify-center rounded-md border border-atr-outline bg-white text-atr-fg-muted transition hover:border-atr-red/30 hover:text-atr-red disabled:opacity-50"
                   aria-label="Hapus kuis"
                 >
-                  {busyId === q.id ? (
+                  {busyKey === `del:${q.id}` ? (
                     <Loader2 className="h-3 w-3 animate-spin" />
                   ) : (
                     <Trash2 className="h-3 w-3" />

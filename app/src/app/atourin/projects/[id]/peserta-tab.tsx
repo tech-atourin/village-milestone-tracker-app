@@ -3,7 +3,14 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Plus, Loader2, Users as UsersIcon, X, GraduationCap } from "lucide-react";
+import {
+  Plus,
+  Loader2,
+  Users as UsersIcon,
+  X,
+  GraduationCap,
+  IdCard,
+} from "lucide-react";
 import {
   addProjectMember,
   removeProjectMember,
@@ -444,6 +451,14 @@ function MembersTable({
       enableSorting: false,
       cell: ({ row }) => (
         <div className="flex justify-end gap-1.5">
+          <Link
+            href={`${raporBasePath}/users/${row.original.user.id}`}
+            className="inline-flex h-7 items-center gap-1 rounded-md border border-atr-outline bg-white px-2 text-xs font-bold text-atr-fg transition hover:bg-atr-bg-soft"
+            title="Lihat detail data peserta"
+          >
+            <IdCard className="h-3 w-3" />
+            Detail
+          </Link>
           <Link
             href={`${raporBasePath}/projects/${projectId}/rapor/${row.original.user.id}`}
             className="inline-flex h-7 items-center gap-1 rounded-md border border-atr-purple/40 bg-atr-purple-50 px-2 text-xs font-bold text-atr-purple-600 transition hover:bg-atr-purple-light/40"
