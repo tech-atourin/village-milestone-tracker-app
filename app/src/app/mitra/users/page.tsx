@@ -6,6 +6,7 @@ import { requireRole } from "@/lib/auth/rbac";
 import { createAdminClient } from "@/lib/supabase/server";
 import { listOrgsDetailed } from "@/server/queries/orgs";
 import { listDesa } from "@/server/queries/desa";
+import { mitraMemberUserIds } from "@/server/queries/mitra-scope";
 import type { UserListRow } from "@/server/queries/users";
 import { UsersTable } from "@/app/atourin/users/users-table";
 import { AddUserButton } from "@/app/atourin/users/add-user-button";
@@ -17,25 +18,29 @@ const MITRA_ROLE_FILTERS = [
 ];
 
 export default async function MitraUsersListPage() {
-  await requireRole("mitra_admin");
+  const actor = await requireRole("mitra_admin");
 
-  // Admin client bypasses RLS on vmt.users (mitra anon role can't read other
-  // users' rows). Scope: only roles relevant to a mitra - peserta, narasumber,
-  // desa_wisata. Superadmin + mitra_admin tidak ditampilkan.
+  // Scope: hanya user yang jadi anggota project milik organisasi mitra
+  // (peserta/narasumber/desa) - bukan seluruh platform.
+  const memberIds = await mitraMemberUserIds(actor.organization_id);
   const admin = createAdminClient();
-  const [{ data }, orgs, desa] = await Promise.all([
-    admin
-      .from("users")
-      .select(
-        "id, full_name, email, email_artificial, phone, global_role, representing_desa_id, created_at, last_login_at, organization:organizations(id, name)",
-      )
-      .in("global_role", ["peserta", "narasumber", "desa_wisata"])
-      .is("deleted_at", null)
-      .order("created_at", { ascending: false })
-      .limit(500),
-    listOrgsDetailed(),
-    listDesa(),
-  ]);
+  const [{ data }, orgs, desa] =
+    memberIds.length === 0
+      ? [{ data: [] }, await listOrgsDetailed(), await listDesa()]
+      : await Promise.all([
+          admin
+            .from("users")
+            .select(
+              "id, full_name, email, email_artificial, phone, global_role, representing_desa_id, created_at, last_login_at, organization:organizations(id, name)",
+            )
+            .in("global_role", ["peserta", "narasumber", "desa_wisata"])
+            .in("id", memberIds)
+            .is("deleted_at", null)
+            .order("created_at", { ascending: false })
+            .limit(500),
+          listOrgsDetailed(),
+          listDesa(),
+        ]);
   const users = (data ?? []) as unknown as UserListRow[];
   const orgOptions = orgs.map((o) => ({ id: o.id, name: o.name }));
   const desaOptions = desa.map((d) => ({ id: d.id, name: d.name }));

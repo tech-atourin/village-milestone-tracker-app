@@ -50,6 +50,8 @@ export type QuizResults = {
     distribution: { bucket: string; count: number }[]; // 0-20,21-40,...
   };
   item_analysis: QuizItemAnalysis[];
+  // Peserta (anggota aktif) yang belum punya isian tercocok pada kuis ini.
+  not_taken: { id: string; full_name: string; email: string | null }[];
 };
 
 function median(nums: number[]): number | null {
@@ -157,6 +159,33 @@ export async function getQuizResults(
     };
   });
 
+  // Peserta yang belum mengisi: anggota peserta aktif yang tidak punya attempt
+  // tercocok ke akunnya.
+  const { data: memberData } = await admin
+    .from("project_memberships")
+    .select("user:users!project_memberships_user_id_fkey(id, full_name, email)")
+    .eq("project_id", q.project_id)
+    .eq("role", "peserta")
+    .eq("status", "active");
+  const takenUserIds = new Set(
+    attempts.map((a) => a.matched_user_id).filter(Boolean) as string[],
+  );
+  const not_taken: { id: string; full_name: string; email: string | null }[] = [];
+  const seenMember = new Set<string>();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  for (const m of (memberData ?? []) as any[]) {
+    const u = m.user;
+    if (!u?.id || seenMember.has(u.id)) continue;
+    seenMember.add(u.id);
+    if (!takenUserIds.has(u.id))
+      not_taken.push({
+        id: u.id,
+        full_name: u.full_name ?? "-",
+        email: u.email ?? null,
+      });
+  }
+  not_taken.sort((a, b) => a.full_name.localeCompare(b.full_name));
+
   return {
     quiz: {
       id: q.id,
@@ -191,5 +220,6 @@ export async function getQuizResults(
       distribution,
     },
     item_analysis,
+    not_taken,
   };
 }

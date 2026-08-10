@@ -2,25 +2,19 @@ export const metadata = { title: "Daftar Desa" };
 
 import { MapPin } from "lucide-react";
 import { requireRole } from "@/lib/auth/rbac";
-import { createClient } from "@/lib/supabase/server";
 import { listAllDesa } from "@/server/queries/desa-master";
+import { mitraProjectIds } from "@/server/queries/mitra-scope";
 import { EmptyState } from "@/components/ui/empty-state";
 import { DesaTable } from "@/app/atourin/desa/desa-table";
 import { AddDesaButton } from "@/app/atourin/desa/add-desa-button";
 
-async function getMitraProjectIds(): Promise<string[]> {
-  const supabase = createClient();
-  const { data } = await supabase
-    .from("projects")
-    .select("id")
-    .is("deleted_at", null);
-  return (data ?? []).map((r) => (r as { id: string }).id);
-}
-
 export default async function MitraDesaListPage() {
-  await requireRole("mitra_admin");
-  const projectIds = await getMitraProjectIds();
-  const rows = await listAllDesa({ scopeProjectIds: projectIds });
+  const user = await requireRole("mitra_admin");
+  const projectIds = await mitraProjectIds(user.organization_id);
+  const rows =
+    projectIds.length > 0
+      ? await listAllDesa({ scopeProjectIds: projectIds })
+      : [];
 
   return (
     <div className="space-y-6">

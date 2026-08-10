@@ -29,6 +29,8 @@ export async function listAllDesa(opts: {
       "id, name, desa_kelurahan, kecamatan, kabupaten, provinsi, current_classification, hub_desa_id, jadesta_id",
     )
     .is("deleted_at", null)
+    // Unit peserta individu (pelaku_pariwisata) bukan desa nyata.
+    .eq("is_individual_unit", false)
     .order("name");
 
   // Atourin sees all; mitra scoped by project_desa

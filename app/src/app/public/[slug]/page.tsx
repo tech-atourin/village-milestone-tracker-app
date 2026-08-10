@@ -27,6 +27,7 @@ type SummaryResponse = {
     status: string;
   };
   organization: { name: string; logo_url: string | null } | null;
+  is_desa_based: boolean;
   stats: {
     desa_count: number;
     peserta_count: number;
@@ -85,7 +86,7 @@ async function fetchSummary(slug: string): Promise<SummaryResponse | null> {
   const { data: projectRow } = await supabase
     .from("projects")
     .select(
-      "id, name, description, period_start, period_end, status, organization:organizations(name, logo_url)",
+      "id, name, description, period_start, period_end, status, program_type, organization:organizations(name, logo_url)",
     )
     .eq("public_dashboard_slug", slug)
     .eq("public_dashboard_enabled", true)
@@ -94,16 +95,23 @@ async function fetchSummary(slug: string): Promise<SummaryResponse | null> {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const project = projectRow as any;
   const projectId = project.id as string;
+  const isDesaBased = project.program_type === "desa_based";
 
-  // 2) project_desa with desa info
+  // 2) project_desa with desa info. Semua project_desa (termasuk unit peserta
+  // individu) tetap dipakai untuk agregat progres/bukti, tapi HANYA desa nyata
+  // yang ditampilkan sebagai "desa" (untuk project pelaku_pariwisata: kosong).
   const { data: pdRows } = await supabase
     .from("project_desa")
     .select(
-      "id, desa:desa(id, name, kabupaten, provinsi, current_classification)",
+      "id, desa:desa(id, name, kabupaten, provinsi, current_classification, is_individual_unit)",
     )
     .eq("project_id", projectId);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const pdList = (pdRows ?? []) as any[];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const pdDisplay = isDesaBased
+    ? pdList.filter((r) => !r.desa?.is_individual_unit)
+    : [];
   const projectDesaIds = pdList.map((r) => r.id as string);
 
   // 3) avg completion per project_desa
@@ -268,7 +276,7 @@ async function fetchSummary(slug: string): Promise<SummaryResponse | null> {
     maju: 0,
     mandiri: 0,
   };
-  for (const r of pdList) {
+  for (const r of pdDisplay) {
     const t = (r.desa?.current_classification as TierKey) ?? "unclassified";
     if (t in tier_dist) tier_dist[t]++;
     else tier_dist.unclassified++;
@@ -295,8 +303,9 @@ async function fetchSummary(slug: string): Promise<SummaryResponse | null> {
           logo_url: (project.organization.logo_url as string) ?? null,
         }
       : null,
+    is_desa_based: isDesaBased,
     stats: {
-      desa_count: pdList.length,
+      desa_count: pdDisplay.length,
       peserta_count: pesertaCount,
       peserta_offline: pesertaOffline,
       peserta_online: pesertaOnline,
@@ -446,11 +455,13 @@ export default async function PublicDashboardPage({
       <div className="mx-auto max-w-5xl space-y-6 px-6 py-10">
         {/* KPI cards */}
         <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          <Kpi
-            label="Desa peserta"
-            value={summary.stats.desa_count.toString()}
-            icon={MapPin}
-          />
+          {summary.is_desa_based && (
+            <Kpi
+              label="Desa peserta"
+              value={summary.stats.desa_count.toString()}
+              icon={MapPin}
+            />
+          )}
           <Kpi
             label="Peserta dampingan"
             value={summary.stats.peserta_count.toString()}
@@ -495,7 +506,8 @@ export default async function PublicDashboardPage({
           </section>
         )}
 
-        {/* Klasifikasi distribution */}
+        {/* Klasifikasi distribution - hanya untuk project berbasis desa */}
+        {summary.is_desa_based && (
         <section className="rounded-2xl border border-atr-outline bg-white p-6 shadow-atr-1">
           <h2 className="mb-1 text-sm font-bold uppercase tracking-wide text-atr-fg-muted">
             Distribusi klasifikasi desa
@@ -536,6 +548,7 @@ export default async function PublicDashboardPage({
             })}
           </div>
         </section>
+        )}
 
         {/* Topik breakdown */}
         <section className="rounded-2xl border border-atr-outline bg-white p-6 shadow-atr-1">
@@ -567,7 +580,8 @@ export default async function PublicDashboardPage({
           </div>
         </section>
 
-        {/* Desa peserta */}
+        {/* Desa peserta - hanya untuk project berbasis desa */}
+        {summary.is_desa_based && (
         <section className="rounded-2xl border border-atr-outline bg-white p-6 shadow-atr-1">
           <h2 className="mb-4 text-sm font-bold uppercase tracking-wide text-atr-fg-muted">
             Desa peserta
@@ -619,6 +633,7 @@ export default async function PublicDashboardPage({
             </table>
           </div>
         </section>
+        )}
 
         {/* Narasumber */}
         {summary.narasumber.length > 0 && (

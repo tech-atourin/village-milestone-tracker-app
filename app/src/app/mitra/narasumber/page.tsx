@@ -5,13 +5,18 @@ import { Upload } from "lucide-react";
 import { requireRole } from "@/lib/auth/rbac";
 import { listNarasumbersWithStats } from "@/server/queries/narasumber";
 import { listNarasumberTaxonomies } from "@/server/actions/narasumber";
+import { mitraMemberUserIds } from "@/server/queries/mitra-scope";
 import { NarasumberDirectory } from "@/app/atourin/narasumber/narasumber-directory";
 import { AddNarasumberButton } from "@/app/atourin/narasumber/add-narasumber-button";
 
 export default async function MitraNarasumberPage() {
-  await requireRole("mitra_admin");
+  const user = await requireRole("mitra_admin");
+  // Hanya narasumber yang jadi anggota project milik organisasi mitra.
+  const narasumberIds = await mitraMemberUserIds(user.organization_id, [
+    "narasumber",
+  ]);
   const [rows, taxonomies] = await Promise.all([
-    listNarasumbersWithStats(),
+    listNarasumbersWithStats({ userIds: narasumberIds }),
     listNarasumberTaxonomies(),
   ]);
 

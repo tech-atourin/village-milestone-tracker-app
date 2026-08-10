@@ -1,9 +1,20 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useMemo, Fragment } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Download, Users, Award, Clock, Target, Loader2 } from "lucide-react";
+import {
+  ArrowLeft,
+  Download,
+  Users,
+  Award,
+  Clock,
+  Target,
+  Loader2,
+  ChevronDown,
+  ChevronRight,
+  UserX,
+} from "lucide-react";
 import type { QuizResults } from "@/server/queries/quiz-results";
 import { resolveAttemptMatch } from "@/server/actions/quizzes";
 
@@ -55,15 +66,64 @@ export function QuizResultsView({
   const [resolvingId, setResolvingId] = useState<string | null>(null);
   // Pisah tabel nilai peserta dari analisis soal supaya tidak perlu scroll
   // jauh ke bawah saat soalnya banyak.
-  const [tab, setTab] = useState<"peserta" | "soal">("peserta");
-  const { quiz, attempts, stats, item_analysis } = results;
+  const [tab, setTab] = useState<"peserta" | "belum" | "soal">("peserta");
+  const [expanded, setExpanded] = useState<Set<string>>(new Set());
+  const { quiz, attempts, stats, item_analysis, not_taken } = results;
   const maxDist = Math.max(1, ...stats.distribution.map((d) => d.count));
 
-  function resolve(attemptId: string, userId: string) {
-    setResolvingId(attemptId);
+  // Kelompokkan attempt per responden (by akun tercocok, atau email).
+  // attempts sudah urut terbaru->terlama dari query.
+  const groups = useMemo(() => {
+    const map = new Map<
+      string,
+      {
+        key: string;
+        name: string;
+        email: string;
+        matched_status: QuizResults["attempts"][number]["matched_status"];
+        matched_user_id: string | null;
+        matched_user_name: string | null;
+        items: QuizResults["attempts"];
+      }
+    >();
+    for (const a of attempts) {
+      const key =
+        a.matched_user_id ?? `email:${(a.respondent_email ?? "").toLowerCase()}`;
+      let g = map.get(key);
+      if (!g) {
+        g = {
+          key,
+          name: a.respondent_name,
+          email: a.respondent_email,
+          matched_status: a.matched_status,
+          matched_user_id: a.matched_user_id,
+          matched_user_name: a.matched_user_name,
+          items: [],
+        };
+        map.set(key, g);
+      }
+      g.items.push(a);
+    }
+    return Array.from(map.values());
+  }, [attempts]);
+
+  function toggleExpand(key: string) {
+    setExpanded((s) => {
+      const next = new Set(s);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  }
+
+  function resolve(attemptIds: string | string[], userId: string) {
+    const ids = Array.isArray(attemptIds) ? attemptIds : [attemptIds];
+    if (ids.length === 0) return;
+    setResolvingId(ids[0]);
     startTransition(async () => {
       try {
-        await resolveAttemptMatch(attemptId, userId || null);
+        // Cocokkan semua attempt milik responden yang sama ke peserta terpilih.
+        for (const id of ids) await resolveAttemptMatch(id, userId || null);
         router.refresh();
       } finally {
         setResolvingId(null);
@@ -216,7 +276,8 @@ export function QuizResultsView({
           <div className="flex gap-1 border-b border-atr-outline">
             {(
               [
-                ["peserta", `Nilai Peserta (${attempts.length})`],
+                ["peserta", `Nilai Peserta (${groups.length})`],
+                ["belum", `Belum Mengisi (${not_taken.length})`],
                 ["soal", `Analisis Soal (${item_analysis.length})`],
               ] as const
             ).map(([key, label]) => (
@@ -280,7 +341,7 @@ export function QuizResultsView({
           </section>
           )}
 
-          {/* Attempts table */}
+          {/* Nilai peserta - dikelompokkan per responden (multi-isian digabung) */}
           {tab === "peserta" && (
           <section className="overflow-x-auto rounded-2xl border border-atr-outline bg-white shadow-atr-1">
             <table className="w-full text-sm">
@@ -288,7 +349,7 @@ export function QuizResultsView({
                 <tr>
                   <th className="px-4 py-3">Nama</th>
                   <th className="px-4 py-3">Email</th>
-                  <th className="px-4 py-3">Nilai</th>
+                  <th className="px-4 py-3">Nilai (terakhir)</th>
                   <th className="px-4 py-3">Lulus</th>
                   <th className="px-4 py-3">Durasi</th>
                   <th className="px-4 py-3">Match</th>
@@ -296,76 +357,197 @@ export function QuizResultsView({
                 </tr>
               </thead>
               <tbody className="divide-y divide-atr-outline">
-                {attempts.map((a) => (
-                  <tr key={a.id}>
-                    <td className="px-4 py-3 font-bold text-atr-fg">
-                      {a.respondent_name}
-                      {a.matched_user_name &&
-                        a.matched_user_name !== a.respondent_name && (
-                          <span className="block text-[11px] font-normal text-atr-fg-muted">
-                            → {a.matched_user_name}
-                          </span>
-                        )}
-                    </td>
-                    <td className="px-4 py-3 text-atr-fg-muted">
-                      {a.respondent_email}
-                    </td>
-                    <td className="px-4 py-3">
-                      <span className="font-bold text-atr-fg">{a.percent ?? "-"}</span>
-                      <span className="text-[11px] text-atr-fg-muted">
-                        {" "}
-                        ({a.score}/{a.max_score})
-                      </span>
-                    </td>
-                    <td className="px-4 py-3">
-                      {a.passed == null ? (
-                        <span className="text-atr-fg-muted">-</span>
-                      ) : a.passed ? (
-                        <span className="font-bold text-atr-arti">Lulus</span>
-                      ) : (
-                        <span className="font-bold text-atr-red">Belum</span>
-                      )}
-                    </td>
-                    <td className="px-4 py-3 text-atr-fg-muted">
-                      {fmtDur(a.duration_seconds)}
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex flex-col gap-1">
-                        <span
-                          className={`inline-flex w-fit rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${MATCH_BADGE[a.matched_status].cls}`}
-                        >
-                          {MATCH_BADGE[a.matched_status].label}
-                        </span>
-                        {a.matched_status !== "matched" &&
-                          memberOptions.length > 0 && (
-                            <span className="inline-flex items-center gap-1">
-                              <select
-                                defaultValue=""
-                                disabled={resolvingId === a.id || pending}
-                                onChange={(e) => resolve(a.id, e.target.value)}
-                                className="max-w-[160px] rounded border border-atr-outline px-1.5 py-1 text-[11px]"
+                {groups.map((g) => {
+                  const latest = g.items[0];
+                  const multi = g.items.length > 1;
+                  const isOpen = expanded.has(g.key);
+                  const pcts = g.items
+                    .map((i) => i.percent)
+                    .filter((p): p is number => typeof p === "number");
+                  const best = pcts.length ? Math.max(...pcts) : null;
+                  return (
+                    <Fragment key={g.key}>
+                      <tr>
+                        <td className="px-4 py-3 font-bold text-atr-fg">
+                          <div className="flex items-center gap-1.5">
+                            {multi && (
+                              <button
+                                type="button"
+                                onClick={() => toggleExpand(g.key)}
+                                className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded border border-atr-outline text-atr-fg-muted hover:bg-atr-bg-soft"
+                                aria-label="Lihat riwayat pengisian"
                               >
-                                <option value="">Cocokkan ke…</option>
-                                {memberOptions.map((m) => (
-                                  <option key={m.id} value={m.id}>
-                                    {m.name}
-                                  </option>
-                                ))}
-                              </select>
-                              {resolvingId === a.id && (
-                                <Loader2 className="h-3 w-3 animate-spin text-atr-fg-muted" />
-                              )}
+                                {isOpen ? (
+                                  <ChevronDown className="h-3 w-3" />
+                                ) : (
+                                  <ChevronRight className="h-3 w-3" />
+                                )}
+                              </button>
+                            )}
+                            <span>{g.name}</span>
+                            {multi && (
+                              <span className="inline-flex rounded-full border border-atr-yellow/40 bg-atr-yellow/20 px-1.5 py-0.5 text-[9px] font-bold text-atr-fg">
+                                {g.items.length}x isi
+                              </span>
+                            )}
+                          </div>
+                          {g.matched_user_name &&
+                            g.matched_user_name !== g.name && (
+                              <span className="block pl-6 text-[11px] font-normal text-atr-fg-muted">
+                                → {g.matched_user_name}
+                              </span>
+                            )}
+                        </td>
+                        <td className="px-4 py-3 text-atr-fg-muted">{g.email}</td>
+                        <td className="px-4 py-3">
+                          <span className="font-bold text-atr-fg">
+                            {latest.percent ?? "-"}
+                          </span>
+                          <span className="text-[11px] text-atr-fg-muted">
+                            {" "}
+                            ({latest.score}/{latest.max_score})
+                          </span>
+                          {multi && best != null && (
+                            <span className="block text-[10px] text-atr-fg-muted">
+                              tertinggi {best}
                             </span>
                           )}
-                      </div>
-                    </td>
-                    <td className="px-4 py-3 text-[11px] text-atr-fg-muted">
-                      {fmtDate(a.submitted_at)}
-                    </td>
-                  </tr>
-                ))}
+                        </td>
+                        <td className="px-4 py-3">
+                          {latest.passed == null ? (
+                            <span className="text-atr-fg-muted">-</span>
+                          ) : latest.passed ? (
+                            <span className="font-bold text-atr-arti">Lulus</span>
+                          ) : (
+                            <span className="font-bold text-atr-red">Belum</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3 text-atr-fg-muted">
+                          {fmtDur(latest.duration_seconds)}
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className="flex flex-col gap-1">
+                            <span
+                              className={`inline-flex w-fit rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${MATCH_BADGE[g.matched_status].cls}`}
+                            >
+                              {MATCH_BADGE[g.matched_status].label}
+                            </span>
+                            {g.matched_status !== "matched" &&
+                              memberOptions.length > 0 && (
+                                <span className="inline-flex items-center gap-1">
+                                  <select
+                                    defaultValue=""
+                                    disabled={
+                                      resolvingId === g.items[0].id || pending
+                                    }
+                                    onChange={(e) =>
+                                      resolve(
+                                        g.items.map((i) => i.id),
+                                        e.target.value,
+                                      )
+                                    }
+                                    className="max-w-[160px] rounded border border-atr-outline px-1.5 py-1 text-[11px]"
+                                  >
+                                    <option value="">Cocokkan ke…</option>
+                                    {memberOptions.map((m) => (
+                                      <option key={m.id} value={m.id}>
+                                        {m.name}
+                                      </option>
+                                    ))}
+                                  </select>
+                                  {resolvingId === g.items[0].id && (
+                                    <Loader2 className="h-3 w-3 animate-spin text-atr-fg-muted" />
+                                  )}
+                                </span>
+                              )}
+                          </div>
+                        </td>
+                        <td className="px-4 py-3 text-[11px] text-atr-fg-muted">
+                          {fmtDate(latest.submitted_at)}
+                        </td>
+                      </tr>
+                      {multi && isOpen && (
+                        <tr className="bg-atr-bg-soft/40">
+                          <td colSpan={7} className="px-4 py-2">
+                            <div className="pl-6 text-[11px] text-atr-fg-muted">
+                              <div className="mb-1 font-bold uppercase tracking-wide">
+                                Riwayat pengisian ({g.items.length})
+                              </div>
+                              <ul className="space-y-0.5">
+                                {g.items.map((i, idx) => (
+                                  <li
+                                    key={i.id}
+                                    className="flex flex-wrap items-center gap-x-3"
+                                  >
+                                    <span className="w-16">
+                                      {idx === 0 ? "Terbaru" : `Isian ${g.items.length - idx}`}
+                                    </span>
+                                    <span className="font-bold text-atr-fg">
+                                      Nilai {i.percent ?? "-"}
+                                    </span>
+                                    <span>
+                                      ({i.score}/{i.max_score})
+                                    </span>
+                                    <span>{fmtDur(i.duration_seconds)}</span>
+                                    <span>{fmtDate(i.submitted_at)}</span>
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          </td>
+                        </tr>
+                      )}
+                    </Fragment>
+                  );
+                })}
               </tbody>
             </table>
+          </section>
+          )}
+
+          {/* Belum mengisi: anggota peserta aktif tanpa isian tercocok */}
+          {tab === "belum" && (
+          <section className="rounded-2xl border border-atr-outline bg-white shadow-atr-1">
+            {not_taken.length === 0 ? (
+              <div className="p-10 text-center">
+                <Users className="mx-auto h-8 w-8 text-atr-arti" />
+                <p className="mt-2 text-sm font-bold text-atr-fg">
+                  Semua peserta sudah mengisi 🎉
+                </p>
+              </div>
+            ) : (
+              <>
+                <div className="flex items-center gap-2 border-b border-atr-outline px-4 py-3 text-sm">
+                  <UserX className="h-4 w-4 text-atr-red" />
+                  <span className="font-bold text-atr-fg">
+                    {not_taken.length} peserta belum mengisi
+                  </span>
+                  <span className="text-atr-fg-muted">
+                    (dari total anggota peserta project)
+                  </span>
+                </div>
+                <table className="w-full text-sm">
+                  <thead className="bg-atr-bg-soft text-left text-xs font-bold uppercase tracking-wide text-atr-fg-muted">
+                    <tr>
+                      <th className="px-4 py-3">Nama</th>
+                      <th className="px-4 py-3">Email</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-atr-outline">
+                    {not_taken.map((p) => (
+                      <tr key={p.id}>
+                        <td className="px-4 py-3 font-bold text-atr-fg">
+                          {p.full_name}
+                        </td>
+                        <td className="px-4 py-3 text-atr-fg-muted">
+                          {p.email ?? "-"}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </>
+            )}
           </section>
           )}
         </>

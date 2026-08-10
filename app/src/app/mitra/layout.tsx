@@ -2,15 +2,7 @@ import { Sidebar, type SidebarItem } from "@/components/sidebar";
 import { Topbar } from "@/components/topbar";
 import { MobileBottomNav } from "@/components/mobile-bottom-nav";
 import { requireRole } from "@/lib/auth/rbac";
-
-const NAV_ITEMS: SidebarItem[] = [
-  { href: "/mitra/dashboard", label: "Dashboard", icon: "LayoutDashboard" },
-  { href: "/mitra/projects", label: "Project Saya", icon: "Folder" },
-  { href: "/mitra/desa", label: "Desa", icon: "MapPin" },
-  { href: "/mitra/narasumber", label: "Narasumber", icon: "GraduationCap" },
-  { href: "/mitra/users", label: "Users", icon: "Users" },
-  { href: "/mitra/laporan", label: "Laporan", icon: "BarChart3" },
-];
+import { mitraHasRealDesa } from "@/server/queries/mitra-scope";
 
 export default async function MitraLayout({
   children,
@@ -18,6 +10,20 @@ export default async function MitraLayout({
   children: React.ReactNode;
 }) {
   const user = await requireRole("mitra_admin");
+
+  // Menu Desa hanya relevan bila mitra punya desa nyata (bukan project
+  // pelaku_pariwisata individu).
+  const showDesa = await mitraHasRealDesa(user.organization_id);
+  const NAV_ITEMS: SidebarItem[] = [
+    { href: "/mitra/dashboard", label: "Dashboard", icon: "LayoutDashboard" },
+    { href: "/mitra/projects", label: "Project Saya", icon: "Folder" },
+    ...(showDesa
+      ? ([{ href: "/mitra/desa", label: "Desa", icon: "MapPin" }] as SidebarItem[])
+      : []),
+    { href: "/mitra/narasumber", label: "Narasumber", icon: "GraduationCap" },
+    { href: "/mitra/users", label: "Users", icon: "Users" },
+    { href: "/mitra/laporan", label: "Laporan", icon: "BarChart3" },
+  ];
 
   return (
     <div className="flex min-h-screen bg-atr-bg-soft">

@@ -20,15 +20,22 @@ export type NarasumberRow = {
   rating_count: number;
 };
 
-export async function listNarasumbersWithStats(): Promise<NarasumberRow[]> {
+export async function listNarasumbersWithStats(
+  opts: { userIds?: string[] } = {},
+): Promise<NarasumberRow[]> {
   const supabase = createAdminClient();
-  const { data: users } = await supabase
+  // Scope opsional: batasi ke daftar user tertentu (mis. narasumber yang jadi
+  // anggota project milik satu mitra). Tanpa scope = semua (untuk atourin).
+  if (opts.userIds && opts.userIds.length === 0) return [];
+  let uq = supabase
     .from("users")
     .select(
       "id, full_name, email, phone, kompetensi, kategori_narasumber, jabatan, instansi, kota, gender",
     )
     .eq("global_role", "narasumber")
     .is("deleted_at", null);
+  if (opts.userIds && opts.userIds.length > 0) uq = uq.in("id", opts.userIds);
+  const { data: users } = await uq;
 
   const rows = (users ?? []) as Array<{
     id: string;
