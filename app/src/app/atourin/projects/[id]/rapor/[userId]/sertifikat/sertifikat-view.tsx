@@ -146,12 +146,22 @@ export function SertifikatView({
             {user.full_name}
           </h2>
           <p className="mt-1 text-sm text-atr-fg-muted">
-            {membership?.desa?.name ??
-              (membership?.attendance_mode === "online"
+            {/* Unit peserta individu: desa hanya wadah tersembunyi (namanya =
+                nama peserta), jangan ditampilkan sebagai desa. */}
+            {membership?.desa && !membership.desa.is_individual_unit
+              ? membership.desa.name
+              : membership?.attendance_mode === "online"
                 ? "Peserta online"
-                : "Peserta")}
-            {membership?.desa?.kabupaten &&
-              ` · ${membership.desa.kabupaten}, ${membership.desa.provinsi}`}
+                : "Peserta"}
+            {(() => {
+              const loc = [
+                membership?.desa?.kabupaten,
+                membership?.desa?.provinsi,
+              ]
+                .filter(Boolean)
+                .join(", ");
+              return loc ? ` · ${loc}` : "";
+            })()}
           </p>
 
           <p className="mx-auto mt-5 max-w-2xl text-sm leading-relaxed text-atr-fg">

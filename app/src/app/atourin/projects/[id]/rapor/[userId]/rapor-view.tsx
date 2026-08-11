@@ -36,7 +36,7 @@ export async function loadRapor(projectId: string, userId: string) {
 
   const { data: membership } = await supabase
     .from("project_memberships")
-    .select("attendance_mode, desa:desa(name, kabupaten, provinsi)")
+    .select("attendance_mode, desa:desa(name, kabupaten, provinsi, is_individual_unit)")
     .eq("project_id", projectId)
     .eq("user_id", userId)
     .eq("role", "peserta")
@@ -278,8 +278,11 @@ export function RaporView({
             </span>
           </div>
           <p className="mt-1 text-sm text-atr-fg-muted">
-            {membership?.desa?.name ??
-              (isOnline ? "Peserta personal (online)" : "Peserta personal")}
+            {membership?.desa && !membership.desa.is_individual_unit
+              ? membership.desa.name
+              : isOnline
+                ? "Peserta personal (online)"
+                : "Peserta personal"}
             {membership?.desa?.kabupaten || membership?.desa?.provinsi ? (
               <>
                 {" · "}

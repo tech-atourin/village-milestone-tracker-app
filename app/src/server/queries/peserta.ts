@@ -510,28 +510,27 @@ export async function listPesertaTraining(
   // (skor akhir belum dihitung), pakai hasil tes yang sudah tersinkron dari
   // kuis (peserta_test_results), dinormalisasi ke persen lalu dirata-rata
   // antar-materi. Supaya kartu tidak menampilkan "-" padahal peserta sudah tes.
+  // peserta_test_results tidak punya project_id; project diambil via
+  // project_topik. Join ke project_topik(project_id) lalu filter ke project user.
   const { data: ptr } = await createAdminClient()
     .from("peserta_test_results")
-    .select("project_id, form_type, score, max_score")
+    .select("form_type, score, max_score, topik:project_topik(project_id)")
     .eq("user_id", userId)
-    .in("project_id", projectIds)
     .in("form_type", ["pre_test", "post_test"]);
   const preAcc = new Map<string, number[]>();
   const postAcc = new Map<string, number[]>();
-  for (const row of (ptr ?? []) as Array<{
-    project_id: string;
-    form_type: string;
-    score: number | null;
-    max_score: number | null;
-  }>) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  for (const row of (ptr ?? []) as any[]) {
+    const pid = row.topik?.project_id as string | undefined;
+    if (!pid || !projectIds.includes(pid)) continue;
     const max = Number(row.max_score);
     const pct =
       max > 0 ? Math.round((Number(row.score) / max) * 100) : Number(row.score);
     if (!Number.isFinite(pct)) continue;
     const acc = row.form_type === "pre_test" ? preAcc : postAcc;
-    const arr = acc.get(row.project_id) ?? [];
+    const arr = acc.get(pid) ?? [];
     arr.push(pct);
-    acc.set(row.project_id, arr);
+    acc.set(pid, arr);
   }
   const avgMap = (m: Map<string, number[]>, pid: string): number | null => {
     const arr = m.get(pid);

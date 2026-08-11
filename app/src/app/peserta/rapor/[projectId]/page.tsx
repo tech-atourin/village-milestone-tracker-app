@@ -56,6 +56,30 @@ export default async function PesertaRaporPage({
   } | null;
   const finalScore = r?.final_score ?? null;
 
+  // Fallback Pre/Post dari hasil kuis tersinkron bila rapor_peserta belum diisi
+  // admin. peserta_test_results tidak punya project_id -> join project_topik.
+  const { data: trRows } = await admin
+    .from("peserta_test_results")
+    .select("form_type, score, max_score, topik:project_topik(project_id)")
+    .eq("user_id", user.id)
+    .in("form_type", ["pre_test", "post_test"]);
+  const preP: number[] = [];
+  const postP: number[] = [];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  for (const row of (trRows ?? []) as any[]) {
+    if (row.topik?.project_id !== params.projectId) continue;
+    const max = Number(row.max_score);
+    const pct =
+      max > 0 ? Math.round((Number(row.score) / max) * 100) : Number(row.score);
+    if (!Number.isFinite(pct)) continue;
+    (row.form_type === "pre_test" ? preP : postP).push(pct);
+  }
+  const avgOf = (a: number[]): number | null =>
+    a.length ? Math.round(a.reduce((x, y) => x + y, 0) / a.length) : null;
+  const preScore = r?.pre_test_score != null ? Number(r.pre_test_score) : avgOf(preP);
+  const postScore =
+    r?.post_test_score != null ? Number(r.post_test_score) : avgOf(postP);
+
   return (
     <div className="space-y-5">
       <Link
@@ -101,8 +125,8 @@ export default async function PesertaRaporPage({
       {/* Pre-test & post-test: peserta memang sudah tahu dari hasil pengisian. */}
       <div className="grid grid-cols-2 gap-3">
         {[
-          { label: "Pre-test", value: r?.pre_test_score, highlight: false },
-          { label: "Post-test", value: r?.post_test_score, highlight: true },
+          { label: "Pre-test", value: preScore, highlight: false },
+          { label: "Post-test", value: postScore, highlight: true },
         ].map((c) => (
           <div
             key={c.label}
