@@ -35,6 +35,24 @@ export async function listProjectResources(
   return (data as ProjectResource[] | null) ?? [];
 }
 
+// Peserta view scoped to ONE project: published resources only. Read via RLS
+// (member-scoped policy). Dipakai di halaman detail/training project peserta.
+export async function getPesertaProjectResources(
+  projectId: string,
+): Promise<ProjectResource[]> {
+  const supabase = createClient();
+  const { data } = await supabase
+    .from("project_resources")
+    .select(
+      "id, project_id, kind, title, description, category, file_url, file_type, mime_type, file_size_bytes, original_filename, url, sort_order, is_published, created_at",
+    )
+    .eq("project_id", projectId)
+    .eq("is_published", true)
+    .order("sort_order", { ascending: true })
+    .order("created_at", { ascending: false });
+  return (data as ProjectResource[] | null) ?? [];
+}
+
 export type PesertaResourceGroup = {
   project_id: string;
   project_name: string;

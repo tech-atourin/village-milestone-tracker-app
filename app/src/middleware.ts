@@ -33,6 +33,7 @@ const SCOPE_PREFIXES = {
   peserta: "/peserta",
   narasumber: "/narasumber",
   desa_wisata: "/desa",
+  personil: "/personil",
 } as const;
 
 type GlobalRole = keyof typeof SCOPE_PREFIXES;

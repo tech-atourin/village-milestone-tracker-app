@@ -81,6 +81,8 @@ export function scopeHomePath(role: GlobalRole): string {
       return "/narasumber/dashboard";
     case "desa_wisata":
       return "/desa/dashboard";
+    case "personil":
+      return "/personil/logbook";
   }
 }
 

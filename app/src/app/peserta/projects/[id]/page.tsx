@@ -13,9 +13,12 @@ import {
 } from "lucide-react";
 import { notFound, redirect } from "next/navigation";
 import { listPesertaTopik } from "@/server/queries/peserta";
+import { getPesertaProjectResources } from "@/server/queries/resources";
+import { PesertaResourceItem } from "@/app/peserta/materi/resource-item";
 import { createClient } from "@/lib/supabase/server";
 import { listNarasumberToRate } from "@/server/actions/narasumber-rating";
 import { NarasumberRatingSection } from "./narasumber-rating-section";
+import { FolderOpen } from "lucide-react";
 
 const STATUS_STYLE: Record<
   "not_started" | "in_progress" | "completed" | "needs_revision",
@@ -74,6 +77,7 @@ export default async function PesertaProjectPage({
 
   const topik = await listPesertaTopik(params.id);
   const narasumberToRate = await listNarasumberToRate(header.project.id);
+  const resources = await getPesertaProjectResources(header.project.id);
   const overall =
     topik.length > 0
       ? topik.reduce((acc, t) => acc + t.completion_percent, 0) / topik.length
@@ -252,6 +256,20 @@ export default async function PesertaProjectPage({
           ))}
         </ul>
       </section>
+
+      {resources.length > 0 && (
+        <section className="space-y-3">
+          <h2 className="inline-flex items-center gap-1.5 text-sm font-bold uppercase tracking-wide text-atr-fg-muted">
+            <FolderOpen className="h-3.5 w-3.5" />
+            Materi &amp; Tautan
+          </h2>
+          <ul className="space-y-2">
+            {resources.map((r) => (
+              <PesertaResourceItem key={r.id} r={r} />
+            ))}
+          </ul>
+        </section>
+      )}
 
       <NarasumberRatingSection
         projectId={header.project.id}

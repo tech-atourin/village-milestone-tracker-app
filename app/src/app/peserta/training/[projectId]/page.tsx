@@ -21,6 +21,8 @@ import {
   listPesertaTopik,
 } from "@/server/queries/peserta";
 import { getMyCheckinTopikIds } from "@/server/queries/checkin";
+import { getPesertaProjectResources } from "@/server/queries/resources";
+import { PesertaResourceItem } from "@/app/peserta/materi/resource-item";
 import { TopikCheckinButton } from "./topik-checkin-button";
 import { ensurePesertaUnit } from "@/server/actions/peserta-unit";
 import { createAdminClient } from "@/lib/supabase/server";
@@ -60,6 +62,9 @@ export default async function PesertaTrainingPage({
   const progressByTopik = new Map(
     checklistTopik.map((t) => [t.project_topik_id, t]),
   );
+
+  // Materi & tautan yang dibagikan penyelenggara untuk project ini.
+  const resources = await getPesertaProjectResources(params.projectId);
 
   // Peserta hanya melihat Nilai Akhir. Rincian komponen penilaian
   // (Pre/Post/Tugas/Keaktifan) sengaja tidak ditampilkan ke peserta.
@@ -210,6 +215,21 @@ export default async function PesertaTrainingPage({
             <ChevronRight className="h-4 w-4 shrink-0 text-atr-fg-muted" />
           </Link>
         </div>
+      )}
+
+      {/* Materi & Tautan khusus project ini. */}
+      {resources.length > 0 && (
+        <section className="rounded-2xl border border-atr-outline bg-white p-5 shadow-atr-1">
+          <h2 className="mb-3 inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wide text-atr-fg-muted">
+            <FolderOpen className="h-3.5 w-3.5" />
+            Materi &amp; Tautan
+          </h2>
+          <ul className="space-y-2">
+            {resources.map((r) => (
+              <PesertaResourceItem key={r.id} r={r} />
+            ))}
+          </ul>
+        </section>
       )}
 
       {/* Nilai akhir + skor tes. Rincian bobot penilaian tidak ditampilkan. */}

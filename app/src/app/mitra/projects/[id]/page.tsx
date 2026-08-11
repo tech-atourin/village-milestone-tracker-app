@@ -37,6 +37,14 @@ import { listProjectRegistrations } from "@/server/queries/quiz-registrations";
 import { ActionPlanBoard } from "@/components/action-plans/action-plan-board";
 import { listActionPlans } from "@/server/queries/action-plans";
 import { listProjectLogoUrls } from "@/server/actions/project-logos";
+import {
+  getProjectPersonnel,
+  getLogbookForPersonnel,
+} from "@/server/queries/personnel";
+import {
+  LogbookAdminTab,
+  LogbookAdminDetail,
+} from "@/app/atourin/projects/[id]/logbook-tab";
 
 async function getPublicState(projectId: string) {
   const supabase = createClient();
@@ -81,6 +89,7 @@ const ALL_TABS = [
   { key: "kehadiran", label: "Kehadiran" },
   { key: "rencana-aksi", label: "Rencana Aksi" },
   { key: "evidence", label: "Bukti" },
+  { key: "logbook", label: "Log Book" },
   { key: "materi", label: "Materi & Tautan" },
   { key: "settings", label: "Pengaturan" },
 ] as const;
@@ -99,7 +108,7 @@ export default async function MitraProjectDetailPage({
   searchParams,
 }: {
   params: { id: string };
-  searchParams: { tab?: string; topik?: string; desa?: string };
+  searchParams: { tab?: string; topik?: string; desa?: string; pp?: string };
 }) {
   await requireRole("mitra_admin");
   const user = await getCurrentUser();
@@ -223,11 +232,52 @@ export default async function MitraProjectDetailPage({
         />
       )}
       {activeTab === "kehadiran" && <KehadiranTab projectId={project.id} />}
+      {activeTab === "logbook" && (
+        <LogbookTabLoader
+          projectId={project.id}
+          basePath={`/mitra/projects/${project.id}`}
+          selectedPersonnelId={searchParams.pp}
+        />
+      )}
       {activeTab === "materi" && <MateriTab projectId={project.id} />}
       {activeTab === "settings" && (
         <MitraSettingsLoader project={project} />
       )}
     </div>
+  );
+}
+
+async function LogbookTabLoader({
+  projectId,
+  basePath,
+  selectedPersonnelId,
+}: {
+  projectId: string;
+  basePath: string;
+  selectedPersonnelId?: string;
+}) {
+  const personnel = await getProjectPersonnel(projectId);
+  if (selectedPersonnelId) {
+    const person = personnel.find((p) => p.id === selectedPersonnelId);
+    if (person) {
+      const entries = await getLogbookForPersonnel(selectedPersonnelId, {
+        asAdmin: true,
+      });
+      return (
+        <LogbookAdminDetail
+          person={person}
+          entries={entries}
+          backPath={`${basePath}?tab=logbook`}
+        />
+      );
+    }
+  }
+  return (
+    <LogbookAdminTab
+      projectId={projectId}
+      personnel={personnel}
+      basePath={basePath}
+    />
   );
 }
 

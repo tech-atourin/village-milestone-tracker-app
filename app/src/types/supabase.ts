@@ -24,7 +24,8 @@ export type GlobalRole =
   | "mitra_admin"
   | "peserta"
   | "narasumber"
-  | "desa_wisata";
+  | "desa_wisata"
+  | "personil";
 
 export type ProjectRole =
   | "superadmin"

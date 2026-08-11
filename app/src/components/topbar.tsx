@@ -11,6 +11,7 @@ const ROLE_LABELS: Record<SessionUser["global_role"], string> = {
   peserta: "Peserta",
   narasumber: "Narasumber",
   desa_wisata: "Pengelola Desa Wisata",
+  personil: "Personil",
 };
 
 export async function Topbar({

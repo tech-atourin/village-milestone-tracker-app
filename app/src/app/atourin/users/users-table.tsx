@@ -27,6 +27,7 @@ const ROLE_LABEL = {
   peserta: "Peserta",
   narasumber: "Narasumber",
   desa_wisata: "Desa Wisata",
+  personil: "Personil",
 } as const;
 
 const ROLE_STYLE = {
@@ -35,6 +36,7 @@ const ROLE_STYLE = {
   peserta: "bg-atr-arti/15 text-atr-arti",
   narasumber: "bg-atr-yellow/25 text-atr-fg",
   desa_wisata: "bg-atr-purple/15 text-atr-purple",
+  personil: "bg-atr-bg-soft text-atr-fg-muted",
 } as const;
 
 type Row = UserListRow & {
