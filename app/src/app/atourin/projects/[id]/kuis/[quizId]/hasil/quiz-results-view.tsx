@@ -263,11 +263,16 @@ export function QuizResultsView({
                   value={stats.unmatched}
                   tone="muted"
                 />
-                <MatchStat label="Ganda" value={stats.ambiguous} tone="yellow" />
+                <MatchStat
+                  label="Isi berkali-kali"
+                  value={groups.filter((g) => g.items.length > 1).length}
+                  tone="yellow"
+                />
               </div>
               <p className="mt-3 text-[11px] text-atr-fg-muted">
-                Peserta dicocokkan otomatis via email. Yang belum cocok akan
-                otomatis terhubung saat akun peserta dengan email sama dibuat.
+                Peserta dicocokkan otomatis via email; yang belum cocok bisa
+                dicocokkan manual. &quot;Isi berkali-kali&quot; = jumlah
+                responden dengan lebih dari satu isian (lihat riwayat di tabel).
               </p>
             </section>
           </div>

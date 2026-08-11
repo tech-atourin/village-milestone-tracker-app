@@ -48,6 +48,14 @@ type SummaryResponse = {
     avg_completion: number;
   }>;
   topik: Array<{ name: string; avg_completion: number }>;
+  has_test: boolean;
+  test_results: Array<{
+    topik: string;
+    pre: number | null;
+    post: number | null;
+    n_pre: number;
+    n_post: number;
+  }>;
   narasumber: Array<{
     id: string;
     full_name: string;
@@ -161,6 +169,45 @@ async function fetchSummary(slug: string): Promise<SummaryResponse | null> {
       cur.count += 1;
     }
   }
+
+  // 4b) hasil pre/post-test per modul (dari peserta_test_results, dinormalisasi
+  // ke persen lalu dirata-rata antar peserta).
+  const topikIds = pt.map((t) => t.id as string);
+  const testByTopik = new Map<string, { pre: number[]; post: number[] }>();
+  if (topikIds.length) {
+    const { data: trRows } = await supabase
+      .from("peserta_test_results")
+      .select("project_topik_id, form_type, score, max_score")
+      .in("project_topik_id", topikIds)
+      .in("form_type", ["pre_test", "post_test"]);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    for (const r of (trRows ?? []) as any[]) {
+      const max = Number(r.max_score);
+      const pct =
+        max > 0 ? Math.round((Number(r.score) / max) * 100) : Number(r.score);
+      if (!Number.isFinite(pct)) continue;
+      const b = testByTopik.get(r.project_topik_id as string) ?? {
+        pre: [],
+        post: [],
+      };
+      if (r.form_type === "pre_test") b.pre.push(pct);
+      else b.post.push(pct);
+      testByTopik.set(r.project_topik_id as string, b);
+    }
+  }
+  const avgArr = (a: number[]): number | null =>
+    a.length ? Math.round(a.reduce((x, y) => x + y, 0) / a.length) : null;
+  const test_results = pt.map((t) => {
+    const b = testByTopik.get(t.id as string) ?? { pre: [], post: [] };
+    return {
+      topik: t.name as string,
+      pre: avgArr(b.pre),
+      post: avgArr(b.post),
+      n_pre: b.pre.length,
+      n_post: b.post.length,
+    };
+  });
+  const has_test = test_results.some((t) => t.pre != null || t.post != null);
 
   // 5) memberships (peserta + narasumber). Pakai FK hint eksplisit
   // (!project_memberships_user_id_fkey) karena project_memberships punya
@@ -324,6 +371,8 @@ async function fetchSummary(slug: string): Promise<SummaryResponse | null> {
         ((r.desa?.current_classification as TierKey) ?? "unclassified"),
       avg_completion: completionByPd.get(r.id as string) ?? 0,
     })),
+    has_test,
+    test_results,
     topik: Array.from(topikAcc.values()).map((v) => ({
       name: v.name,
       avg_completion: v.count ? v.sum / v.count : 0,
@@ -548,6 +597,62 @@ export default async function PublicDashboardPage({
             })}
           </div>
         </section>
+        )}
+
+        {/* Hasil pre/post-test per modul */}
+        {summary.has_test && (
+          <section className="rounded-2xl border border-atr-outline bg-white p-6 shadow-atr-1">
+            <h2 className="mb-1 text-sm font-bold uppercase tracking-wide text-atr-fg-muted">
+              Hasil Pre-test &amp; Post-test
+            </h2>
+            <p className="mb-4 text-xs text-atr-fg-muted">
+              Rata-rata nilai peserta per modul (skala 0-100).
+            </p>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="text-left text-xs font-bold uppercase tracking-wide text-atr-fg-muted">
+                    <th className="py-2">Modul</th>
+                    <th className="py-2 text-right">Pre-test</th>
+                    <th className="py-2 text-right">Post-test</th>
+                    <th className="py-2 text-right">Peningkatan</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-atr-outline">
+                  {summary.test_results.map((t) => {
+                    const delta =
+                      t.pre != null && t.post != null ? t.post - t.pre : null;
+                    return (
+                      <tr key={t.topik}>
+                        <td className="py-3 font-bold text-atr-fg">{t.topik}</td>
+                        <td className="py-3 text-right text-atr-fg">
+                          {t.pre ?? "-"}
+                        </td>
+                        <td className="py-3 text-right font-bold text-atr-purple-700">
+                          {t.post ?? "-"}
+                        </td>
+                        <td
+                          className={`py-3 text-right font-bold ${
+                            delta == null
+                              ? "text-atr-fg-muted"
+                              : delta > 0
+                                ? "text-atr-arti"
+                                : delta < 0
+                                  ? "text-atr-red"
+                                  : "text-atr-fg-muted"
+                          }`}
+                        >
+                          {delta == null
+                            ? "-"
+                            : `${delta > 0 ? "+" : ""}${delta}`}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </section>
         )}
 
         {/* Topik breakdown */}

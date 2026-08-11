@@ -1,6 +1,6 @@
 import "server-only";
 
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createAdminClient } from "@/lib/supabase/server";
 import type { ProjectStatus } from "@/types/supabase";
 
 export type ProjectListRow = {
@@ -64,17 +64,21 @@ export async function getProject(id: string): Promise<ProjectDetail | null> {
 
   if (error || !project) return null;
 
+  // Hitungan agregat pakai admin client: mitra_admin tidak punya policy RLS
+  // baca project_topik/checklist_item, jadi lewat RLS hasilnya 0. Akses ke
+  // project sudah dijaga oleh baca baris project (RLS) + ownership check di page.
+  const admin = createAdminClient();
   const [{ count: topik }, { count: desa }, { count: members }] =
     await Promise.all([
-      supabase
+      admin
         .from("project_topik")
         .select("id", { count: "exact", head: true })
         .eq("project_id", id),
-      supabase
+      admin
         .from("project_desa")
         .select("id", { count: "exact", head: true })
         .eq("project_id", id),
-      supabase
+      admin
         .from("project_memberships")
         .select("id", { count: "exact", head: true })
         .eq("project_id", id)
@@ -82,14 +86,14 @@ export async function getProject(id: string): Promise<ProjectDetail | null> {
     ]);
 
   // Count checklist items across all topik of this project.
-  const { data: topikRows } = await supabase
+  const { data: topikRows } = await admin
     .from("project_topik")
     .select("id")
     .eq("project_id", id);
   const topikIds = (topikRows ?? []).map((t: { id: string }) => t.id);
   let checklist = 0;
   if (topikIds.length) {
-    const { count } = await supabase
+    const { count } = await admin
       .from("project_checklist_item")
       .select("id", { count: "exact", head: true })
       .in("project_topik_id", topikIds);
