@@ -49,6 +49,7 @@ const MODULES = [
   ["capacity_building", "Capacity Building (RAPOR)"],
   ["klasifikasi_nasional", "Klasifikasi Nasional"],
   ["public_dashboard", "Shareable link (untuk mitra/sponsor)"],
+  ["logbook", "Log Book Personil"],
 ] as const;
 
 export function SettingsTab({
@@ -95,6 +96,7 @@ export function SettingsTab({
     klasifikasi_nasional:
       project.enabled_modules.klasifikasi_nasional ?? false,
     public_dashboard: project.enabled_modules.public_dashboard ?? false,
+    logbook: project.enabled_modules.logbook ?? false,
   }));
 
   // Bobot penilaian dalam PERSEN (0..100) untuk input; disimpan sbg fraksi.
@@ -137,6 +139,7 @@ export function SettingsTab({
           capacity_building: modules.capacity_building,
           klasifikasi_nasional: modules.klasifikasi_nasional,
           public_dashboard: modules.public_dashboard,
+          logbook: modules.logbook,
         },
         grading_config: {
           weights: {

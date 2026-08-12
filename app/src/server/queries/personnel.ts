@@ -104,29 +104,35 @@ export async function getMyPersonnel(): Promise<
     .order("created_at", { ascending: true });
 
   const rows = data ?? [];
-  // Nama project di-resolve via admin client (personil tidak punya RLS
-  // read policy di tabel projects).
+  // Nama project + status modul di-resolve via admin client (personil tidak
+  // punya RLS read policy di tabel projects). Assignment hanya ditampilkan
+  // kalau modul Log Book project tsb aktif.
   const projectIds = Array.from(new Set(rows.map((r) => r.project_id as string)));
   const nameMap = new Map<string, string>();
+  const logbookOn = new Map<string, boolean>();
   if (projectIds.length) {
     const admin = createAdminClient();
     const { data: projs } = await admin
       .from("projects")
-      .select("id, name")
+      .select("id, name, enabled_modules")
       .in("id", projectIds);
     for (const p of projs ?? []) {
       nameMap.set(p.id as string, p.name as string);
+      const mods = (p.enabled_modules ?? {}) as Record<string, boolean>;
+      logbookOn.set(p.id as string, mods.logbook === true);
     }
   }
 
-  return rows.map((r) => ({
-    id: r.id as string,
-    project_id: r.project_id as string,
-    project_name: nameMap.get(r.project_id as string) ?? "Project",
-    position: r.position as string,
-    work_start: (r.work_start as string | null) ?? null,
-    work_end: (r.work_end as string | null) ?? null,
-  }));
+  return rows
+    .filter((r) => logbookOn.get(r.project_id as string) === true)
+    .map((r) => ({
+      id: r.id as string,
+      project_id: r.project_id as string,
+      project_name: nameMap.get(r.project_id as string) ?? "Project",
+      position: r.position as string,
+      work_start: (r.work_start as string | null) ?? null,
+      work_end: (r.work_end as string | null) ?? null,
+    }));
 }
 
 // =====================================================

@@ -85,7 +85,7 @@ const ALL_TABS = [
   { key: "kehadiran", label: "Kehadiran" },
   { key: "rencana-aksi", label: "Rencana Aksi" },
   { key: "evidence", label: "Bukti" },
-  { key: "logbook", label: "Log Book" },
+  { key: "logbook", label: "Log Book", moduleKey: "logbook" },
   { key: "materi", label: "Materi & Tautan" },
   { key: "settings", label: "Pengaturan" },
 ] as const;
@@ -114,9 +114,14 @@ export default async function ProjectDetailPage({
   const isDesaBased = project.program_type === "desa_based";
   // Pelaku pariwisata: project tidak terkait desa wisata, jadi tab Desa dan
   // Rencana Aksi (yang per-desa) disembunyikan.
-  const TABS = ALL_TABS.filter(
-    (t) => isDesaBased || !("desaOnly" in t && t.desaOnly),
-  );
+  const TABS = ALL_TABS.filter((t) => {
+    if (!isDesaBased && "desaOnly" in t && t.desaOnly) return false;
+    // Tab bergantung modul: sembunyikan jika modul tidak diaktifkan.
+    if ("moduleKey" in t && t.moduleKey) {
+      return project.enabled_modules?.[t.moduleKey] === true;
+    }
+    return true;
+  });
 
   return (
     <div className="space-y-6">

@@ -47,6 +47,7 @@ type State = {
     capacity_building: boolean;
     klasifikasi_nasional: boolean;
     public_dashboard: boolean;
+    logbook: boolean;
   };
 };
 
@@ -85,6 +86,7 @@ export function ProjectWizard({
       capacity_building: true,
       klasifikasi_nasional: true,
       public_dashboard: true,
+      logbook: false,
     },
   });
 
@@ -482,6 +484,38 @@ export function ProjectWizard({
               />
               <Row label="Mitra" value={selectedOrg?.name ?? "-"} />
             </dl>
+
+            {/* Modul opsional */}
+            <div className="rounded-xl border border-atr-outline p-4">
+              <h4 className="mb-2 text-sm font-semibold text-atr-fg">
+                Modul Opsional
+              </h4>
+              <label className="flex items-start gap-3">
+                <input
+                  type="checkbox"
+                  checked={state.enabled_modules.logbook}
+                  onChange={(e) =>
+                    setState((s) => ({
+                      ...s,
+                      enabled_modules: {
+                        ...s.enabled_modules,
+                        logbook: e.target.checked,
+                      },
+                    }))
+                  }
+                  className="mt-0.5 h-4 w-4"
+                />
+                <span className="text-sm">
+                  <span className="font-medium text-atr-fg">
+                    Log Book Personil
+                  </span>
+                  <span className="block text-xs text-atr-fg-muted">
+                    Tim pelaksana project mencatat agenda kegiatan harian
+                    selama masa kerja. Bisa diubah nanti di Pengaturan.
+                  </span>
+                </span>
+              </label>
+            </div>
 
             <div className="flex flex-col gap-2 pt-2 sm:flex-row sm:justify-end">
               <button

@@ -89,7 +89,7 @@ const ALL_TABS = [
   { key: "kehadiran", label: "Kehadiran" },
   { key: "rencana-aksi", label: "Rencana Aksi" },
   { key: "evidence", label: "Bukti" },
-  { key: "logbook", label: "Log Book" },
+  { key: "logbook", label: "Log Book", moduleKey: "logbook" },
   { key: "materi", label: "Materi & Tautan" },
   { key: "settings", label: "Pengaturan" },
 ] as const;
@@ -123,9 +123,13 @@ export default async function MitraProjectDetailPage({
   const publicState = await getPublicState(params.id);
   const activeTab = searchParams.tab ?? "overview";
   const isDesaBased = project.program_type === "desa_based";
-  const TABS = ALL_TABS.filter(
-    (t) => isDesaBased || !("desaOnly" in t && t.desaOnly),
-  );
+  const TABS = ALL_TABS.filter((t) => {
+    if (!isDesaBased && "desaOnly" in t && t.desaOnly) return false;
+    if ("moduleKey" in t && t.moduleKey) {
+      return project.enabled_modules?.[t.moduleKey] === true;
+    }
+    return true;
+  });
 
   return (
     <div className="space-y-6">

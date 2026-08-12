@@ -100,6 +100,112 @@ export async function addPersonnel(input: z.input<typeof addSchema>) {
 }
 
 // =====================================================
+// Admin: bulk import personil. Tiap baris = 1 personil.
+// Kolom (tab/koma): Nama, Email, Posisi, Telepon, Mulai, Selesai.
+// Akun dibuat otomatis (password bakti2026) atau pakai akun yang ada.
+// =====================================================
+const bulkRowSchema = z.object({
+  full_name: z.string().min(2),
+  email: z.string().email(),
+  position: z.string().min(2),
+  phone: z.string().optional().nullable(),
+  work_start: z.string().optional().nullable(),
+  work_end: z.string().optional().nullable(),
+});
+
+export async function bulkImportPersonnel(input: {
+  project_id: string;
+  rows: z.input<typeof bulkRowSchema>[];
+}) {
+  const actor = await requireRole("superadmin", "mitra_admin");
+  if (!Array.isArray(input.rows) || input.rows.length === 0) {
+    return { error: "Tidak ada baris untuk diimpor" };
+  }
+  const admin = createAdminClient();
+
+  if (actor.global_role === "mitra_admin") {
+    const { data: proj } = await admin
+      .from("projects")
+      .select("organization_id")
+      .eq("id", input.project_id)
+      .maybeSingle();
+    if (!proj || proj.organization_id !== actor.organization_id) {
+      return { error: "Project di luar organisasi Anda" };
+    }
+  }
+
+  let created = 0;
+  let reused = 0;
+  const errors: string[] = [];
+
+  for (let i = 0; i < input.rows.length; i++) {
+    const parsed = bulkRowSchema.safeParse(input.rows[i]);
+    if (!parsed.success) {
+      errors.push(`Baris ${i + 1}: data tidak valid`);
+      continue;
+    }
+    const b = parsed.data;
+
+    const { data: existing } = await admin
+      .from("users")
+      .select("id")
+      .eq("email", b.email)
+      .is("deleted_at", null)
+      .maybeSingle();
+
+    let userId: string;
+    if (existing) {
+      userId = existing.id as string;
+      reused++;
+    } else {
+      const { data: authRes, error: authErr } =
+        await admin.auth.admin.createUser({
+          email: b.email,
+          email_confirm: true,
+          password: "bakti2026",
+          user_metadata: { full_name: b.full_name },
+        });
+      if (authErr || !authRes.user) {
+        errors.push(`Baris ${i + 1} (${b.email}): ${authErr?.message ?? "gagal buat akun"}`);
+        continue;
+      }
+      userId = authRes.user.id;
+      await sanitizeAuthUser(userId);
+      const { error: insErr } = await admin.from("users").insert({
+        id: userId,
+        full_name: b.full_name,
+        email: b.email,
+        email_artificial: false,
+        phone: b.phone ?? null,
+        global_role: "personil",
+      });
+      if (insErr) {
+        await admin.auth.admin.deleteUser(userId);
+        errors.push(`Baris ${i + 1} (${b.email}): ${insErr.message}`);
+        continue;
+      }
+      created++;
+    }
+
+    const { error: ppErr } = await admin.from("project_personnel").insert({
+      project_id: input.project_id,
+      user_id: userId,
+      position: b.position,
+      phone: b.phone ?? null,
+      work_start: b.work_start || null,
+      work_end: b.work_end || null,
+    });
+    if (ppErr && ppErr.code !== "23505") {
+      errors.push(`Baris ${i + 1} (${b.email}): ${ppErr.message}`);
+    }
+  }
+
+  revalidatePath(`/atourin/projects/${input.project_id}`);
+  revalidatePath(`/mitra/projects/${input.project_id}`);
+  return { ok: true, created, reused, errors };
+}
+
+// =====================================================
 // Admin: ubah data personil (posisi/telepon/rentang kerja).
 // =====================================================
 const updateSchema = z.object({

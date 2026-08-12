@@ -33,6 +33,7 @@ const updateProjectSchema = z.object({
     capacity_building: z.boolean(),
     klasifikasi_nasional: z.boolean(),
     public_dashboard: z.boolean(),
+    logbook: z.boolean().optional(),
   }),
   // Konfigurasi penilaian per project. Bobot dalam persen (0..100), disimpan
   // sebagai fraksi. Opsional: kalau tidak dikirim, config lama dipertahankan.

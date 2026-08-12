@@ -11,11 +11,13 @@ import {
   ArrowLeft,
   Printer,
   NotebookPen,
+  Upload,
 } from "lucide-react";
 import {
   addPersonnel,
   updatePersonnel,
   removePersonnel,
+  bulkImportPersonnel,
 } from "@/server/actions/personnel";
 import type { PersonnelRow, LogbookEntry } from "@/server/queries/personnel";
 
@@ -48,29 +50,52 @@ export function LogbookAdminTab({
   basePath: string; // e.g. /atourin/projects/{id} atau /mitra/projects/{id}
 }) {
   const [showForm, setShowForm] = useState(false);
+  const [showImport, setShowImport] = useState(false);
 
   return (
     <div className="space-y-5">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
           <h2 className="text-lg font-bold text-atr-fg">Log Book Personil</h2>
           <p className="text-sm text-atr-fg-muted">
             Tim pelaksana project mencatat agenda harian selama masa kerja.
           </p>
         </div>
-        <button
-          onClick={() => setShowForm((v) => !v)}
-          className="inline-flex items-center gap-2 rounded-lg bg-atr-purple px-4 py-2 text-sm font-bold text-white"
-        >
-          <Plus className="h-4 w-4" />
-          Tambah Personil
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={() => {
+              setShowImport((v) => !v);
+              setShowForm(false);
+            }}
+            className="inline-flex items-center gap-2 rounded-lg border border-atr-outline bg-white px-4 py-2 text-sm font-bold text-atr-fg hover:bg-atr-bg-soft"
+          >
+            <Upload className="h-4 w-4" />
+            Import Personil
+          </button>
+          <button
+            onClick={() => {
+              setShowForm((v) => !v);
+              setShowImport(false);
+            }}
+            className="inline-flex items-center gap-2 rounded-lg bg-atr-purple px-4 py-2 text-sm font-bold text-white"
+          >
+            <Plus className="h-4 w-4" />
+            Tambah Personil
+          </button>
+        </div>
       </div>
 
       {showForm && (
         <AddPersonnelForm
           projectId={projectId}
           onDone={() => setShowForm(false)}
+        />
+      )}
+
+      {showImport && (
+        <BulkImportForm
+          projectId={projectId}
+          onDone={() => setShowImport(false)}
         />
       )}
 
@@ -245,6 +270,125 @@ function AddPersonnelForm({
           font-size: 0.875rem;
         }
       `}</style>
+    </div>
+  );
+}
+
+// =====================================================
+// Bulk import personil via paste (satu baris per personil).
+// =====================================================
+function BulkImportForm({
+  projectId,
+  onDone,
+}: {
+  projectId: string;
+  onDone: () => void;
+}) {
+  const router = useRouter();
+  const [text, setText] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [result, setResult] = useState<{
+    created: number;
+    reused: number;
+    errors: string[];
+  } | null>(null);
+  const [pending, startTransition] = useTransition();
+
+  function parseRows() {
+    return text
+      .split("\n")
+      .map((l) => l.trim())
+      .filter(Boolean)
+      .map((line) => {
+        // Pisah dengan tab atau koma.
+        const cols = line.split(/\t|,/).map((c) => c.trim());
+        return {
+          full_name: cols[0] ?? "",
+          email: cols[1] ?? "",
+          position: cols[2] ?? "",
+          phone: cols[3] || null,
+          work_start: cols[4] || null,
+          work_end: cols[5] || null,
+        };
+      });
+  }
+
+  function submit() {
+    setError(null);
+    setResult(null);
+    const rows = parseRows();
+    if (rows.length === 0) {
+      setError("Tempel minimal satu baris data");
+      return;
+    }
+    startTransition(async () => {
+      const res = await bulkImportPersonnel({ project_id: projectId, rows });
+      if (res.error) {
+        setError(res.error);
+        return;
+      }
+      setResult({
+        created: res.created ?? 0,
+        reused: res.reused ?? 0,
+        errors: res.errors ?? [],
+      });
+      setText("");
+      router.refresh();
+    });
+  }
+
+  return (
+    <div className="space-y-3 rounded-xl border border-atr-outline bg-white p-4">
+      <div>
+        <h3 className="text-sm font-bold text-atr-fg">Import Personil</h3>
+        <p className="mt-0.5 text-xs text-atr-fg-muted">
+          Tempel data dari spreadsheet. Satu baris per personil, kolom dipisah
+          Tab atau koma dengan urutan:
+        </p>
+        <p className="mt-1 rounded bg-atr-bg-soft px-2 py-1 font-mono text-[11px] text-atr-fg">
+          Nama, Email, Posisi, Telepon, Mulai (YYYY-MM-DD), Selesai (YYYY-MM-DD)
+        </p>
+        <p className="mt-1 text-[11px] text-atr-fg-muted">
+          Telepon dan tanggal boleh dikosongkan. Akun baru otomatis dibuat
+          dengan password <span className="font-bold">bakti2026</span>.
+        </p>
+      </div>
+      <textarea
+        value={text}
+        onChange={(e) => setText(e.target.value)}
+        rows={6}
+        placeholder={"Budi Santoso, budi@contoh.com, Fasilitator, 08123456789, 2026-07-01, 2026-09-30\nSiti Aminah, siti@contoh.com, Admin, , 2026-07-01, 2026-08-31"}
+        className="w-full rounded-lg border border-atr-outline px-3 py-2 font-mono text-xs"
+      />
+      {error && <p className="text-sm text-red-600">{error}</p>}
+      {result && (
+        <div className="rounded-lg bg-green-50 px-3 py-2 text-sm text-green-700">
+          Berhasil: {result.created} akun baru, {result.reused} pakai akun ada.
+          {result.errors.length > 0 && (
+            <ul className="mt-1 list-disc pl-5 text-xs text-red-600">
+              {result.errors.map((e, i) => (
+                <li key={i}>{e}</li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
+      <div className="flex gap-2">
+        <button
+          onClick={submit}
+          disabled={pending}
+          className="inline-flex items-center gap-2 rounded-lg bg-atr-purple px-4 py-2 text-sm font-bold text-white disabled:opacity-60"
+        >
+          {pending && <Loader2 className="h-4 w-4 animate-spin" />}
+          Import
+        </button>
+        <button
+          onClick={onDone}
+          className="rounded-lg border border-atr-outline px-4 py-2 text-sm font-medium text-atr-fg"
+        >
+          Tutup
+        </button>
+      </div>
     </div>
   );
 }

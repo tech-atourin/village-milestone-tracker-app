@@ -40,6 +40,7 @@ const createProjectSchema = z.object({
       capacity_building: z.boolean().default(true),
       klasifikasi_nasional: z.boolean().default(false),
       public_dashboard: z.boolean().default(false),
+      logbook: z.boolean().default(false),
     })
     .default({
       desa_baseline: true,
@@ -47,6 +48,7 @@ const createProjectSchema = z.object({
       capacity_building: true,
       klasifikasi_nasional: false,
       public_dashboard: false,
+      logbook: false,
     }),
   publish: z.boolean().default(false),
 });
