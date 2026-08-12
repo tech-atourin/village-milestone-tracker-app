@@ -1,16 +1,16 @@
 "use client";
 
 /**
- * Client-side image compressor used by peserta evidence uploads.
- * - JPG/PNG/WEBP/HEIC inputs are resized to max 1920px on the long edge
- *   and re-encoded as JPEG quality 0.82 (~70% size reduction typical).
+ * Client-side image compressor used by peserta evidence + personil log book.
+ * - JPG/PNG/WEBP/HEIC inputs are resized to max 2048px on the long edge
+ *   and re-encoded as JPEG quality 0.85 (kualitas tetap tajam, hemat storage).
  * - Files already < 500KB are passed through untouched (compression
  *   would not save meaningful storage).
  * - Non-image files (PDF/video/audio/etc) are passed through untouched.
  */
 
-const MAX_EDGE = 1920;
-const QUALITY = 0.82;
+const MAX_EDGE = 2048;
+const QUALITY = 0.85;
 const SKIP_BELOW = 500 * 1024;
 
 export async function compressIfImage(file: File): Promise<File> {

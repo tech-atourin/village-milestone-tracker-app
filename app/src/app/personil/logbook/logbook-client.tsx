@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition, useRef } from "react";
+import { useState, useTransition, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { Plus, Loader2, Trash2, Pencil, ImagePlus, X, Check } from "lucide-react";
@@ -54,7 +54,7 @@ export function LogbookClient({
 
   if (!active) {
     return (
-      <div className="rounded-xl border border-atr-outline bg-white p-8 text-center text-atr-muted">
+      <div className="rounded-xl border border-atr-outline bg-white p-8 text-center text-atr-fg-muted">
         Anda belum ditugaskan sebagai personil di project mana pun.
       </div>
     );
@@ -70,8 +70,8 @@ export function LogbookClient({
               onClick={() => setActiveId(a.id)}
               className={`rounded-lg border px-3 py-1.5 text-sm ${
                 a.id === activeId
-                  ? "border-atr-primary bg-atr-primary text-white"
-                  : "border-atr-outline bg-white text-atr-ink"
+                  ? "border-atr-purple bg-atr-purple text-white"
+                  : "border-atr-outline bg-white text-atr-fg"
               }`}
             >
               {a.project_name}
@@ -148,11 +148,11 @@ function AssignmentPanel({ assignment }: { assignment: PersonnelAssignment }) {
   return (
     <div className="space-y-5">
       <div className="rounded-xl border border-atr-outline bg-white p-4">
-        <p className="text-sm text-atr-muted">
+        <p className="text-sm text-atr-fg-muted">
           {assignment.position} - {assignment.project_name}
         </p>
         {(assignment.work_start || assignment.work_end) && (
-          <p className="mt-0.5 text-xs text-atr-muted">
+          <p className="mt-0.5 text-xs text-atr-fg-muted">
             Masa kerja: {assignment.work_start ? formatTanggal(assignment.work_start) : "?"} sampai{" "}
             {assignment.work_end ? formatTanggal(assignment.work_end) : "?"}
           </p>
@@ -161,10 +161,10 @@ function AssignmentPanel({ assignment }: { assignment: PersonnelAssignment }) {
 
       {/* Form tambah agenda */}
       <div className="rounded-xl border border-atr-outline bg-white p-4 space-y-3">
-        <h2 className="font-semibold text-atr-ink">Tambah Agenda Harian</h2>
+        <h2 className="font-semibold text-atr-fg">Tambah Agenda Harian</h2>
         <div className="grid gap-3 sm:grid-cols-[200px_1fr]">
           <div>
-            <label className="mb-1 block text-xs font-medium text-atr-muted">
+            <label className="mb-1 block text-xs font-medium text-atr-fg-muted">
               Tanggal
             </label>
             <input
@@ -177,7 +177,7 @@ function AssignmentPanel({ assignment }: { assignment: PersonnelAssignment }) {
             />
           </div>
           <div>
-            <label className="mb-1 block text-xs font-medium text-atr-muted">
+            <label className="mb-1 block text-xs font-medium text-atr-fg-muted">
               Deskripsi Kegiatan
             </label>
             <textarea
@@ -192,20 +192,20 @@ function AssignmentPanel({ assignment }: { assignment: PersonnelAssignment }) {
 
         {/* Lampiran gambar (opsional) */}
         <div>
-          <label className="mb-1 block text-xs font-medium text-atr-muted">
+          <label className="mb-1 block text-xs font-medium text-atr-fg-muted">
             Gambar Dokumentasi (opsional)
           </label>
           <div className="flex flex-wrap items-center gap-2">
             <button
               type="button"
               onClick={() => addFileRef.current?.click()}
-              className="inline-flex items-center gap-2 rounded-lg border border-dashed border-atr-outline px-3 py-2 text-sm text-atr-muted hover:bg-atr-bg-soft"
+              className="inline-flex items-center gap-2 rounded-lg border border-dashed border-atr-outline px-3 py-2 text-sm text-atr-fg-muted hover:bg-atr-bg-soft"
             >
               <ImagePlus className="h-4 w-4" />
               Pilih Gambar
             </button>
             {files.length > 0 && (
-              <span className="text-xs text-atr-muted">
+              <span className="text-xs text-atr-fg-muted">
                 {files.length} gambar dipilih
               </span>
             )}
@@ -213,22 +213,13 @@ function AssignmentPanel({ assignment }: { assignment: PersonnelAssignment }) {
           {files.length > 0 && (
             <div className="mt-2 flex flex-wrap gap-2">
               {files.map((f, i) => (
-                <div
+                <FilePreview
                   key={`${f.name}-${i}`}
-                  className="flex items-center gap-1.5 rounded-lg border border-atr-outline bg-atr-bg-soft px-2 py-1 text-xs text-atr-ink"
-                >
-                  <span className="max-w-[160px] truncate">{f.name}</span>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setFiles((prev) => prev.filter((_, idx) => idx !== i))
-                    }
-                    className="text-red-500"
-                    title="Hapus"
-                  >
-                    <X className="h-3.5 w-3.5" />
-                  </button>
-                </div>
+                  file={f}
+                  onRemove={() =>
+                    setFiles((prev) => prev.filter((_, idx) => idx !== i))
+                  }
+                />
               ))}
             </div>
           )}
@@ -249,7 +240,7 @@ function AssignmentPanel({ assignment }: { assignment: PersonnelAssignment }) {
         <button
           onClick={submit}
           disabled={pending}
-          className="inline-flex items-center gap-2 rounded-lg bg-atr-primary px-4 py-2 text-sm font-medium text-white disabled:opacity-60"
+          className="inline-flex items-center gap-2 rounded-lg bg-atr-purple px-4 py-2 text-sm font-medium text-white disabled:opacity-60"
         >
           {pending ? (
             <Loader2 className="h-4 w-4 animate-spin" />
@@ -262,7 +253,7 @@ function AssignmentPanel({ assignment }: { assignment: PersonnelAssignment }) {
 
       {/* Daftar entri per tanggal */}
       {dates.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-atr-outline bg-white p-8 text-center text-atr-muted">
+        <div className="rounded-xl border border-dashed border-atr-outline bg-white p-8 text-center text-atr-fg-muted">
           Belum ada agenda. Mulai isi log book harian Anda di atas.
         </div>
       ) : (
@@ -272,7 +263,7 @@ function AssignmentPanel({ assignment }: { assignment: PersonnelAssignment }) {
               key={date}
               className="rounded-xl border border-atr-outline bg-white p-4"
             >
-              <h3 className="mb-3 font-semibold text-atr-ink">
+              <h3 className="mb-3 font-semibold text-atr-fg">
                 {formatTanggal(date)}
               </h3>
               <div className="space-y-3">
@@ -284,6 +275,45 @@ function AssignmentPanel({ assignment }: { assignment: PersonnelAssignment }) {
           ))}
         </div>
       )}
+    </div>
+  );
+}
+
+// Thumbnail preview untuk file yang dipilih (sebelum diunggah).
+function FilePreview({
+  file,
+  onRemove,
+}: {
+  file: File;
+  onRemove: () => void;
+}) {
+  const [url, setUrl] = useState<string | null>(null);
+  useEffect(() => {
+    const objectUrl = URL.createObjectURL(file);
+    setUrl(objectUrl);
+    return () => URL.revokeObjectURL(objectUrl);
+  }, [file]);
+
+  return (
+    <div className="group relative">
+      {url ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={url}
+          alt={file.name}
+          className="h-20 w-20 rounded-lg border border-atr-outline object-cover"
+        />
+      ) : (
+        <div className="h-20 w-20 rounded-lg border border-atr-outline bg-atr-bg-soft" />
+      )}
+      <button
+        type="button"
+        onClick={onRemove}
+        className="absolute -right-1.5 -top-1.5 rounded-full bg-red-500 p-0.5 text-white opacity-0 group-hover:opacity-100"
+        title="Hapus"
+      >
+        <X className="h-3 w-3" />
+      </button>
     </div>
   );
 }
@@ -353,7 +383,7 @@ function EntryRow({ entry }: { entry: LogbookEntry }) {
             className="w-full rounded-lg border border-atr-outline px-3 py-2 text-sm"
           />
         ) : (
-          <p className="flex-1 whitespace-pre-wrap text-sm text-atr-ink">
+          <p className="flex-1 whitespace-pre-wrap text-sm text-atr-fg">
             {entry.agenda}
           </p>
         )}
@@ -373,7 +403,7 @@ function EntryRow({ entry }: { entry: LogbookEntry }) {
                   setEditing(false);
                   setDraft(entry.agenda);
                 }}
-                className="rounded p-1.5 text-atr-muted hover:bg-atr-outline/20"
+                className="rounded p-1.5 text-atr-fg-muted hover:bg-atr-outline/20"
                 title="Batal"
               >
                 <X className="h-4 w-4" />
@@ -383,7 +413,7 @@ function EntryRow({ entry }: { entry: LogbookEntry }) {
             <>
               <button
                 onClick={() => setEditing(true)}
-                className="rounded p-1.5 text-atr-muted hover:bg-atr-outline/20"
+                className="rounded p-1.5 text-atr-fg-muted hover:bg-atr-outline/20"
                 title="Edit"
               >
                 <Pencil className="h-4 w-4" />
@@ -413,7 +443,7 @@ function EntryRow({ entry }: { entry: LogbookEntry }) {
                 className="h-20 w-20 rounded-lg border border-atr-outline object-cover"
               />
             ) : (
-              <div className="flex h-20 w-20 items-center justify-center rounded-lg border border-atr-outline text-xs text-atr-muted">
+              <div className="flex h-20 w-20 items-center justify-center rounded-lg border border-atr-outline text-xs text-atr-fg-muted">
                 gambar
               </div>
             )}
@@ -429,7 +459,7 @@ function EntryRow({ entry }: { entry: LogbookEntry }) {
         <button
           onClick={() => fileRef.current?.click()}
           disabled={uploading}
-          className="flex h-20 w-20 flex-col items-center justify-center gap-1 rounded-lg border border-dashed border-atr-outline text-xs text-atr-muted hover:bg-white disabled:opacity-60"
+          className="flex h-20 w-20 flex-col items-center justify-center gap-1 rounded-lg border border-dashed border-atr-outline text-xs text-atr-fg-muted hover:bg-white disabled:opacity-60"
         >
           {uploading ? (
             <Loader2 className="h-4 w-4 animate-spin" />
