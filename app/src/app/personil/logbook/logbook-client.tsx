@@ -88,8 +88,10 @@ function AssignmentPanel({ assignment }: { assignment: PersonnelAssignment }) {
   const router = useRouter();
   const [entryDate, setEntryDate] = useState("");
   const [agenda, setAgenda] = useState("");
+  const [files, setFiles] = useState<File[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
+  const addFileRef = useRef<HTMLInputElement>(null);
 
   const min = assignment.work_start ?? undefined;
   const max = assignment.work_end ?? undefined;
@@ -114,7 +116,22 @@ function AssignmentPanel({ assignment }: { assignment: PersonnelAssignment }) {
         setError(res.error);
         return;
       }
+      // Unggah gambar (jika ada) ke agenda yang baru dibuat.
+      if (res.id && files.length > 0) {
+        for (const file of files) {
+          const compressed = await compressIfImage(file);
+          const base64 = await fileToBase64(compressed);
+          await uploadLogbookMedia({
+            logbook_id: res.id,
+            base64,
+            filename: compressed.name,
+            mime_type: compressed.type || "image/jpeg",
+          });
+        }
+      }
       setAgenda("");
+      setFiles([]);
+      if (addFileRef.current) addFileRef.current.value = "";
       router.refresh();
     });
   }
@@ -172,6 +189,62 @@ function AssignmentPanel({ assignment }: { assignment: PersonnelAssignment }) {
             />
           </div>
         </div>
+
+        {/* Lampiran gambar (opsional) */}
+        <div>
+          <label className="mb-1 block text-xs font-medium text-atr-muted">
+            Gambar Dokumentasi (opsional)
+          </label>
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={() => addFileRef.current?.click()}
+              className="inline-flex items-center gap-2 rounded-lg border border-dashed border-atr-outline px-3 py-2 text-sm text-atr-muted hover:bg-atr-bg-soft"
+            >
+              <ImagePlus className="h-4 w-4" />
+              Pilih Gambar
+            </button>
+            {files.length > 0 && (
+              <span className="text-xs text-atr-muted">
+                {files.length} gambar dipilih
+              </span>
+            )}
+          </div>
+          {files.length > 0 && (
+            <div className="mt-2 flex flex-wrap gap-2">
+              {files.map((f, i) => (
+                <div
+                  key={`${f.name}-${i}`}
+                  className="flex items-center gap-1.5 rounded-lg border border-atr-outline bg-atr-bg-soft px-2 py-1 text-xs text-atr-ink"
+                >
+                  <span className="max-w-[160px] truncate">{f.name}</span>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setFiles((prev) => prev.filter((_, idx) => idx !== i))
+                    }
+                    className="text-red-500"
+                    title="Hapus"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+          <input
+            ref={addFileRef}
+            type="file"
+            accept="image/*"
+            multiple
+            className="hidden"
+            onChange={(e) => {
+              if (e.target.files)
+                setFiles((prev) => [...prev, ...Array.from(e.target.files!)]);
+            }}
+          />
+        </div>
+
         {error && <p className="text-sm text-red-600">{error}</p>}
         <button
           onClick={submit}
