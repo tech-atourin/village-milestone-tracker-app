@@ -1,4 +1,4 @@
-export const metadata = { title: "Profil Desa | VMT by Atourin" };
+export const metadata = { title: "Profil Desa" };
 
 import Link from "next/link";
 import { Pencil } from "lucide-react";

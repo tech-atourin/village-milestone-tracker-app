@@ -24,7 +24,9 @@ const DESCRIPTION =
   "Village Milestone Tracker by Atourin. Platform multi-tenant untuk Pemerintah, BUMN/Swasta, dan NGO dalam mengelola program pelatihan, pendampingan, dan klasifikasi desa wisata secara terukur.";
 
 export const metadata = {
-  title: "Village Milestone Tracker - Platform Manajemen Program Pendampingan",
+  title: {
+    absolute: "Village Milestone Tracker - Platform Manajemen Program Pendampingan",
+  },
   description: DESCRIPTION,
   metadataBase: new URL(SITE_URL),
   alternates: { canonical: "/" },

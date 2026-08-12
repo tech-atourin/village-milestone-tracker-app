@@ -1,5 +1,5 @@
 export const metadata = {
-  title: "Detail Assessment Klasifikasi Desa V2 (Atourin)",
+  title: "Detail Assessment Klasifikasi Desa V2",
 };
 
 import Link from "next/link";

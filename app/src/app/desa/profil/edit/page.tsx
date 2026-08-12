@@ -1,4 +1,4 @@
-export const metadata = { title: "Edit Profil Desa | VMT by Atourin" };
+export const metadata = { title: "Edit Profil Desa" };
 
 import Link from "next/link";
 import { redirect, notFound } from "next/navigation";

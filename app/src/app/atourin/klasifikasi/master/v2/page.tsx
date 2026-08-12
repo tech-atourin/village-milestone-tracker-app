@@ -1,4 +1,4 @@
-export const metadata = { title: "Master Klasifikasi V2 | VMT by Atourin" };
+export const metadata = { title: "Master Klasifikasi V2" };
 
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";

@@ -2,7 +2,7 @@ import { requireRole } from "@/lib/auth/rbac";
 import { getMyPersonnel, getLogbookForPersonnel } from "@/server/queries/personnel";
 import { LogbookClient, type PersonnelAssignment } from "./logbook-client";
 
-export const metadata = { title: "Log Book | VMT by Atourin" };
+export const metadata = { title: "Log Book" };
 
 export default async function PersonilLogbookPage() {
   await requireRole("personil");
