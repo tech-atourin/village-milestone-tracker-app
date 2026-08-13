@@ -60,9 +60,10 @@ export function RaporEntryTable({
   const [editState, setEditState] = useState<EditState>(() => {
     const init: EditState = {};
     for (const r of rows) {
+      // Pre-isi Pre/Post dari nilai kuis otomatis bila belum ada input manual.
       init[r.user_id] = {
-        pre: r.pre_test_score?.toString() ?? "",
-        post: r.post_test_score?.toString() ?? "",
+        pre: (r.pre_test_score ?? r.auto_pre_test_score)?.toString() ?? "",
+        post: (r.post_test_score ?? r.auto_post_test_score)?.toString() ?? "",
         tugas: r.tugas_score?.toString() ?? "",
         keaktifan: r.keaktifan_score?.toString() ?? "",
       };
@@ -212,10 +213,13 @@ export function RaporEntryTable({
       <div className="rounded-xl border border-atr-outline bg-atr-bg-soft/50 px-3 py-2 text-xs text-atr-fg-muted">
         <strong className="text-atr-fg">Komposisi Nilai Akhir:</strong>{" "}
         {labels.map((b) => `${b.label} ${b.percent}`).join(" + ")}. Nilai
-        Akhir muncul setelah keempat komponen terisi. Kolom <strong>Hadir %</strong>{" "}
-        terisi otomatis dari check-in per materi dan <strong>tidak</strong>{" "}
-        ikut dihitung. Peserta hanya melihat Nilai Akhir, Pre-Test, dan
-        Post-Test di rapor &amp; sertifikat, bukan Tugas/Keaktifan.
+        Akhir muncul setelah keempat komponen terisi. Kolom <strong>Pre</strong>{" "}
+        dan <strong>Post</strong> terisi otomatis dari hasil kuis pre/post-test
+        (rata-rata semua materi) - bisa diubah manual bila perlu, lalu Simpan.
+        Kolom <strong>Δ</strong> = pertumbuhan (Post - Pre) dalam poin. Kolom{" "}
+        <strong>Hadir %</strong> terisi otomatis dari check-in per materi dan{" "}
+        <strong>tidak</strong> ikut dihitung. Peserta hanya melihat Nilai Akhir,
+        Pre-Test, dan Post-Test di rapor &amp; sertifikat, bukan Tugas/Keaktifan.
       </div>
       <div className="text-xs text-atr-fg-muted">
         {visibleRows.length} dari {rows.length} peserta
@@ -321,19 +325,25 @@ export function RaporEntryTable({
                     </span>
                   </td>
                   <td className="px-4 py-3">
-                    {r.improvement_percent != null ? (
-                      <span
-                        className={`inline-flex rounded-full px-2 py-0.5 text-xs font-bold ${
-                          r.improvement_percent > 0
-                            ? "bg-atr-arti/15 text-atr-arti"
-                            : r.improvement_percent < 0
-                              ? "bg-atr-red/15 text-atr-red"
-                              : "bg-atr-bg-soft text-atr-fg-muted"
-                        }`}
-                      >
-                        {r.improvement_percent > 0 ? "+" : ""}
-                        {r.improvement_percent}%
-                      </span>
+                    {livePre != null && livePost != null ? (
+                      (() => {
+                        const delta = Math.round((livePost - livePre) * 100) / 100;
+                        return (
+                          <span
+                            className={`inline-flex rounded-full px-2 py-0.5 text-xs font-bold ${
+                              delta > 0
+                                ? "bg-atr-arti/15 text-atr-arti"
+                                : delta < 0
+                                  ? "bg-atr-red/15 text-atr-red"
+                                  : "bg-atr-bg-soft text-atr-fg-muted"
+                            }`}
+                            title="Pertumbuhan Post-test dikurangi Pre-test (poin)"
+                          >
+                            {delta > 0 ? "+" : ""}
+                            {delta}
+                          </span>
+                        );
+                      })()
                     ) : (
                       <span className="text-xs text-atr-fg-muted">-</span>
                     )}

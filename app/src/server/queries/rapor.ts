@@ -11,6 +11,10 @@ export type RaporRow = {
   attendance_mode: "offline" | "online";
   pre_test_score: number | null;
   post_test_score: number | null;
+  // Nilai pre/post otomatis dari hasil kuis (peserta_test_results), rata-rata
+  // semua topik. Dipakai untuk pre-fill kolom rapor bila belum diisi manual.
+  auto_pre_test_score: number | null;
+  auto_post_test_score: number | null;
   tugas_score: number | null;
   keaktifan_score: number | null;
   final_score: number | null;
@@ -87,6 +91,43 @@ export async function listProjectRapor(projectId: string): Promise<RaporRow[]> {
     raporMap.set(r.user_id, r);
   }
 
+  // Nilai kuis otomatis: rata-rata pre/post per peserta dari peserta_test_results
+  // (sumber GForm ATAU kuis native, keduanya menyimpan form_type + max_score).
+  // Dinormalisasi ke persen lalu dirata-rata semua topik.
+  const { data: testResults } = await supabase
+    .from("peserta_test_results")
+    .select(
+      "user_id, score, max_score, form_type, project_topik:project_topik!inner(project_id)",
+    )
+    .eq("project_topik.project_id", projectId)
+    .in("form_type", ["pre_test", "post_test"])
+    .in(
+      "user_id",
+      memberRows.map((m) => m.user_id),
+    );
+  const autoAgg = new Map<
+    string,
+    { preSum: number; preN: number; postSum: number; postN: number }
+  >();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  for (const t of (testResults ?? []) as any[]) {
+    const uid = t.user_id as string;
+    const raw = Number(t.score);
+    const max = Number(t.max_score);
+    if (!Number.isFinite(raw)) continue;
+    const pct = max > 0 ? (raw / max) * 100 : raw;
+    const cur =
+      autoAgg.get(uid) ?? { preSum: 0, preN: 0, postSum: 0, postN: 0 };
+    if (t.form_type === "pre_test") {
+      cur.preSum += pct;
+      cur.preN += 1;
+    } else if (t.form_type === "post_test") {
+      cur.postSum += pct;
+      cur.postN += 1;
+    }
+    autoAgg.set(uid, cur);
+  }
+
   // Kehadiran diturunkan dari check-in per materi (bukan input manual) dan
   // tidak ikut dalam perhitungan Nilai Akhir.
   const matrix = await getProjectCheckinMatrix(projectId);
@@ -102,10 +143,17 @@ export async function listProjectRapor(projectId: string): Promise<RaporRow[]> {
 
   return memberRows.map((m) => {
     const r = raporMap.get(m.user_id);
+    const agg = autoAgg.get(m.user_id);
+    const autoPre =
+      agg && agg.preN > 0 ? Math.round(agg.preSum / agg.preN) : null;
+    const autoPost =
+      agg && agg.postN > 0 ? Math.round(agg.postSum / agg.postN) : null;
     return {
       ...m,
       pre_test_score: r?.pre_test_score ?? null,
       post_test_score: r?.post_test_score ?? null,
+      auto_pre_test_score: autoPre,
+      auto_post_test_score: autoPost,
       tugas_score: r?.tugas_score ?? null,
       keaktifan_score: r?.keaktifan_score ?? null,
       final_score: r?.final_score ?? null,
