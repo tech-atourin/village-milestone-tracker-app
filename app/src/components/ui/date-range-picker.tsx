@@ -74,7 +74,7 @@ export function DateRangePicker({
 
   const hasValue = Boolean(value.from || value.to);
   const label = hasValue
-    ? `${fmt(value.from) || "…"} – ${fmt(value.to) || "…"}`
+    ? `${fmt(value.from) || "…"} sampai ${fmt(value.to) || "…"}`
     : placeholder;
 
   return (

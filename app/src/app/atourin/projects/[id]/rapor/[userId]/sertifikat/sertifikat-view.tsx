@@ -170,7 +170,7 @@ export function SertifikatView({
             <strong className="text-atr-purple-600">{project.name}</strong>
             <br />
             yang diselenggarakan oleh BAKTI KOMDIGI dan Atourin selama periode{" "}
-            {dateFmt(project.period_start)} – {dateFmt(project.period_end)}.
+            {dateFmt(project.period_start)} sampai {dateFmt(project.period_end)}.
           </p>
 
           {pre != null && post != null && (

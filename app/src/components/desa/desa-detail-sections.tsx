@@ -1060,7 +1060,7 @@ export function DesaDetailSections({
                 <div>
                   <div className="font-bold text-atr-fg">{p.project_name}</div>
                   <div className="text-[11px] text-atr-fg-muted">
-                    {fmtDate(p.period_start)} – {fmtDate(p.period_end)} · {p.peserta_count} peserta
+                    {fmtDate(p.period_start)} sampai {fmtDate(p.period_end)} · {p.peserta_count} peserta
                   </div>
                 </div>
                 <span className="inline-flex rounded-full bg-atr-purple-50 px-2.5 py-0.5 text-[10px] font-bold uppercase text-atr-purple-600">

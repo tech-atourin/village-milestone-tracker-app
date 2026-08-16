@@ -343,7 +343,7 @@ export function SesiDetailEditor({
                 }).format(new Date(data.session_date))}
               </DT>
               <DT label="Jam">
-                {fmtTime(data.start_time)} – {fmtTime(data.end_time)}
+                {fmtTime(data.start_time)} sampai {fmtTime(data.end_time)}
               </DT>
               <DT label="Narasumber">{data.narasumber_name}</DT>
               <DT label="Status">{data.status}</DT>

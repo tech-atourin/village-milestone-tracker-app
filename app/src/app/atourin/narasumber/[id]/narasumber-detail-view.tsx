@@ -187,7 +187,7 @@ export function NarasumberDetailView({
                         {r.project_name}
                       </h3>
                       <p className="text-[11px] text-atr-fg-muted">
-                        {fmtDate(r.period_start)} – {fmtDate(r.period_end)}
+                        {fmtDate(r.period_start)} sampai {fmtDate(r.period_end)}
                       </p>
                       <div className="mt-2 flex flex-wrap gap-1.5">
                         {r.desa_names.map((d) => (

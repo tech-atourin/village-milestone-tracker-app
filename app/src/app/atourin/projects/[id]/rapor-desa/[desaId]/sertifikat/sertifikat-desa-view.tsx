@@ -139,7 +139,7 @@ export function SertifikatDesaView({
             <br />
             <strong className="text-atr-purple-600">{project.name}</strong>
             <br />
-            periode {dateFmt(project.period_start)} – {dateFmt(project.period_end)}.
+            periode {dateFmt(project.period_start)} sampai {dateFmt(project.period_end)}.
           </p>
 
           <div className="mx-auto mt-5 flex max-w-md justify-center gap-6 text-center text-xs">

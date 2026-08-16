@@ -127,7 +127,7 @@ export default async function NarasumberProjectDetailPage({
           </div>
           <div className="text-sm text-atr-fg-muted">
             Mitra: {project.organization?.name ?? "-"} ·{" "}
-            {formatDate(project.period_start)} – {formatDate(project.period_end)}
+            {formatDate(project.period_start)} sampai {formatDate(project.period_end)}
           </div>
         </div>
         <ProjectActions

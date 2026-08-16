@@ -325,7 +325,7 @@ export function RaporView({
             Periode
           </div>
           <div className="mt-1 font-bold text-atr-fg">
-            {fmtDateIdn(project.period_start)} – {fmtDateIdn(project.period_end)}
+            {fmtDateIdn(project.period_start)} sampai {fmtDateIdn(project.period_end)}
           </div>
         </div>
       </section>

@@ -190,7 +190,7 @@ export async function ReportBody({
           Laporan akhir program pendampingan
         </p>
         <p className="mt-2 text-xs text-atr-fg-muted">
-          {fmtDateIdn(project.period_start)} – {fmtDateIdn(project.period_end)}
+          {fmtDateIdn(project.period_start)} sampai {fmtDateIdn(project.period_end)}
         </p>
       </section>
 

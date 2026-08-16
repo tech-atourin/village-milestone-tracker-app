@@ -223,7 +223,7 @@ export function HubExtrasSections({
                   <div className="text-[11px] text-atr-fg-muted">
                     {fmtDate(e.mulai)}
                     {e.selesai && e.selesai !== e.mulai && (
-                      <> – {fmtDate(e.selesai)}</>
+                      <> sampai {fmtDate(e.selesai)}</>
                     )}
                   </div>
                   {e.deskripsi && (

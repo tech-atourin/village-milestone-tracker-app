@@ -362,7 +362,7 @@ function FormResultsTable({
       </div>
 
       <p className="text-xs text-atr-fg-muted">
-        Menampilkan {start + 1}–{Math.min(start + PAGE_SIZE, filtered.length)}{" "}
+        Menampilkan {start + 1}-{Math.min(start + PAGE_SIZE, filtered.length)}{" "}
         dari {filtered.length} hasil
       </p>
 
@@ -626,7 +626,7 @@ function NarasumberRatingTable({ rows }: { rows: NarasumberRatingRow[] }) {
       </div>
 
       <p className="text-xs text-atr-fg-muted">
-        Menampilkan {start + 1}–{Math.min(start + PAGE_SIZE, filtered.length)}{" "}
+        Menampilkan {start + 1}-{Math.min(start + PAGE_SIZE, filtered.length)}{" "}
         dari {filtered.length} penilaian
       </p>
 

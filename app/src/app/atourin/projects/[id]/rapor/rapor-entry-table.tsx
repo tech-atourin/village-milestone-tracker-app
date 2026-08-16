@@ -96,6 +96,14 @@ export function RaporEntryTable({
     const dir = sortDir === "asc" ? 1 : -1;
     const num = (v: number | null | undefined) =>
       v == null ? Number.NEGATIVE_INFINITY : v;
+    // Nilai efektif = input manual bila ada, kalau tidak pakai auto dari kuis.
+    const effPre = (r: RaporRow) => r.pre_test_score ?? r.auto_pre_test_score;
+    const effPost = (r: RaporRow) => r.post_test_score ?? r.auto_post_test_score;
+    const effDelta = (r: RaporRow) => {
+      const p = effPre(r);
+      const q = effPost(r);
+      return p == null || q == null ? null : q - p;
+    };
     return [...filtered].sort((a, b) => {
       switch (sortKey) {
         case "name":
@@ -103,9 +111,9 @@ export function RaporEntryTable({
         case "desa":
           return (a.desa_name ?? "").localeCompare(b.desa_name ?? "") * dir;
         case "pre":
-          return (num(a.pre_test_score) - num(b.pre_test_score)) * dir;
+          return (num(effPre(a)) - num(effPre(b))) * dir;
         case "post":
-          return (num(a.post_test_score) - num(b.post_test_score)) * dir;
+          return (num(effPost(a)) - num(effPost(b))) * dir;
         case "tugas":
           return (num(a.tugas_score) - num(b.tugas_score)) * dir;
         case "keaktifan":
@@ -113,7 +121,7 @@ export function RaporEntryTable({
         case "attendance":
           return (num(a.attendance) - num(b.attendance)) * dir;
         case "delta":
-          return (num(a.improvement_percent) - num(b.improvement_percent)) * dir;
+          return (num(effDelta(a)) - num(effDelta(b))) * dir;
         case "final":
           return (num(a.final_score) - num(b.final_score)) * dir;
       }

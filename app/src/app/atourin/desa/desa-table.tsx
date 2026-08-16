@@ -188,7 +188,7 @@ export function DesaTable({
       </div>
 
       <p className="text-xs text-atr-fg-muted">
-        Menampilkan {start + 1}–{Math.min(start + PAGE_SIZE, filtered.length)} dari{" "}
+        Menampilkan {start + 1}-{Math.min(start + PAGE_SIZE, filtered.length)} dari{" "}
         {filtered.length} desa
         {filtered.length !== rows.length && ` (filter dari ${rows.length})`}
       </p>

@@ -2,7 +2,7 @@ export const metadata = { title: "Hasil Kuis Saya" };
 
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { ClipboardList, ChevronRight, BookOpen } from "lucide-react";
+import { ClipboardList, ChevronRight, BookOpen, ArrowLeft } from "lucide-react";
 import { getCurrentUser } from "@/lib/auth/rbac";
 import { listMyQuizAttempts } from "@/server/queries/quiz-peserta";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -28,6 +28,14 @@ export default async function PesertaKuisPage() {
 
   return (
     <div className="space-y-5">
+      <Link
+        href="/peserta/home"
+        className="inline-flex items-center gap-1.5 text-sm text-atr-fg-muted hover:text-atr-fg"
+      >
+        <ArrowLeft className="h-4 w-4" />
+        Kembali ke Beranda
+      </Link>
+
       <header className="space-y-1">
         <h1 className="text-xl font-bold tracking-tight text-atr-fg">
           Hasil Kuis Saya

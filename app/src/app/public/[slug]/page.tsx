@@ -467,7 +467,7 @@ export default async function PublicDashboardPage({
               <div className="mt-3 flex flex-wrap items-center gap-3 text-xs text-white/80">
                 <span className="inline-flex items-center gap-1.5">
                   <CalendarRange className="h-3.5 w-3.5" />
-                  {formatDate(summary.project.period_start)} –{" "}
+                  {formatDate(summary.project.period_start)} sampai{" "}
                   {formatDate(summary.project.period_end)}
                 </span>
                 <span className="inline-flex items-center rounded-full bg-white/15 px-2 py-0.5 font-bold">
