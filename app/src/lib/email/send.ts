@@ -15,6 +15,9 @@ type SendEmailInput = {
   to: string;
   subject: string;
   html: string;
+  // Versi plaintext. Sangat disarankan diisi: multipart text+html adalah
+  // sinyal kuat agar email masuk INBOX (bukan Promotions/Spam).
+  text?: string;
   replyTo?: string;
 };
 
@@ -52,6 +55,7 @@ export async function sendEmail(
         to: [input.to],
         subject: input.subject,
         html: input.html,
+        ...(input.text ? { text: input.text } : {}),
         ...(input.replyTo ? { reply_to: input.replyTo } : {}),
       }),
     });

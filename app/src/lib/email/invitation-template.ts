@@ -1,9 +1,21 @@
-function escapeHtml(s: string): string {
-  return s
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
+import { emailShell, escapeHtml, h1, p } from "./layout";
+
+const BRAND = { ink: "#0f172a", muted: "#64748b", border: "#e2e8f0", soft: "#f8fafc" };
+
+// Kotak kredensial: label + nilai monospace, gaya "detail transaksi".
+function credsBox(email: string, password: string): string {
+  return `<tr><td style="padding:2px 0 18px 0;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:${BRAND.soft}; border:1px solid ${BRAND.border}; border-radius:12px;">
+      <tr>
+        <td style="padding:14px 16px; font-size:11px; text-transform:uppercase; letter-spacing:0.5px; color:${BRAND.muted}; width:96px;">Email</td>
+        <td style="padding:14px 16px; font-family:'SFMono-Regular',Consolas,'Liberation Mono',Menlo,monospace; font-size:14px; color:${BRAND.ink}; word-break:break-all;">${escapeHtml(email)}</td>
+      </tr>
+      <tr>
+        <td style="padding:14px 16px; font-size:11px; text-transform:uppercase; letter-spacing:0.5px; color:${BRAND.muted}; border-top:1px solid ${BRAND.border};">Password</td>
+        <td style="padding:14px 16px; font-family:'SFMono-Regular',Consolas,'Liberation Mono',Menlo,monospace; font-size:14px; color:${BRAND.ink}; border-top:1px solid ${BRAND.border}; word-break:break-all;">${escapeHtml(password)}</td>
+      </tr>
+    </table>
+  </td></tr>`;
 }
 
 export function invitationHtml(
@@ -14,22 +26,47 @@ export function invitationHtml(
   appUrl: string,
 ): string {
   const loginUrl = `${appUrl}/login`;
-  const resetUrl = `${appUrl}/forgot-password`;
-  return `
-<!doctype html>
-<html lang="id">
-  <body style="font-family: -apple-system, system-ui, sans-serif; color:#0f172a; max-width:560px; margin:0 auto; padding:24px;">
-    <h2 style="color:#7c3aed;">Halo ${escapeHtml(fullName)},</h2>
-    <p>Akun Anda di <strong>${escapeHtml(appName)}</strong> sudah dibuat. Gunakan kredensial berikut untuk login:</p>
-    <table style="width:100%; border-collapse:collapse; margin:16px 0; background:#f8fafc; border-radius:8px;">
-      <tr><td style="padding:10px 14px; font-size:12px; color:#64748b; width:100px;">Email</td><td style="padding:10px 14px; font-family:monospace; font-size:14px; color:#0f172a;">${escapeHtml(email)}</td></tr>
-      <tr><td style="padding:10px 14px; font-size:12px; color:#64748b; border-top:1px solid #e2e8f0;">Password</td><td style="padding:10px 14px; font-family:monospace; font-size:14px; color:#0f172a; border-top:1px solid #e2e8f0;">${escapeHtml(password)}</td></tr>
-    </table>
-    <p style="margin: 24px 0;">
-      <a href="${loginUrl}" style="background:#7c3aed; color:#fff; padding:10px 18px; border-radius:8px; text-decoration:none; font-weight:600;">Login Sekarang</a>
-    </p>
-    <p style="color:#475569; font-size:13px;">Untuk keamanan, ganti password Anda setelah login pertama. Atau gunakan <a href="${resetUrl}">link reset password</a> jika diperlukan.</p>
-    <p style="color:#94a3b8; font-size:12px; margin-top:32px;">Email ini dikirim otomatis. Jika Anda merasa menerima ini secara keliru, abaikan saja.</p>
-  </body>
-</html>`.trim();
+  const content = [
+    h1(`Halo ${fullName},`),
+    p(
+      `Akun Anda di <strong>${escapeHtml(
+        appName,
+      )}</strong> sudah aktif. Gunakan kredensial berikut untuk masuk:`,
+    ),
+    credsBox(email, password),
+    p(
+      `Demi keamanan, ganti password Anda setelah login pertama melalui menu Profil.`,
+    ),
+  ].join("");
+
+  return emailShell({
+    preheader: `Kredensial login akun ${appName} Anda sudah siap.`,
+    contentHtml: content,
+    cta: { label: "Login Sekarang", url: loginUrl },
+    appName,
+    appUrl,
+  });
+}
+
+export function invitationText(
+  fullName: string,
+  email: string,
+  password: string,
+  appName: string,
+  appUrl: string,
+): string {
+  return [
+    `Halo ${fullName},`,
+    "",
+    `Akun Anda di ${appName} sudah aktif. Gunakan kredensial berikut untuk masuk:`,
+    "",
+    `Email    : ${email}`,
+    `Password : ${password}`,
+    "",
+    `Login: ${appUrl}/login`,
+    "",
+    "Demi keamanan, ganti password Anda setelah login pertama melalui menu Profil.",
+    "",
+    "Email ini dikirim otomatis. Mohon tidak membalas.",
+  ].join("\n");
 }

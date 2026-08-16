@@ -5,7 +5,10 @@ import { z } from "zod";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { scopeHomePath } from "@/lib/auth/rbac";
 import { sendEmail, isEmailConfigured } from "@/lib/email/send";
-import { resetPasswordHtml } from "@/lib/email/reset-password-template";
+import {
+  resetPasswordHtml,
+  resetPasswordText,
+} from "@/lib/email/reset-password-template";
 import type { GlobalRole } from "@/types/supabase";
 
 const signInSchema = z.object({
@@ -155,6 +158,7 @@ export async function forgotPasswordAction(
     to: email,
     subject: `Reset password akun Anda di ${appName}`,
     html: resetPasswordHtml(fullName, confirmUrl, appName),
+    text: resetPasswordText(fullName, confirmUrl, appName),
   });
 
   return { success: true };

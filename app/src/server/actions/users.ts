@@ -390,7 +390,9 @@ export async function sendCredentialsEmail(
     process.env.NEXT_PUBLIC_APP_NAME ?? "Atourin Milestone Tracker";
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
 
-  const { invitationHtml } = await import("@/lib/email/invitation-template");
+  const { invitationHtml, invitationText } = await import(
+    "@/lib/email/invitation-template"
+  );
   const { sendEmail, isEmailConfigured } = await import("@/lib/email/send");
   if (!isEmailConfigured()) return { error: "Email (Resend) belum dikonfigurasi" };
 
@@ -398,6 +400,13 @@ export async function sendCredentialsEmail(
     to: t.email,
     subject: `Akun login Anda di ${appName}`,
     html: invitationHtml(
+      t.full_name,
+      t.email,
+      parsed.data.password,
+      appName,
+      appUrl,
+    ),
+    text: invitationText(
       t.full_name,
       t.email,
       parsed.data.password,

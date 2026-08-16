@@ -8,7 +8,7 @@ import {
   parseBulkRows,
   type BulkRowResult,
 } from "@/lib/excel/bulk-import";
-import { invitationHtml } from "@/lib/email/invitation-template";
+import { invitationHtml, invitationText } from "@/lib/email/invitation-template";
 import { sendEmail, isEmailConfigured } from "@/lib/email/send";
 import { sanitizeAuthUser } from "@/lib/auth/sanitize";
 import { reconcileAttemptsForUser } from "@/lib/quiz/reconcile";
@@ -572,6 +572,13 @@ export async function commitBulkImport(
         to: email,
         subject: `Akun login Anda di ${appName}`,
         html: invitationHtml(
+          row.full_name,
+          email,
+          generatedPassword,
+          appName,
+          appUrl,
+        ),
+        text: invitationText(
           row.full_name,
           email,
           generatedPassword,
