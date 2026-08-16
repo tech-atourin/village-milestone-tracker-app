@@ -18,6 +18,7 @@ export type ProjectMemberRow = {
     jabatan: string | null;
   };
   desa: { id: string; name: string } | null;
+  batch: { id: string; name: string } | null;
 };
 
 export async function listProjectMembers(
@@ -27,7 +28,7 @@ export async function listProjectMembers(
   const { data, error } = await supabase
     .from("project_memberships")
     .select(
-      "id, role, status, invited_at, attendance_mode, user:users!project_memberships_user_id_fkey(id, full_name, email, kota, address, gender, jabatan), desa:desa(id, name)",
+      "id, role, status, invited_at, attendance_mode, user:users!project_memberships_user_id_fkey(id, full_name, email, kota, address, gender, jabatan), desa:desa(id, name), batch:project_batches(id, name)",
     )
     .eq("project_id", projectId)
     .order("invited_at", { ascending: false });

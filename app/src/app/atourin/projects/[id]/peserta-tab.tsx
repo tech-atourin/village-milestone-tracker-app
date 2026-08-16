@@ -353,6 +353,7 @@ function MembersTable({
           : "-",
     jabatan: m.user.jabatan || "-",
     attendance_mode: m.attendance_mode ?? "offline",
+    batch_name: m.batch?.name ?? "-",
   }));
   type Row = (typeof rows)[number];
 
@@ -361,6 +362,12 @@ function MembersTable({
   const desaOptions = Array.from(
     new Set(rows.map((r) => r.desa_name).filter((n) => n && n !== "-")),
   ).map((n) => ({ value: n, label: n }));
+
+  // Kolom/filter Batch hanya muncul kalau ada peserta yang sudah ditaut ke batch.
+  const batchOptions = Array.from(
+    new Set(rows.map((r) => r.batch_name).filter((n) => n && n !== "-")),
+  ).map((n) => ({ value: n, label: n }));
+  const showBatch = batchOptions.length > 0;
 
   const baseColumns: MembersColumnDef<Row, unknown>[] = [
     {
@@ -400,6 +407,18 @@ function MembersTable({
       <span className="text-sm text-atr-fg">{row.original.jabatan}</span>
     ),
   };
+  const batchColumn: MembersColumnDef<Row, unknown> = {
+    accessorKey: "batch_name",
+    header: "Batch",
+    cell: ({ row }) =>
+      row.original.batch_name && row.original.batch_name !== "-" ? (
+        <span className="inline-flex rounded-full bg-atr-purple-50 px-2 py-0.5 text-xs font-medium text-atr-purple-700">
+          {row.original.batch_name}
+        </span>
+      ) : (
+        <span className="text-xs text-atr-fg-muted">-</span>
+      ),
+  };
   const modeColumn: MembersColumnDef<Row, unknown> = {
     accessorKey: "attendance_mode",
     header: "Mode",
@@ -425,6 +444,7 @@ function MembersTable({
     ...(isDesaBased
       ? [desaColumn, modeColumn]
       : [asalColumn, genderColumn, jabatanColumn]),
+    ...(showBatch ? [batchColumn] : []),
     {
       accessorKey: "invited_at",
       header: "Diundang",
@@ -491,11 +511,20 @@ function MembersTable({
       columns={columns}
       searchKeys={["full_name", "email", isDesaBased ? "desa_name" : "asal"]}
       searchPlaceholder="Cari nama, email, atau desa…"
-      filters={
-        isDesaBased && desaOptions.length > 0
-          ? [{ key: "desa_name", label: "Desa", options: desaOptions }]
-          : []
-      }
+      filters={(
+        [
+          ...(isDesaBased && desaOptions.length > 0
+            ? [{ key: "desa_name", label: "Desa", options: desaOptions }]
+            : []),
+          ...(showBatch
+            ? [{ key: "batch_name", label: "Batch", options: batchOptions }]
+            : []),
+        ] as {
+          key: "desa_name" | "batch_name";
+          label: string;
+          options: { value: string; label: string }[];
+        }[]
+      )}
     />
   );
 }
