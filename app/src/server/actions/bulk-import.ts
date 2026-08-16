@@ -1,7 +1,6 @@
 "use server";
 
 import * as XLSX from "xlsx";
-import nodemailer from "nodemailer";
 import { z } from "zod";
 import { createAdminClient } from "@/lib/supabase/server";
 import { getCurrentUser } from "@/lib/auth/rbac";
@@ -10,6 +9,7 @@ import {
   type BulkRowResult,
 } from "@/lib/excel/bulk-import";
 import { invitationHtml } from "@/lib/email/invitation-template";
+import { sendEmail, isEmailConfigured } from "@/lib/email/send";
 import { sanitizeAuthUser } from "@/lib/auth/sanitize";
 import { reconcileAttemptsForUser } from "@/lib/quiz/reconcile";
 
@@ -444,19 +444,7 @@ export async function commitBulkImport(
     if (!error) attached++;
   }
 
-  const smtpUser = process.env.SMTP_USER;
-  const smtpPass = process.env.SMTP_PASSWORD;
-  const fromEmail = process.env.SMTP_FROM_EMAIL || smtpUser;
-  const fromName = process.env.SMTP_FROM_NAME ?? "Atourin Milestone Tracker";
-  const transporter =
-    smtpUser && smtpPass
-      ? nodemailer.createTransport({
-          host: process.env.SMTP_HOST ?? "smtp.gmail.com",
-          port: Number(process.env.SMTP_PORT ?? 465),
-          secure: (process.env.SMTP_SECURE ?? "true") === "true",
-          auth: { user: smtpUser, pass: smtpPass },
-        })
-      : null;
+  const emailReady = isEmailConfigured();
   const appName =
     process.env.NEXT_PUBLIC_APP_NAME ?? "Atourin Milestone Tracker";
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
@@ -579,24 +567,20 @@ export async function commitBulkImport(
     }
 
     // 5. Send invite email (best-effort) - includes credentials
-    if (parsed.data.send_invites && !emailArtificial && transporter && fromEmail) {
-      try {
-        await transporter.sendMail({
-          from: `"${fromName}" <${fromEmail}>`,
-          to: email,
-          subject: `Akun login Anda di ${appName}`,
-          html: invitationHtml(
-            row.full_name,
-            email,
-            generatedPassword,
-            appName,
-            appUrl,
-          ),
-        });
-        invitesSent++;
-      } catch (e) {
-        invitesFailed++;
-      }
+    if (parsed.data.send_invites && !emailArtificial && emailReady) {
+      const sent = await sendEmail({
+        to: email,
+        subject: `Akun login Anda di ${appName}`,
+        html: invitationHtml(
+          row.full_name,
+          email,
+          generatedPassword,
+          appName,
+          appUrl,
+        ),
+      });
+      if (sent.ok) invitesSent++;
+      else invitesFailed++;
     }
   }
 

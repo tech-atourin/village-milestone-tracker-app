@@ -64,3 +64,54 @@ export async function changePassword(input: {
 
   return { ok: true };
 }
+
+// =====================================================
+// Reset password (via recovery session dari link email).
+// Dipakai halaman /reset-password setelah callback menukar code jadi sesi
+// recovery. Tidak butuh password lama - identitas dijamin oleh sesi recovery.
+// =====================================================
+const resetSchema = z
+  .object({
+    next: z.string().min(8, "Password baru minimal 8 karakter").max(72),
+    confirm: z.string(),
+  })
+  .refine((d) => d.next === d.confirm, {
+    message: "Konfirmasi password tidak cocok",
+    path: ["confirm"],
+  });
+
+export type ResetPasswordResult = {
+  error?: string;
+  fieldErrors?: Partial<Record<"next" | "confirm", string>>;
+  ok?: boolean;
+};
+
+export async function resetPasswordWithSession(input: {
+  next: string;
+  confirm: string;
+}): Promise<ResetPasswordResult> {
+  const parsed = resetSchema.safeParse(input);
+  if (!parsed.success) {
+    const f = parsed.error.flatten().fieldErrors;
+    return { fieldErrors: { next: f.next?.[0], confirm: f.confirm?.[0] } };
+  }
+
+  // Butuh sesi (recovery) yang aktif dari link reset.
+  const supabase = createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    return {
+      error:
+        "Sesi reset tidak valid atau kedaluwarsa. Minta ulang link reset password.",
+    };
+  }
+
+  const { error } = await supabase.auth.updateUser({
+    password: parsed.data.next,
+  });
+  if (error) return { error: error.message };
+
+  return { ok: true };
+}

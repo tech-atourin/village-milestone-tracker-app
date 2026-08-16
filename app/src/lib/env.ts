@@ -20,6 +20,10 @@ const serverSchema = z.object({
   SMTP_PASSWORD: z.string().optional(),
   SMTP_FROM_NAME: z.string().default("Atourin Milestone Tracker"),
   SMTP_FROM_EMAIL: z.string().email().optional().or(z.literal("")),
+  // Resend (transport email aktif). Domain pengirim harus terverifikasi di Resend.
+  RESEND_API_KEY: z.string().optional(),
+  RESEND_FROM_EMAIL: z.string().email().optional().or(z.literal("")),
+  RESEND_FROM_NAME: z.string().optional(),
   FONNTE_API_TOKEN: z.string().optional(),
   NEXT_PUBLIC_APP_URL: z.string().url().default("http://localhost:3000"),
   NEXT_PUBLIC_APP_NAME: z.string().default("Atourin Milestone Tracker"),

@@ -2,8 +2,10 @@
 
 import { redirect } from "next/navigation";
 import { z } from "zod";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { scopeHomePath } from "@/lib/auth/rbac";
+import { sendEmail, isEmailConfigured } from "@/lib/email/send";
+import { resetPasswordHtml } from "@/lib/email/reset-password-template";
 import type { GlobalRole } from "@/types/supabase";
 
 const signInSchema = z.object({
@@ -108,16 +110,52 @@ export async function forgotPasswordAction(
     return { error: "Format email tidak valid." };
   }
 
-  const supabase = createClient();
+  const email = parsed.data.email.trim().toLowerCase();
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+  const appName =
+    process.env.NEXT_PUBLIC_APP_NAME ?? "Atourin Milestone Tracker";
 
-  const { error } = await supabase.auth.resetPasswordForEmail(
-    parsed.data.email,
-    { redirectTo: `${appUrl}/auth/callback?next=/reset-password` },
-  );
+  if (!isEmailConfigured()) {
+    return {
+      error:
+        "Layanan email belum dikonfigurasi. Hubungi admin untuk reset password.",
+    };
+  }
 
-  if (error) return { error: error.message };
+  // Flow custom via Resend: buat token recovery lewat admin API, lalu kirim
+  // sendiri via Resend (bukan email bawaan Supabase). Kita pakai token_hash
+  // ke route /auth/confirm (verifyOtp) - pola resmi @supabase/ssr - lalu
+  // mendarat di /reset-password dengan sesi recovery aktif.
+  const admin = createAdminClient();
+  const { data, error } = await admin.auth.admin.generateLink({
+    type: "recovery",
+    email,
+  });
 
-  // Always show success - don't leak whether the email exists.
+  // Selalu tampilkan sukses - jangan bocorkan apakah email terdaftar.
+  // (generateLink error untuk email tak dikenal; tetap balas success.)
+  const tokenHash = data?.properties?.hashed_token;
+  if (error || !tokenHash) {
+    return { success: true };
+  }
+
+  const confirmUrl = `${appUrl}/auth/confirm?token_hash=${encodeURIComponent(
+    tokenHash,
+  )}&type=recovery&next=${encodeURIComponent("/reset-password")}`;
+
+  // Ambil nama untuk sapaan email (best-effort).
+  const { data: profile } = await admin
+    .from("users")
+    .select("full_name")
+    .eq("email", email)
+    .maybeSingle();
+  const fullName = (profile as { full_name?: string } | null)?.full_name ?? "";
+
+  await sendEmail({
+    to: email,
+    subject: `Reset password akun Anda di ${appName}`,
+    html: resetPasswordHtml(fullName, confirmUrl, appName),
+  });
+
   return { success: true };
 }

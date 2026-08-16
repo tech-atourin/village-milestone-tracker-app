@@ -1,7 +1,7 @@
 import "server-only";
 
 import { createAdminClient } from "@/lib/supabase/server";
-import nodemailer from "nodemailer";
+import { sendEmail, isEmailConfigured } from "@/lib/email/send";
 
 export type NotifyTemplateKey =
   | "checklist_approved"
@@ -215,37 +215,22 @@ export async function notify(input: NotifyPayload): Promise<void> {
   } | null;
   if (!u) return;
 
-  // EMAIL channel - via Google Workspace SMTP (nodemailer).
+  // EMAIL channel - via Resend (lib/email/send).
   // Sementara dimatikan global lewat NOTIFY_EMAIL_DISABLED - skip kirim
   // dan jangan mark pending biar log bersih.
   if (input.channel === "email" && NOTIFY_EMAIL_DISABLED) return;
   if (input.channel === "email") {
-    const smtpUser = process.env.SMTP_USER;
-    const smtpPass = process.env.SMTP_PASSWORD;
-    const fromEmail = process.env.SMTP_FROM_EMAIL || smtpUser;
-    const fromName = process.env.SMTP_FROM_NAME ?? "Atourin Milestone Tracker";
-
-    if (!smtpUser || !smtpPass || !fromEmail || !u.email || u.email_artificial) {
-      await markPending(input, "smtp creds or recipient email missing");
+    if (!isEmailConfigured() || !u.email || u.email_artificial) {
+      await markPending(input, "resend not configured or recipient email missing");
       return;
     }
-    try {
-      const transporter = nodemailer.createTransport({
-        host: process.env.SMTP_HOST ?? "smtp.gmail.com",
-        port: Number(process.env.SMTP_PORT ?? 465),
-        secure: (process.env.SMTP_SECURE ?? "true") === "true",
-        auth: { user: smtpUser, pass: smtpPass },
-      });
-      await transporter.sendMail({
-        from: `"${fromName}" <${fromEmail}>`,
-        to: u.email,
-        subject: tpl.subject,
-        html: tpl.html,
-      });
-      await markSent(input);
-    } catch (e) {
-      await markFailed(input, (e as Error).message);
-    }
+    const res = await sendEmail({
+      to: u.email,
+      subject: tpl.subject,
+      html: tpl.html,
+    });
+    if (res.ok) await markSent(input);
+    else await markFailed(input, res.error);
     return;
   }
 

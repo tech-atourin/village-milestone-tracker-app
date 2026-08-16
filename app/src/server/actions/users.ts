@@ -386,40 +386,26 @@ export async function sendCredentialsEmail(
   const access = await ensureAccess(t.global_role, t.organization_id);
   if ("error" in access) return { error: access.error ?? "Tidak diizinkan" };
 
-  const smtpUser = process.env.SMTP_USER;
-  const smtpPass = process.env.SMTP_PASSWORD;
-  const fromEmail = process.env.SMTP_FROM_EMAIL || smtpUser;
-  const fromName = process.env.SMTP_FROM_NAME ?? "Atourin Milestone Tracker";
   const appName =
     process.env.NEXT_PUBLIC_APP_NAME ?? "Atourin Milestone Tracker";
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
-  if (!smtpUser || !smtpPass || !fromEmail)
-    return { error: "SMTP belum dikonfigurasi" };
 
-  const nodemailer = await import("nodemailer");
   const { invitationHtml } = await import("@/lib/email/invitation-template");
-  const transporter = nodemailer.default.createTransport({
-    host: process.env.SMTP_HOST ?? "smtp.gmail.com",
-    port: Number(process.env.SMTP_PORT ?? 465),
-    secure: (process.env.SMTP_SECURE ?? "true") === "true",
-    auth: { user: smtpUser, pass: smtpPass },
+  const { sendEmail, isEmailConfigured } = await import("@/lib/email/send");
+  if (!isEmailConfigured()) return { error: "Email (Resend) belum dikonfigurasi" };
+
+  const sent = await sendEmail({
+    to: t.email,
+    subject: `Akun login Anda di ${appName}`,
+    html: invitationHtml(
+      t.full_name,
+      t.email,
+      parsed.data.password,
+      appName,
+      appUrl,
+    ),
   });
-  try {
-    await transporter.sendMail({
-      from: `"${fromName}" <${fromEmail}>`,
-      to: t.email,
-      subject: `Akun login Anda di ${appName}`,
-      html: invitationHtml(
-        t.full_name,
-        t.email,
-        parsed.data.password,
-        appName,
-        appUrl,
-      ),
-    });
-  } catch (e) {
-    return { error: (e as Error).message };
-  }
+  if (!sent.ok) return { error: sent.error };
   await audit({
     actor_id: access.user.id,
     action: "member.added",
