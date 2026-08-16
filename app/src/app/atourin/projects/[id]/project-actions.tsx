@@ -14,18 +14,22 @@ import {
   MapPin,
 } from "lucide-react";
 import { togglePublicDashboard } from "@/server/actions/public-dashboard";
+import { isModuleOn } from "@/lib/modules";
 
 export function ProjectActions({
   projectId,
   initialEnabled,
   initialSlug,
   scope = "atourin",
+  enabledModules,
 }: {
   projectId: string;
   initialEnabled: boolean;
   initialSlug: string | null;
   scope?: "atourin" | "mitra" | "narasumber";
+  enabledModules?: Record<string, boolean>;
 }) {
+  const showRapor = isModuleOn(enabledModules, "capacity_building");
   const router = useRouter();
   const canTogglePublic = scope !== "narasumber";
   const [enabled, setEnabled] = useState(initialEnabled);
@@ -119,28 +123,32 @@ export function ProjectActions({
           </a>
         </>
       )}
-      <Link
-        href={`/${scope}/projects/${projectId}/rapor`}
-        className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-atr-outline bg-white px-3 text-sm font-bold text-atr-fg transition hover:bg-atr-bg-soft"
-      >
-        <GraduationCap className="h-3.5 w-3.5" />
-        Rapor Peserta
-      </Link>
-      <Link
-        href={`/${scope}/projects/${projectId}/rapor-desa`}
-        className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-atr-outline bg-white px-3 text-sm font-bold text-atr-fg transition hover:bg-atr-bg-soft"
-      >
-        <MapPin className="h-3.5 w-3.5" />
-        Rapor Desa
-      </Link>
-      <Link
-        href={`/${scope}/projects/${projectId}/report`}
-        target="_blank"
-        className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-atr-outline bg-white px-3 text-sm font-bold text-atr-fg transition hover:bg-atr-bg-soft"
-      >
-        <FileText className="h-3.5 w-3.5" />
-        Final Report
-      </Link>
+      {showRapor && (
+        <>
+          <Link
+            href={`/${scope}/projects/${projectId}/rapor`}
+            className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-atr-outline bg-white px-3 text-sm font-bold text-atr-fg transition hover:bg-atr-bg-soft"
+          >
+            <GraduationCap className="h-3.5 w-3.5" />
+            Rapor Peserta
+          </Link>
+          <Link
+            href={`/${scope}/projects/${projectId}/rapor-desa`}
+            className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-atr-outline bg-white px-3 text-sm font-bold text-atr-fg transition hover:bg-atr-bg-soft"
+          >
+            <MapPin className="h-3.5 w-3.5" />
+            Rapor Desa
+          </Link>
+          <Link
+            href={`/${scope}/projects/${projectId}/report`}
+            target="_blank"
+            className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-atr-outline bg-white px-3 text-sm font-bold text-atr-fg transition hover:bg-atr-bg-soft"
+          >
+            <FileText className="h-3.5 w-3.5" />
+            Final Report
+          </Link>
+        </>
+      )}
       </div>
     </div>
   );

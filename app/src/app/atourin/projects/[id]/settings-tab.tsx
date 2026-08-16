@@ -18,6 +18,7 @@ import {
   type GradingConfig,
   type BobotKey,
 } from "@/lib/rapor/scoring";
+import { PROJECT_MODULES, SELECTABLE_MODULES } from "@/lib/modules";
 
 type Project = {
   id: string;
@@ -43,14 +44,6 @@ const BOBOT_FIELDS: Array<{ key: BobotKey; label: string }> = [
   { key: "keaktifan", label: "Keaktifan" },
 ];
 
-const MODULES = [
-  ["desa_baseline", "Desa Baseline"],
-  ["topik_pendampingan", "Topik Pendampingan"],
-  ["capacity_building", "Capacity Building (RAPOR)"],
-  ["klasifikasi_nasional", "Klasifikasi Nasional"],
-  ["public_dashboard", "Shareable link (untuk mitra/sponsor)"],
-  ["logbook", "Log Book Personil"],
-] as const;
 
 export function SettingsTab({
   project,
@@ -89,15 +82,13 @@ export function SettingsTab({
     project.total_pendampingan_days?.toString() ?? "",
   );
   const [status, setStatus] = useState(project.status);
-  const [modules, setModules] = useState<Record<string, boolean>>(() => ({
-    desa_baseline: project.enabled_modules.desa_baseline ?? true,
-    topik_pendampingan: project.enabled_modules.topik_pendampingan ?? true,
-    capacity_building: project.enabled_modules.capacity_building ?? true,
-    klasifikasi_nasional:
-      project.enabled_modules.klasifikasi_nasional ?? false,
-    public_dashboard: project.enabled_modules.public_dashboard ?? false,
-    logbook: project.enabled_modules.logbook ?? false,
-  }));
+  const [modules, setModules] = useState<Record<string, boolean>>(() => {
+    const init: Record<string, boolean> = {};
+    for (const m of PROJECT_MODULES) {
+      init[m.key] = project.enabled_modules[m.key] ?? m.default;
+    }
+    return init;
+  });
 
   // Bobot penilaian dalam PERSEN (0..100) untuk input; disimpan sbg fraksi.
   const initialGrading = resolveGradingConfig(project.grading_config);
@@ -133,14 +124,7 @@ export function SettingsTab({
         pendampingan_end: pendampinganEnd,
         total_pendampingan_days: totalDays === "" ? null : Number(totalDays),
         status,
-        enabled_modules: {
-          desa_baseline: modules.desa_baseline,
-          topik_pendampingan: modules.topik_pendampingan,
-          capacity_building: modules.capacity_building,
-          klasifikasi_nasional: modules.klasifikasi_nasional,
-          public_dashboard: modules.public_dashboard,
-          logbook: modules.logbook,
-        },
+        enabled_modules: modules,
         grading_config: {
           weights: {
             pre_test: Number(weights.pre_test) || 0,
@@ -340,6 +324,39 @@ export function SettingsTab({
               <option value="archived">Arsip</option>
             </select>
           </Field>
+        </div>
+      </section>
+
+      <hr className="border-atr-outline" />
+
+      <section className="rounded-2xl border border-atr-outline bg-white p-6 shadow-atr-1">
+        <h3 className="text-sm font-bold text-atr-fg">Modul Aktif</h3>
+        <p className="mt-1 text-xs text-atr-fg-muted">
+          Centang fitur yang dipakai project ini. Menonaktifkan modul akan
+          menyembunyikan tab/menu terkait.
+        </p>
+        <div className="mt-4 grid gap-2 sm:grid-cols-2">
+          {SELECTABLE_MODULES.map((m) => (
+            <label
+              key={m.key}
+              className="flex items-start gap-3 rounded-xl border border-atr-outline p-3"
+            >
+              <input
+                type="checkbox"
+                checked={modules[m.key] ?? m.default}
+                onChange={(e) =>
+                  setModules((s) => ({ ...s, [m.key]: e.target.checked }))
+                }
+                className="mt-0.5 h-4 w-4"
+              />
+              <span className="text-sm">
+                <span className="font-medium text-atr-fg">{m.label}</span>
+                <span className="block text-xs text-atr-fg-muted">
+                  {m.description}
+                </span>
+              </span>
+            </label>
+          ))}
         </div>
       </section>
 

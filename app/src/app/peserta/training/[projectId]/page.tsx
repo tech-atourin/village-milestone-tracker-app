@@ -22,6 +22,7 @@ import {
 } from "@/server/queries/peserta";
 import { getMyCheckinTopikIds } from "@/server/queries/checkin";
 import { getPesertaProjectResources } from "@/server/queries/resources";
+import { isModuleOn } from "@/lib/modules";
 import { PesertaResourceItem } from "@/app/peserta/materi/resource-item";
 import { TopikCheckinButton } from "./topik-checkin-button";
 import { ensurePesertaUnit } from "@/server/actions/peserta-unit";
@@ -127,7 +128,7 @@ export default async function PesertaTrainingPage({
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-atr-fg-muted">
           <span className="inline-flex items-center gap-1">
             <CalendarRange className="h-3.5 w-3.5" />
-            {fmtDate(project.period_start)} – {fmtDate(project.period_end)}
+            {fmtDate(project.period_start)} sampai {fmtDate(project.period_end)}
           </span>
           {project.organization_name && (
             <span>Mitra: {project.organization_name}</span>
@@ -217,8 +218,8 @@ export default async function PesertaTrainingPage({
         </div>
       )}
 
-      {/* Materi & Tautan khusus project ini. */}
-      {resources.length > 0 && (
+      {/* Materi & Tautan khusus project ini (modul Materi). */}
+      {isModuleOn(project.enabled_modules, "materi") && resources.length > 0 && (
         <section className="rounded-2xl border border-atr-outline bg-white p-5 shadow-atr-1">
           <h2 className="mb-3 inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wide text-atr-fg-muted">
             <FolderOpen className="h-3.5 w-3.5" />
@@ -381,7 +382,8 @@ export default async function PesertaTrainingPage({
         </section>
       )}
 
-      {/* Rapor + Sertifikat link */}
+      {/* Rapor + Sertifikat link (modul Capacity Building) */}
+      {isModuleOn(project.enabled_modules, "capacity_building") && (
       <section className="grid gap-3 sm:grid-cols-2">
         <Link
           href={`/peserta/rapor/${project.id}`}
@@ -416,6 +418,7 @@ export default async function PesertaTrainingPage({
           </div>
         </Link>
       </section>
+      )}
     </div>
   );
 }

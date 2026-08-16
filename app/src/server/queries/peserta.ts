@@ -577,6 +577,7 @@ export type PesertaTrainingDetail = {
     period_end: string | null;
     status: string;
     organization_name: string | null;
+    enabled_modules: Record<string, boolean>;
   };
   membership: {
     attendance_mode: "offline" | "online";
@@ -623,7 +624,7 @@ export async function getPesertaTrainingDetail(
   const { data: proj } = await supabase
     .from("projects")
     .select(
-      "id, name, description, period_start, period_end, status, organization:organizations(name)",
+      "id, name, description, period_start, period_end, status, enabled_modules, organization:organizations(name)",
     )
     .eq("id", projectId)
     .maybeSingle();
@@ -765,6 +766,10 @@ export async function getPesertaTrainingDetail(
       period_end: project.period_end ?? null,
       status: project.status,
       organization_name: project.organization?.name ?? null,
+      enabled_modules: (project.enabled_modules ?? {}) as Record<
+        string,
+        boolean
+      >,
     },
     membership: {
       attendance_mode:

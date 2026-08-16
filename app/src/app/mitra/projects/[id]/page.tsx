@@ -45,6 +45,12 @@ import {
   LogbookAdminTab,
   LogbookAdminDetail,
 } from "@/app/atourin/projects/[id]/logbook-tab";
+import { listProjectBatches } from "@/server/queries/batches";
+import {
+  BatchTab,
+  type BatchPeserta,
+} from "@/app/atourin/projects/[id]/batch-tab";
+import { isModuleOn } from "@/lib/modules";
 
 async function getPublicState(projectId: string) {
   const supabase = createClient();
@@ -80,17 +86,18 @@ const STATUS_LABEL = {
 const ALL_TABS = [
   { key: "overview", label: "Ringkasan" },
   // Analisis (ringkasan AI + SWOT) berbasis desa, sembunyikan untuk project individu.
-  { key: "summary", label: "Analisis", desaOnly: true },
+  { key: "summary", label: "Analisis", desaOnly: true, moduleKey: "analisis" },
   { key: "desa", label: "Desa", desaOnly: true },
-  { key: "topik", label: "Topik" },
+  { key: "topik", label: "Topik", moduleKey: "topik_pendampingan" },
   { key: "peserta", label: "Peserta" },
-  { key: "narasumber", label: "Narasumber" },
-  { key: "kuis", label: "Kuis & Tes" },
-  { key: "kehadiran", label: "Kehadiran" },
-  { key: "rencana-aksi", label: "Rencana Aksi" },
-  { key: "evidence", label: "Bukti" },
+  { key: "batch", label: "Batch", moduleKey: "batch" },
+  { key: "narasumber", label: "Narasumber", moduleKey: "narasumber" },
+  { key: "kuis", label: "Kuis & Tes", moduleKey: "kuis" },
+  { key: "kehadiran", label: "Kehadiran", moduleKey: "kehadiran" },
+  { key: "rencana-aksi", label: "Rencana Aksi", moduleKey: "rencana_aksi" },
+  { key: "evidence", label: "Bukti", moduleKey: "evidence" },
   { key: "logbook", label: "Log Book", moduleKey: "logbook" },
-  { key: "materi", label: "Materi & Tautan" },
+  { key: "materi", label: "Materi & Tautan", moduleKey: "materi" },
   { key: "settings", label: "Pengaturan" },
 ] as const;
 
@@ -126,7 +133,7 @@ export default async function MitraProjectDetailPage({
   const TABS = ALL_TABS.filter((t) => {
     if (!isDesaBased && "desaOnly" in t && t.desaOnly) return false;
     if ("moduleKey" in t && t.moduleKey) {
-      return project.enabled_modules?.[t.moduleKey] === true;
+      return isModuleOn(project.enabled_modules, t.moduleKey);
     }
     return true;
   });
@@ -156,7 +163,7 @@ export default async function MitraProjectDetailPage({
           </div>
           <div className="text-sm text-atr-fg-muted">
             Mitra: {project.organization?.name ?? "-"} ·{" "}
-            {formatDate(project.period_start)} – {formatDate(project.period_end)}
+            {formatDate(project.period_start)} sampai {formatDate(project.period_end)}
           </div>
           {project.template && (
             <div className="text-xs text-atr-fg-muted">
@@ -169,6 +176,7 @@ export default async function MitraProjectDetailPage({
           initialEnabled={publicState.enabled}
           initialSlug={publicState.slug}
           scope="mitra"
+          enabledModules={project.enabled_modules}
         />
       </header>
 
@@ -215,6 +223,7 @@ export default async function MitraProjectDetailPage({
           programType={project.program_type}
         />
       )}
+      {activeTab === "batch" && <BatchTabLoader projectId={project.id} />}
       {activeTab === "narasumber" && (
         <NarasumberTabLoader projectId={project.id} />
       )}
@@ -283,6 +292,31 @@ async function LogbookTabLoader({
       basePath={basePath}
     />
   );
+}
+
+async function BatchTabLoader({ projectId }: { projectId: string }) {
+  const admin = createAdminClient();
+  const [batches, membersRes] = await Promise.all([
+    listProjectBatches(projectId),
+    admin
+      .from("project_memberships")
+      .select(
+        "user_id, batch_id, user:users!project_memberships_user_id_fkey(full_name, email)",
+      )
+      .eq("project_id", projectId)
+      .eq("role", "peserta")
+      .eq("status", "active"),
+  ]);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const peserta: BatchPeserta[] = ((membersRes.data ?? []) as any[])
+    .map((m) => ({
+      user_id: m.user_id as string,
+      full_name: m.user?.full_name ?? "-",
+      email: m.user?.email ?? null,
+      batch_id: (m.batch_id as string | null) ?? null,
+    }))
+    .sort((a, b) => a.full_name.localeCompare(b.full_name));
+  return <BatchTab projectId={projectId} batches={batches} peserta={peserta} />;
 }
 
 async function DesaTabLoader({ projectId }: { projectId: string }) {

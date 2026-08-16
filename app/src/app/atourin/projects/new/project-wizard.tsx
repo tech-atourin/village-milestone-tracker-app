@@ -15,6 +15,10 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { createProjectAction } from "@/server/actions/projects";
+import {
+  DEFAULT_ENABLED_MODULES,
+  modulesForProgram,
+} from "@/lib/modules";
 import type {
   TemplateSummary,
   OrganizationSummary,
@@ -41,14 +45,7 @@ type State = {
   total_pendampingan_days: number;
   template_id: string | null;
   organization_id: string;
-  enabled_modules: {
-    desa_baseline: boolean;
-    topik_pendampingan: boolean;
-    capacity_building: boolean;
-    klasifikasi_nasional: boolean;
-    public_dashboard: boolean;
-    logbook: boolean;
-  };
+  enabled_modules: Record<string, boolean>;
 };
 
 export function ProjectWizard({
@@ -80,14 +77,7 @@ export function ProjectWizard({
     total_pendampingan_days: 5,
     template_id: null,
     organization_id: defaultOrganizationId ?? "",
-    enabled_modules: {
-      desa_baseline: true,
-      topik_pendampingan: true,
-      capacity_building: true,
-      klasifikasi_nasional: true,
-      public_dashboard: true,
-      logbook: false,
-    },
+    enabled_modules: { ...DEFAULT_ENABLED_MODULES },
   });
 
   const selectedTemplate = state.template_id
@@ -485,36 +475,44 @@ export function ProjectWizard({
               <Row label="Mitra" value={selectedOrg?.name ?? "-"} />
             </dl>
 
-            {/* Modul opsional */}
+            {/* Modul aktif: centang fitur yang dipakai project ini. */}
             <div className="rounded-xl border border-atr-outline p-4">
-              <h4 className="mb-2 text-sm font-semibold text-atr-fg">
-                Modul Opsional
+              <h4 className="mb-1 text-sm font-semibold text-atr-fg">
+                Modul Aktif
               </h4>
-              <label className="flex items-start gap-3">
-                <input
-                  type="checkbox"
-                  checked={state.enabled_modules.logbook}
-                  onChange={(e) =>
-                    setState((s) => ({
-                      ...s,
-                      enabled_modules: {
-                        ...s.enabled_modules,
-                        logbook: e.target.checked,
-                      },
-                    }))
-                  }
-                  className="mt-0.5 h-4 w-4"
-                />
-                <span className="text-sm">
-                  <span className="font-medium text-atr-fg">
-                    Log Book Personil
-                  </span>
-                  <span className="block text-xs text-atr-fg-muted">
-                    Tim pelaksana project mencatat agenda kegiatan harian
-                    selama masa kerja. Bisa diubah nanti di Pengaturan.
-                  </span>
-                </span>
-              </label>
+              <p className="mb-3 text-xs text-atr-fg-muted">
+                Centang fitur yang dipakai project ini. Bisa diubah lagi nanti
+                di Pengaturan.
+              </p>
+              <div className="grid gap-2 sm:grid-cols-2">
+                {modulesForProgram(state.program_type).map((m) => (
+                  <label
+                    key={m.key}
+                    className="flex items-start gap-3 rounded-lg border border-atr-outline p-3"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={state.enabled_modules[m.key] ?? m.default}
+                      onChange={(e) =>
+                        setState((s) => ({
+                          ...s,
+                          enabled_modules: {
+                            ...s.enabled_modules,
+                            [m.key]: e.target.checked,
+                          },
+                        }))
+                      }
+                      className="mt-0.5 h-4 w-4"
+                    />
+                    <span className="text-sm">
+                      <span className="font-medium text-atr-fg">{m.label}</span>
+                      <span className="block text-xs text-atr-fg-muted">
+                        {m.description}
+                      </span>
+                    </span>
+                  </label>
+                ))}
+              </div>
             </div>
 
             <div className="flex flex-col gap-2 pt-2 sm:flex-row sm:justify-end">

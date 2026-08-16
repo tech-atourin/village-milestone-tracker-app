@@ -33,23 +33,8 @@ const createProjectSchema = z.object({
   participant_mode: z.enum(["offline", "online", "both"]).default("offline"),
   target_online: z.number().int().min(0).max(100000).default(0),
   target_offline: z.number().int().min(0).max(100000).default(0),
-  enabled_modules: z
-    .object({
-      desa_baseline: z.boolean().default(true),
-      topik_pendampingan: z.boolean().default(true),
-      capacity_building: z.boolean().default(true),
-      klasifikasi_nasional: z.boolean().default(false),
-      public_dashboard: z.boolean().default(false),
-      logbook: z.boolean().default(false),
-    })
-    .default({
-      desa_baseline: true,
-      topik_pendampingan: true,
-      capacity_building: true,
-      klasifikasi_nasional: false,
-      public_dashboard: false,
-      logbook: false,
-    }),
+  // Record modul generik (key -> aktif). Definisi modul ada di lib/modules.ts.
+  enabled_modules: z.record(z.string(), z.boolean()).default({}),
   publish: z.boolean().default(false),
 });
 

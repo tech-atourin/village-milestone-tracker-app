@@ -27,14 +27,8 @@ const updateProjectSchema = z.object({
   pendampingan_end: DateStr,
   total_pendampingan_days: z.number().int().min(1).max(60).optional().nullable(),
   status: z.enum(["draft", "active", "completed", "archived"]),
-  enabled_modules: z.object({
-    desa_baseline: z.boolean(),
-    topik_pendampingan: z.boolean(),
-    capacity_building: z.boolean(),
-    klasifikasi_nasional: z.boolean(),
-    public_dashboard: z.boolean(),
-    logbook: z.boolean().optional(),
-  }),
+  // Record modul generik (key -> aktif). Definisi ada di lib/modules.ts.
+  enabled_modules: z.record(z.string(), z.boolean()),
   // Konfigurasi penilaian per project. Bobot dalam persen (0..100), disimpan
   // sebagai fraksi. Opsional: kalau tidak dikirim, config lama dipertahankan.
   grading_config: z
