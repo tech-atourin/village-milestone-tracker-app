@@ -105,6 +105,13 @@ export function PesertaTab({
   }
 
   const activeMembers = safeMembers.filter((m) => m.status === "active");
+  const batchNames = Array.from(
+    new Set(
+      members
+        .map((m) => m.batch?.name)
+        .filter((n): n is string => !!n),
+    ),
+  ).sort();
 
   return (
     <div className="space-y-4">
@@ -118,7 +125,10 @@ export function PesertaTab({
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <PesertaBulkImportButton projectId={projectId} />
+          <PesertaBulkImportButton
+            projectId={projectId}
+            batchNames={batchNames}
+          />
           <button
             type="button"
             onClick={() => setShowAdd((s) => !s)}

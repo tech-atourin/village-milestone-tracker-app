@@ -62,6 +62,9 @@ export const bulkRowSchema = z
     gender: z.enum(["L", "P"]).optional().or(z.literal("")),
     birthdate: z.string().optional().nullable(),
     desa_name: z.string().optional().or(z.literal("")),
+    // Nama batch/gelombang (opsional). Dicocokkan dengan batch yang sudah ada
+    // di project saat import; kosong = tanpa batch.
+    batch_name: z.string().optional().or(z.literal("")),
     role: z
       .enum(["peserta", "mitra_admin", "narasumber"])
       .default("peserta"),
@@ -123,6 +126,9 @@ const COLUMN_ALIASES: Record<string, string> = {
   tanggal_lahir: "birthdate",
   desa_name: "desa_name",
   desa: "desa_name",
+  batch_name: "batch_name",
+  batch: "batch_name",
+  gelombang: "batch_name",
   role: "role",
   attendance_mode: "attendance_mode",
   mode: "attendance_mode",

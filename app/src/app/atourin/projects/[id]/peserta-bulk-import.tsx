@@ -11,7 +11,13 @@ import { BulkImportFlow } from "@/app/atourin/users/bulk-import/bulk-import-flow
  * attached as project members (desa resolved from the desa_name column).
  * Works for superadmin and the project's mitra_admin.
  */
-export function PesertaBulkImportButton({ projectId }: { projectId: string }) {
+export function PesertaBulkImportButton({
+  projectId,
+  batchNames = [],
+}: {
+  projectId: string;
+  batchNames?: string[];
+}) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
 
@@ -59,6 +65,7 @@ export function PesertaBulkImportButton({ projectId }: { projectId: string }) {
             <BulkImportFlow
               mode="peserta"
               projectId={projectId}
+              batchNames={batchNames}
               onDone={() => router.refresh()}
             />
           </div>

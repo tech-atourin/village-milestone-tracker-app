@@ -37,6 +37,7 @@ export async function generateTemplateBase64(
     "gender",
     "birthdate",
     "desa_name",
+    "batch_name",
     "role",
     "attendance_mode",
   ];
@@ -48,6 +49,7 @@ export async function generateTemplateBase64(
     "L",
     "12/05/1985",
     "Wanurejo",
+    "Batch 1",
     "peserta",
     "offline",
   ];
@@ -59,6 +61,7 @@ export async function generateTemplateBase64(
     "L atau P",
     "DD/MM/YYYY atau YYYY-MM-DD, opsional",
     "Nama desa yang sudah terdaftar, atau biarkan kosong untuk peserta non-desa",
+    "Nama batch/gelombang yang sudah ada di project, opsional (kosong = tanpa batch)",
     "peserta | mitra_admin | narasumber - default peserta",
     "offline (full kegiatan) | online (pre/post test only). Default offline. Cuma berlaku saat import ke dalam project.",
   ];
@@ -269,6 +272,7 @@ const commitSchema = z.object({
       gender: z.string().optional().nullable(),
       birthdate: z.string().optional().nullable(),
       desa_name: z.string().optional().nullable(),
+      batch_name: z.string().optional().nullable(),
       role: z.enum(["peserta", "mitra_admin", "narasumber"]),
       // Berlaku saat project_id != null + role=peserta. "offline" / "online".
       attendance_mode: z
@@ -351,6 +355,22 @@ export async function commitBulkImport(
     }
   }
 
+  // Pre-resolve project's batch (name → id) for membership attachment
+  const batchByName = new Map<string, string>();
+  if (projectId) {
+    const { data: batchRows } = await admin
+      .from("project_batches")
+      .select("id, name")
+      .eq("project_id", projectId);
+    for (const b of ((batchRows ?? []) as Array<{ id: string; name: string }>)) {
+      if (b.name) batchByName.set(b.name.toLowerCase().trim(), b.id);
+    }
+  }
+  function resolveBatchId(batchName: string | null | undefined): string | null {
+    if (!batchName) return null;
+    return batchByName.get(batchName.toLowerCase().trim()) ?? null;
+  }
+
   // Global desa name → id map for resolving representing_desa_id on peserta
   const globalDesaByName = new Map<string, string>();
   {
@@ -396,26 +416,31 @@ export async function commitBulkImport(
     role: string,
     desaName: string | null | undefined,
     attendanceMode: "offline" | "online" | null | undefined,
+    batchName: string | null | undefined,
   ) {
     if (!projectId) return;
     const desaId =
       role === "peserta" && desaName
         ? desaByName.get(desaName.toLowerCase().trim()) ?? null
         : null;
+    const batchId = role === "peserta" ? resolveBatchId(batchName) : null;
     // Upsert membership - a peserta can belong to multiple projects, and
     // re-import shouldn't duplicate. (project_id,user_id,role) is unique.
-    const { error } = await admin.from("project_memberships").upsert(
-      {
-        project_id: projectId,
-        user_id: userId,
-        role,
-        desa_id: desaId,
-        attendance_mode:
-          role === "peserta" ? attendanceMode ?? "offline" : "offline",
-        status: "active",
-      },
-      { onConflict: "project_id,user_id,role" },
-    );
+    const payload: Record<string, unknown> = {
+      project_id: projectId,
+      user_id: userId,
+      role,
+      desa_id: desaId,
+      attendance_mode:
+        role === "peserta" ? attendanceMode ?? "offline" : "offline",
+      status: "active",
+    };
+    // Only set batch_id when a matching batch was found, so re-imports without
+    // a batch column don't wipe an existing assignment.
+    if (batchId) payload.batch_id = batchId;
+    const { error } = await admin.from("project_memberships").upsert(payload, {
+      onConflict: "project_id,user_id,role",
+    });
     if (!error) attached++;
   }
 
@@ -462,7 +487,7 @@ export async function commitBulkImport(
     if (existing) {
       skipped++;
       const existingId = (existing as { id: string }).id;
-      await attachToProject(existingId, row.role, row.desa_name, row.attendance_mode);
+      await attachToProject(existingId, row.role, row.desa_name, row.attendance_mode, row.batch_name);
       // Backfill representing_desa_id for peserta if it was missing
       if (row.role === "peserta") {
         const desaId = resolveDesaId(row.desa_name);
@@ -534,7 +559,7 @@ export async function commitBulkImport(
     }
 
     created++;
-    await attachToProject(authResult.user.id, row.role, row.desa_name, row.attendance_mode);
+    await attachToProject(authResult.user.id, row.role, row.desa_name, row.attendance_mode, row.batch_name);
     if (row.role === "peserta") {
       const desaId = resolveDesaId(row.desa_name);
       if (desaId)

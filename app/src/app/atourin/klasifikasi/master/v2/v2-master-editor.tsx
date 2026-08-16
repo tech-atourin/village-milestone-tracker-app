@@ -473,6 +473,7 @@ function PillarCard({
         <button
           type="button"
           onClick={onRemove}
+          aria-label="Hapus pillar"
           className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-atr-red/30 bg-atr-red/5 text-atr-red hover:bg-atr-red/10"
           title="Hapus pillar"
         >

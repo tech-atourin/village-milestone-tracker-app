@@ -570,7 +570,7 @@ function TextField({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         readOnly={readOnly}
-        className={`w-full rounded-lg border border-atr-outline px-3 py-2 text-sm ${readOnly ? "bg-atr-bg-soft text-atr-fg-muted" : ""}`}
+        className={`w-full rounded-lg border border-atr-outline px-3 py-2 text-sm outline-none transition focus:border-atr-purple focus:ring-2 focus:ring-atr-purple/15 ${readOnly ? "bg-atr-bg-soft text-atr-fg-muted" : ""}`}
       />
       {hint && <span className="mt-1 block text-[11px] text-atr-fg-muted">{hint}</span>}
     </label>

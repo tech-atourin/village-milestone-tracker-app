@@ -284,6 +284,7 @@ function TagDialog({
           </div>
           <button
             type="button"
+            aria-label="Tutup"
             onClick={onClose}
             className="flex h-7 w-7 items-center justify-center rounded-md border border-atr-outline text-atr-fg-muted hover:bg-atr-bg-soft"
           >

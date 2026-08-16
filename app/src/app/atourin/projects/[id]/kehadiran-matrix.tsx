@@ -1,0 +1,194 @@
+"use client";
+
+import { useMemo, useState } from "react";
+import { Check, Users } from "lucide-react";
+import type { CheckinMatrix } from "@/server/queries/checkin";
+
+export function KehadiranMatrix({
+  topik,
+  rows,
+  total_topik,
+}: {
+  topik: CheckinMatrix["topik"];
+  rows: CheckinMatrix["rows"];
+  total_topik: number;
+}) {
+  const [batchFilter, setBatchFilter] = useState("");
+
+  const batchOptions = useMemo(() => {
+    const set = new Set<string>();
+    for (const r of rows) {
+      if (r.batch_name) set.add(r.batch_name);
+    }
+    return Array.from(set).sort();
+  }, [rows]);
+
+  const visibleRows = useMemo(
+    () =>
+      batchFilter ? rows.filter((r) => r.batch_name === batchFilter) : rows,
+    [rows, batchFilter],
+  );
+
+  const fullyChecked = visibleRows.filter(
+    (r) => total_topik > 0 && r.checked_count === total_topik,
+  ).length;
+
+  if (rows.length === 0) {
+    return (
+      <div className="rounded-2xl border border-dashed border-atr-outline bg-atr-bg-soft/40 p-10 text-center">
+        <Users className="mx-auto h-8 w-8 text-atr-fg-muted" />
+        <p className="mt-2 text-sm font-bold text-atr-fg">Belum ada peserta</p>
+      </div>
+    );
+  }
+
+  return (
+    <>
+      {batchOptions.length > 0 && (
+        <div className="flex flex-wrap items-center gap-2">
+          <select
+            value={batchFilter}
+            onChange={(e) => setBatchFilter(e.target.value)}
+            aria-label="Filter batch"
+            className={`h-10 rounded-lg border bg-white px-3 text-sm outline-none transition focus:border-atr-purple focus:ring-2 focus:ring-atr-purple/15 ${
+              batchFilter
+                ? "border-atr-purple/50 text-atr-fg"
+                : "border-atr-outline text-atr-fg-muted"
+            }`}
+          >
+            <option value="">Batch: Semua</option>
+            {batchOptions.map((b) => (
+              <option key={b} value={b}>
+                Batch: {b}
+              </option>
+            ))}
+          </select>
+          {batchFilter && (
+            <button
+              type="button"
+              onClick={() => setBatchFilter("")}
+              className="inline-flex h-10 items-center rounded-lg border border-atr-outline bg-white px-3 text-xs font-bold text-atr-fg-muted transition hover:bg-atr-bg-soft"
+            >
+              Reset
+            </button>
+          )}
+        </div>
+      )}
+
+      <div className="grid grid-cols-3 gap-3">
+        <Stat label="Peserta" value={String(visibleRows.length)} />
+        <Stat label="Topik" value={String(total_topik)} />
+        <Stat
+          label="Hadir lengkap"
+          value={`${fullyChecked}/${visibleRows.length}`}
+          highlight
+        />
+      </div>
+
+      <div className="overflow-x-auto rounded-2xl border border-atr-outline bg-white shadow-atr-1">
+        <table className="w-full text-sm">
+          <thead className="bg-atr-bg-soft text-left text-xs font-bold uppercase tracking-wide text-atr-fg-muted">
+            <tr>
+              <th className="sticky left-0 z-10 bg-atr-bg-soft px-4 py-3">
+                Peserta
+              </th>
+              {batchOptions.length > 0 && (
+                <th className="px-3 py-3">Batch</th>
+              )}
+              {topik.map((t, i) => (
+                <th key={t.id} className="px-2 py-3 text-center" title={t.name}>
+                  T{i + 1}
+                </th>
+              ))}
+              <th className="px-3 py-3 text-center">Total</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-atr-outline">
+            {visibleRows.map((r) => (
+              <tr key={r.user_id}>
+                <td className="sticky left-0 z-10 bg-white px-4 py-3">
+                  <div className="font-bold text-atr-fg">{r.name}</div>
+                  {r.email && (
+                    <div className="text-[11px] text-atr-fg-muted">
+                      {r.email}
+                    </div>
+                  )}
+                </td>
+                {batchOptions.length > 0 && (
+                  <td className="px-3 py-3">
+                    {r.batch_name ? (
+                      <span className="inline-flex rounded-full border border-atr-purple/30 bg-atr-purple/10 px-2 py-0.5 text-xs font-medium text-atr-purple">
+                        {r.batch_name}
+                      </span>
+                    ) : (
+                      <span className="text-xs text-atr-fg-muted">-</span>
+                    )}
+                  </td>
+                )}
+                {topik.map((t) => (
+                  <td key={t.id} className="px-2 py-3 text-center">
+                    {r.checked[t.id] ? (
+                      <Check className="mx-auto h-4 w-4 text-atr-arti" />
+                    ) : (
+                      <span className="text-atr-fg-muted">·</span>
+                    )}
+                  </td>
+                ))}
+                <td className="px-3 py-3 text-center">
+                  <span
+                    className={`text-xs font-bold ${
+                      r.checked_count === total_topik
+                        ? "text-atr-arti"
+                        : "text-atr-fg"
+                    }`}
+                  >
+                    {r.checked_count}/{total_topik}
+                  </span>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <div className="rounded-xl border border-atr-outline bg-atr-bg-soft/40 p-3">
+        <div className="mb-1.5 text-[10px] font-bold uppercase tracking-wide text-atr-fg-muted">
+          Keterangan kolom
+        </div>
+        <ul className="flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-atr-fg">
+          {topik.map((t, i) => (
+            <li key={t.id} className="inline-flex items-center gap-1.5">
+              <span className="inline-flex h-4 min-w-[1.5rem] items-center justify-center rounded bg-atr-purple-50 px-1 text-[10px] font-bold text-atr-purple-700">
+                T{i + 1}
+              </span>
+              {t.name}
+            </li>
+          ))}
+        </ul>
+      </div>
+    </>
+  );
+}
+
+function Stat({
+  label,
+  value,
+  highlight,
+}: {
+  label: string;
+  value: string;
+  highlight?: boolean;
+}) {
+  return (
+    <div className="rounded-2xl border border-atr-outline bg-white p-4 shadow-atr-1">
+      <div className="text-[10px] font-bold uppercase tracking-wide text-atr-fg-muted">
+        {label}
+      </div>
+      <div
+        className={`text-xl font-bold ${highlight ? "text-atr-purple-700" : "text-atr-fg"}`}
+      >
+        {value}
+      </div>
+    </div>
+  );
+}

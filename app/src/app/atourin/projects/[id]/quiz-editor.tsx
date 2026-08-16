@@ -186,7 +186,7 @@ export function QuizEditor({
             <input
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              className="w-full rounded-lg border border-atr-outline px-3 py-2 text-sm"
+              className="w-full rounded-lg border border-atr-outline px-3 py-2 text-sm outline-none transition focus:border-atr-purple focus:ring-2 focus:ring-atr-purple/15"
             />
           </Field>
           <Field label="Deskripsi / instruksi" className="sm:col-span-2">
@@ -194,7 +194,7 @@ export function QuizEditor({
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               rows={2}
-              className="w-full rounded-lg border border-atr-outline px-3 py-2 text-sm"
+              className="w-full rounded-lg border border-atr-outline px-3 py-2 text-sm outline-none transition focus:border-atr-purple focus:ring-2 focus:ring-atr-purple/15"
             />
           </Field>
           <Field
@@ -244,7 +244,7 @@ export function QuizEditor({
                 // sarankan langsung minta data pendaftaran.
                 if (next === "pre_test") setCollectReg(true);
               }}
-              className="w-full rounded-lg border border-atr-outline px-3 py-2 text-sm"
+              className="w-full rounded-lg border border-atr-outline px-3 py-2 text-sm outline-none transition focus:border-atr-purple focus:ring-2 focus:ring-atr-purple/15"
             >
               <option value="standalone">Mandiri</option>
               <option value="pre_test">Pre-test</option>
@@ -262,7 +262,7 @@ export function QuizEditor({
             <select
               value={topikId}
               onChange={(e) => setTopikId(e.target.value)}
-              className="w-full rounded-lg border border-atr-outline px-3 py-2 text-sm"
+              className="w-full rounded-lg border border-atr-outline px-3 py-2 text-sm outline-none transition focus:border-atr-purple focus:ring-2 focus:ring-atr-purple/15"
             >
               <option value="">- tidak terkait materi -</option>
               {topikOptions.map((t) => (
@@ -278,7 +278,7 @@ export function QuizEditor({
               min={0}
               value={timerMin}
               onChange={(e) => setTimerMin(Number(e.target.value))}
-              className="w-full rounded-lg border border-atr-outline px-3 py-2 text-sm"
+              className="w-full rounded-lg border border-atr-outline px-3 py-2 text-sm outline-none transition focus:border-atr-purple focus:ring-2 focus:ring-atr-purple/15"
             />
           </Field>
           <Field label="Nilai lulus (KKM, 0 = tanpa)">
@@ -288,7 +288,7 @@ export function QuizEditor({
               max={100}
               value={passing}
               onChange={(e) => setPassing(Number(e.target.value))}
-              className="w-full rounded-lg border border-atr-outline px-3 py-2 text-sm"
+              className="w-full rounded-lg border border-atr-outline px-3 py-2 text-sm outline-none transition focus:border-atr-purple focus:ring-2 focus:ring-atr-purple/15"
             />
           </Field>
           <Field label="Maks. percobaan per email (0 = tak terbatas)">
@@ -297,7 +297,7 @@ export function QuizEditor({
               min={0}
               value={maxAttempts}
               onChange={(e) => setMaxAttempts(Number(e.target.value))}
-              className="w-full rounded-lg border border-atr-outline px-3 py-2 text-sm"
+              className="w-full rounded-lg border border-atr-outline px-3 py-2 text-sm outline-none transition focus:border-atr-purple focus:ring-2 focus:ring-atr-purple/15"
             />
           </Field>
           <label className="flex items-center gap-2 text-sm text-atr-fg">
@@ -572,7 +572,7 @@ function QuestionForm({
             value={prompt}
             onChange={(e) => setPrompt(e.target.value)}
             rows={2}
-            className="w-full rounded-lg border border-atr-outline px-3 py-2 text-sm"
+            className="w-full rounded-lg border border-atr-outline px-3 py-2 text-sm outline-none transition focus:border-atr-purple focus:ring-2 focus:ring-atr-purple/15"
           />
         </Field>
         <div className="flex flex-wrap gap-3">
@@ -580,7 +580,7 @@ function QuestionForm({
             <select
               value={type}
               onChange={(e) => switchType(e.target.value as QuizQuestionType)}
-              className="rounded-lg border border-atr-outline px-3 py-2 text-sm"
+              className="rounded-lg border border-atr-outline px-3 py-2 text-sm outline-none transition focus:border-atr-purple focus:ring-2 focus:ring-atr-purple/15"
             >
               <option value="single_choice">Pilihan ganda</option>
               <option value="true_false">Benar/Salah</option>
@@ -592,7 +592,7 @@ function QuestionForm({
               min={0}
               value={points}
               onChange={(e) => setPoints(Number(e.target.value))}
-              className="w-24 rounded-lg border border-atr-outline px-3 py-2 text-sm"
+              className="w-24 rounded-lg border border-atr-outline px-3 py-2 text-sm outline-none transition focus:border-atr-purple focus:ring-2 focus:ring-atr-purple/15"
             />
           </Field>
           {topikOptions.length > 0 && (
@@ -600,7 +600,7 @@ function QuestionForm({
               <select
                 value={topikId}
                 onChange={(e) => setTopikId(e.target.value)}
-                className="rounded-lg border border-atr-outline px-3 py-2 text-sm"
+                className="rounded-lg border border-atr-outline px-3 py-2 text-sm outline-none transition focus:border-atr-purple focus:ring-2 focus:ring-atr-purple/15"
               >
                 <option value="">Ikut materi kuis</option>
                 {topikOptions.map((t) => (
@@ -649,7 +649,7 @@ function QuestionForm({
                     )
                   }
                   placeholder={`Opsi ${i + 1}`}
-                  className="flex-1 rounded-lg border border-atr-outline px-3 py-1.5 text-sm disabled:bg-atr-bg-soft"
+                  className="flex-1 rounded-lg border border-atr-outline px-3 py-1.5 text-sm outline-none transition focus:border-atr-purple focus:ring-2 focus:ring-atr-purple/15 disabled:bg-atr-bg-soft"
                 />
                 {type === "single_choice" && options.length > 2 && (
                   <button

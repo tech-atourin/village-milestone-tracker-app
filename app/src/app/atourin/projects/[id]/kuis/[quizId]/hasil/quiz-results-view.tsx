@@ -451,7 +451,7 @@ export function QuizResultsView({
                                         e.target.value,
                                       )
                                     }
-                                    className="max-w-[160px] rounded border border-atr-outline px-1.5 py-1 text-[11px]"
+                                    className="max-w-[160px] rounded border border-atr-outline px-1.5 py-1 text-[11px] outline-none transition focus:border-atr-purple focus:ring-2 focus:ring-atr-purple/15"
                                   >
                                     <option value="">Cocokkan ke…</option>
                                     {memberOptions.map((m) => (

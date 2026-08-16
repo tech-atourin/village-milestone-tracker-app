@@ -194,7 +194,7 @@ function AssignmentPanel({ assignment }: { assignment: PersonnelAssignment }) {
               min={min}
               max={max}
               onChange={(e) => setEntryDate(e.target.value)}
-              className="w-full rounded-lg border border-atr-outline px-3 py-2 text-sm"
+              className="w-full rounded-lg border border-atr-outline px-3 py-2 text-sm outline-none transition focus:border-atr-purple focus:ring-2 focus:ring-atr-purple/15"
             />
           </div>
           <div>
@@ -206,7 +206,7 @@ function AssignmentPanel({ assignment }: { assignment: PersonnelAssignment }) {
               onChange={(e) => setAgenda(e.target.value)}
               rows={2}
               placeholder="Contoh: Koordinasi dengan tim lapangan dan penyusunan materi..."
-              className="w-full rounded-lg border border-atr-outline px-3 py-2 text-sm"
+              className="w-full rounded-lg border border-atr-outline px-3 py-2 text-sm outline-none transition focus:border-atr-purple focus:ring-2 focus:ring-atr-purple/15"
             />
           </div>
         </div>
@@ -396,7 +396,7 @@ function EntryRow({ entry }: { entry: LogbookEntry }) {
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
             rows={2}
-            className="w-full rounded-lg border border-atr-outline px-3 py-2 text-sm"
+            className="w-full rounded-lg border border-atr-outline px-3 py-2 text-sm outline-none transition focus:border-atr-purple focus:ring-2 focus:ring-atr-purple/15"
           />
         ) : (
           <p className="flex-1 whitespace-pre-wrap text-sm text-atr-fg">

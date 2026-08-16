@@ -37,11 +37,14 @@ type Summary = {
 export function BulkImportFlow({
   mode = "peserta",
   projectId,
+  batchNames = [],
   onDone,
 }: {
   mode?: "peserta" | "narasumber";
   /** When set, imported users are attached to this project as members. */
   projectId?: string;
+  /** Batch names available in this project (for the "assign all" dropdown). */
+  batchNames?: string[];
   /** Called after a successful commit (e.g. to close a dialog + refresh). */
   onDone?: () => void;
 }) {
@@ -52,6 +55,9 @@ export function BulkImportFlow({
   const [summary, setSummary] = useState<Summary | null>(null);
   const [commitResult, setCommitResult] = useState<CommitResult | null>(null);
   const [sendInvites, setSendInvites] = useState(true);
+  // Optional: apply one batch to ALL imported peserta (overrides the Excel
+  // batch_name column). Empty = keep whatever the per-row column resolves to.
+  const [targetBatch, setTargetBatch] = useState("");
   const [pending, startTransition] = useTransition();
 
   async function handleDownload() {
@@ -106,6 +112,7 @@ export function BulkImportFlow({
       gender: r.data!.gender || null,
       birthdate: r.data!.normalized_birthdate,
       desa_name: r.data!.desa_name || null,
+      batch_name: targetBatch || r.data!.batch_name || null,
       role: r.data!.role,
       attendance_mode:
         r.data!.attendance_mode === "online"
@@ -288,7 +295,29 @@ export function BulkImportFlow({
           </div>
         </div>
 
-        <div className="rounded-2xl border border-atr-outline bg-white p-5">
+        <div className="space-y-4 rounded-2xl border border-atr-outline bg-white p-5">
+          {projectId && mode === "peserta" && batchNames.length > 0 && (
+            <label className="flex flex-col gap-1.5 text-sm text-atr-fg sm:flex-row sm:items-center sm:gap-3">
+              <span className="font-medium">Tetapkan semua ke batch</span>
+              <select
+                value={targetBatch}
+                onChange={(e) => setTargetBatch(e.target.value)}
+                className="h-9 rounded-lg border border-atr-outline bg-white px-3 text-sm text-atr-fg outline-none focus:border-atr-purple focus:ring-2 focus:ring-atr-purple/15"
+              >
+                <option value="">
+                  Pakai kolom batch_name di Excel (default)
+                </option>
+                {batchNames.map((b) => (
+                  <option key={b} value={b}>
+                    {b}
+                  </option>
+                ))}
+              </select>
+              <span className="text-xs text-atr-fg-muted">
+                Menimpa kolom batch_name untuk semua baris.
+              </span>
+            </label>
+          )}
           <label className="flex cursor-pointer items-center gap-2 text-sm text-atr-fg">
             <input
               type="checkbox"

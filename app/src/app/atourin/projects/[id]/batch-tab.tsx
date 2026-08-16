@@ -205,7 +205,7 @@ function BatchForm({
             value={form.name}
             onChange={(e) => setForm({ ...form, name: e.target.value })}
             placeholder="mis. Batch 1"
-            className="mt-1 w-full rounded-lg border border-atr-outline px-3 py-2 text-sm text-atr-fg"
+            className="mt-1 w-full rounded-lg border border-atr-outline px-3 py-2 text-sm text-atr-fg outline-none transition focus:border-atr-purple focus:ring-2 focus:ring-atr-purple/15"
           />
         </label>
         <label className="text-xs font-medium text-atr-fg-muted">
@@ -215,7 +215,7 @@ function BatchForm({
             min={0}
             value={form.quota}
             onChange={(e) => setForm({ ...form, quota: e.target.value })}
-            className="mt-1 w-full rounded-lg border border-atr-outline px-3 py-2 text-sm text-atr-fg"
+            className="mt-1 w-full rounded-lg border border-atr-outline px-3 py-2 text-sm text-atr-fg outline-none transition focus:border-atr-purple focus:ring-2 focus:ring-atr-purple/15"
           />
         </label>
         <label className="text-xs font-medium text-atr-fg-muted">
@@ -224,7 +224,7 @@ function BatchForm({
             type="date"
             value={form.start_date}
             onChange={(e) => setForm({ ...form, start_date: e.target.value })}
-            className="mt-1 w-full rounded-lg border border-atr-outline px-3 py-2 text-sm text-atr-fg"
+            className="mt-1 w-full rounded-lg border border-atr-outline px-3 py-2 text-sm text-atr-fg outline-none transition focus:border-atr-purple focus:ring-2 focus:ring-atr-purple/15"
           />
         </label>
         <label className="text-xs font-medium text-atr-fg-muted">
@@ -233,7 +233,7 @@ function BatchForm({
             type="date"
             value={form.end_date}
             onChange={(e) => setForm({ ...form, end_date: e.target.value })}
-            className="mt-1 w-full rounded-lg border border-atr-outline px-3 py-2 text-sm text-atr-fg"
+            className="mt-1 w-full rounded-lg border border-atr-outline px-3 py-2 text-sm text-atr-fg outline-none transition focus:border-atr-purple focus:ring-2 focus:ring-atr-purple/15"
           />
         </label>
       </div>
@@ -339,7 +339,7 @@ function PesertaBatchRow({
         <select
           value={value}
           onChange={(e) => change(e.target.value)}
-          className="rounded-lg border border-atr-outline px-2 py-1.5 text-sm text-atr-fg"
+          className="rounded-lg border border-atr-outline px-2 py-1.5 text-sm text-atr-fg outline-none transition focus:border-atr-purple focus:ring-2 focus:ring-atr-purple/15"
         >
           <option value="">Tanpa batch</option>
           {batches.map((b) => (

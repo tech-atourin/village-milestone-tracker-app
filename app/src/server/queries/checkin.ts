@@ -31,6 +31,7 @@ export type CheckinMatrix = {
     user_id: string;
     name: string;
     email: string | null;
+    batch_name: string | null;
     checked: Record<string, string>; // topik_id -> checked_in_at ISO
     checked_count: number;
   }[];
@@ -65,7 +66,7 @@ export async function getProjectCheckinMatrix(
   const { data: members } = await admin
     .from("project_memberships")
     .select(
-      "user_id, user:users!project_memberships_user_id_fkey(full_name, email)",
+      "user_id, user:users!project_memberships_user_id_fkey(full_name, email), batch:project_batches(name)",
     )
     .eq("project_id", projectId)
     .eq("role", "peserta")
@@ -95,6 +96,7 @@ export async function getProjectCheckinMatrix(
       user_id: m.user_id,
       name: m.user?.full_name ?? "-",
       email: m.user?.email ?? null,
+      batch_name: (m.batch?.name as string | null) ?? null,
       checked,
       checked_count: Object.keys(checked).length,
     });

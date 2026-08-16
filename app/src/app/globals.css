@@ -141,3 +141,15 @@
     text-wrap: balance;
   }
 }
+
+@layer components {
+  /* Kelas input bersama: dipakai form yang menulis className="input".
+     Sebelumnya kelas ini tidak terdefinisi sehingga input tampil polos
+     tanpa border/padding/focus. */
+  .input {
+    @apply w-full rounded-lg border border-atr-outline bg-white px-3 py-2 text-sm text-atr-fg outline-none transition;
+  }
+  .input:focus {
+    @apply border-atr-purple ring-2 ring-atr-purple/15;
+  }
+}

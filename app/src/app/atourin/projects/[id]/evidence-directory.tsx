@@ -233,6 +233,7 @@ export function EvidenceDirectory({
                         rel="noreferrer"
                         className="inline-flex h-7 w-7 items-center justify-center rounded-md text-atr-fg-muted hover:bg-atr-purple-50 hover:text-atr-purple-600"
                         title="Buka / download"
+                        aria-label="Buka atau download file"
                       >
                         <ExternalLink className="h-3.5 w-3.5" />
                       </a>

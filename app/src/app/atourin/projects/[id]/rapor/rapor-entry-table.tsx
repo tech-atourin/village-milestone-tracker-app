@@ -74,6 +74,7 @@ export function RaporEntryTable({
   const [, startTransition] = useTransition();
   const [search, setSearch] = useState("");
   const [desaFilter, setDesaFilter] = useState("");
+  const [batchFilter, setBatchFilter] = useState("");
   const [sortKey, setSortKey] = useState<SortKey>("name");
   const [sortDir, setSortDir] = useState<SortDir>("asc");
 
@@ -85,10 +86,19 @@ export function RaporEntryTable({
     return Array.from(set).sort();
   }, [rows]);
 
+  const batchOptions = useMemo(() => {
+    const set = new Set<string>();
+    for (const r of rows) {
+      if (r.batch_name) set.add(r.batch_name);
+    }
+    return Array.from(set).sort();
+  }, [rows]);
+
   const visibleRows = useMemo(() => {
     const q = search.trim().toLowerCase();
     const filtered = rows.filter((r) => {
       if (desaFilter && r.desa_name !== desaFilter) return false;
+      if (batchFilter && r.batch_name !== batchFilter) return false;
       if (!q) return true;
       const hay = `${r.full_name} ${r.email ?? ""} ${r.desa_name ?? ""}`.toLowerCase();
       return hay.includes(q);
@@ -126,7 +136,7 @@ export function RaporEntryTable({
           return (num(a.final_score) - num(b.final_score)) * dir;
       }
     });
-  }, [rows, search, desaFilter, sortKey, sortDir]);
+  }, [rows, search, desaFilter, batchFilter, sortKey, sortDir]);
 
   function toggleSort(k: SortKey) {
     if (sortKey === k) setSortDir((d) => (d === "asc" ? "desc" : "asc"));
@@ -204,12 +214,32 @@ export function RaporEntryTable({
             ))}
           </select>
         )}
-        {(search || desaFilter) && (
+        {batchOptions.length > 0 && (
+          <select
+            value={batchFilter}
+            onChange={(e) => setBatchFilter(e.target.value)}
+            aria-label="Filter batch"
+            className={`h-10 rounded-lg border bg-white px-3 text-sm outline-none transition focus:border-atr-purple focus:ring-2 focus:ring-atr-purple/15 ${
+              batchFilter
+                ? "border-atr-purple/50 text-atr-fg"
+                : "border-atr-outline text-atr-fg-muted"
+            }`}
+          >
+            <option value="">Batch: Semua</option>
+            {batchOptions.map((b) => (
+              <option key={b} value={b}>
+                Batch: {b}
+              </option>
+            ))}
+          </select>
+        )}
+        {(search || desaFilter || batchFilter) && (
           <button
             type="button"
             onClick={() => {
               setSearch("");
               setDesaFilter("");
+              setBatchFilter("");
             }}
             className="inline-flex h-10 items-center gap-1 rounded-lg border border-atr-outline bg-white px-3 text-xs font-bold text-atr-fg-muted transition hover:bg-atr-bg-soft"
           >
@@ -240,6 +270,9 @@ export function RaporEntryTable({
             <tr className="text-left text-xs font-bold uppercase tracking-wide text-atr-fg-muted">
               <SortableTh label="Nama" k="name" sortKey={sortKey} sortDir={sortDir} onClick={toggleSort} />
               <SortableTh label="Desa" k="desa" sortKey={sortKey} sortDir={sortDir} onClick={toggleSort} />
+              {batchOptions.length > 0 && (
+                <th className="px-4 py-3">Batch</th>
+              )}
               <SortableTh label="Pre" k="pre" sortKey={sortKey} sortDir={sortDir} onClick={toggleSort} className="w-24" />
               <SortableTh label="Post" k="post" sortKey={sortKey} sortDir={sortDir} onClick={toggleSort} className="w-24" />
               <SortableTh label="Tugas" k="tugas" sortKey={sortKey} sortDir={sortDir} onClick={toggleSort} className="w-24" />
@@ -254,7 +287,7 @@ export function RaporEntryTable({
           <tbody className="divide-y divide-atr-outline text-sm">
             {visibleRows.length === 0 && (
               <tr>
-                <td colSpan={11} className="px-4 py-10 text-center text-sm text-atr-fg-muted">
+                <td colSpan={batchOptions.length > 0 ? 12 : 11} className="px-4 py-10 text-center text-sm text-atr-fg-muted">
                   Tidak ada peserta yang cocok dengan filter.
                 </td>
               </tr>
@@ -300,6 +333,17 @@ export function RaporEntryTable({
                       {r.attendance_mode === "online" ? "Online" : "Offline"}
                     </span>
                   </td>
+                  {batchOptions.length > 0 && (
+                    <td className="px-4 py-3">
+                      {r.batch_name ? (
+                        <span className="inline-flex rounded-full border border-atr-purple/30 bg-atr-purple/10 px-2 py-0.5 text-xs font-medium text-atr-purple">
+                          {r.batch_name}
+                        </span>
+                      ) : (
+                        <span className="text-xs text-atr-fg-muted">-</span>
+                      )}
+                    </td>
+                  )}
                   <td className="px-4 py-3">
                     <ScoreInput
                       value={e.pre}
@@ -399,7 +443,8 @@ export function RaporEntryTable({
                           href={`/${scope}/projects/${projectId}/rapor/${r.user_id}`}
                           target="_blank"
                           className="inline-flex h-8 items-center gap-1 rounded-md border border-atr-outline bg-white px-2 text-xs font-bold text-atr-fg transition hover:bg-atr-bg-soft"
-                          title="RAPOR"
+                          title="Rapor"
+                          aria-label="Lihat rapor peserta"
                         >
                           <FileText className="h-3 w-3" />
                         </Link>
@@ -408,6 +453,7 @@ export function RaporEntryTable({
                           target="_blank"
                           className="inline-flex h-8 items-center gap-1 rounded-md border border-atr-yellow/40 bg-atr-yellow/10 px-2 text-xs font-bold text-atr-fg transition hover:bg-atr-yellow/20"
                           title="Sertifikat"
+                          aria-label="Lihat sertifikat peserta"
                         >
                           <Award className="h-3 w-3" />
                         </Link>

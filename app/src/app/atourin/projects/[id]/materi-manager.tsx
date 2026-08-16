@@ -253,6 +253,7 @@ function ResourceRow({
             type="button"
             onClick={onEdit}
             title="Ubah"
+            aria-label="Ubah materi"
             className="flex h-8 w-8 items-center justify-center rounded-lg text-atr-fg-muted transition hover:bg-atr-bg-soft hover:text-atr-fg"
           >
             <Pencil className="h-4 w-4" />
@@ -372,6 +373,7 @@ function ResourceForm({
         </h4>
         <button
           type="button"
+          aria-label="Tutup"
           onClick={onClose}
           className="flex h-7 w-7 items-center justify-center rounded-lg text-atr-fg-muted hover:bg-white"
         >

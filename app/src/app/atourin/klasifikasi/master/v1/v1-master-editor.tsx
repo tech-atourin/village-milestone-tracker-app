@@ -298,6 +298,7 @@ function EditDialog({
           </h2>
           <button
             type="button"
+            aria-label="Tutup"
             onClick={onClose}
             className="rounded-md p-1 text-atr-fg-muted hover:bg-atr-bg-soft hover:text-atr-fg"
           >

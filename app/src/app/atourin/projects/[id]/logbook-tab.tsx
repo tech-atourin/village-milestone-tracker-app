@@ -370,7 +370,7 @@ function BulkImportForm({
         placeholder={
           "Budi Santoso, budi@contoh.com, Fasilitator, 08123456789, 2026-07-01, 2026-09-30\nSiti Aminah, siti@contoh.com, Admin, , 2026-07-01, 2026-08-31"
         }
-        className="w-full rounded-lg border border-atr-outline px-3 py-2 font-mono text-xs"
+        className="w-full rounded-lg border border-atr-outline px-3 py-2 font-mono text-xs outline-none transition focus:border-atr-purple focus:ring-2 focus:ring-atr-purple/15"
       />
       {error && <p className="text-sm text-red-600">{error}</p>}
       {result && (
@@ -482,7 +482,7 @@ function PersonnelTableRow({
           <input
             value={draft.position}
             onChange={(e) => setDraft({ ...draft, position: e.target.value })}
-            className="w-full rounded border border-atr-outline px-2 py-1 text-sm"
+            className="w-full rounded border border-atr-outline px-2 py-1 text-sm outline-none transition focus:border-atr-purple focus:ring-2 focus:ring-atr-purple/15"
           />
         </td>
         <td className="px-4 py-3">
@@ -493,13 +493,13 @@ function PersonnelTableRow({
               onChange={(e) =>
                 setDraft({ ...draft, work_start: e.target.value })
               }
-              className="rounded border border-atr-outline px-2 py-1 text-xs"
+              className="rounded border border-atr-outline px-2 py-1 text-xs outline-none transition focus:border-atr-purple focus:ring-2 focus:ring-atr-purple/15"
             />
             <input
               type="date"
               value={draft.work_end}
               onChange={(e) => setDraft({ ...draft, work_end: e.target.value })}
-              className="rounded border border-atr-outline px-2 py-1 text-xs"
+              className="rounded border border-atr-outline px-2 py-1 text-xs outline-none transition focus:border-atr-purple focus:ring-2 focus:ring-atr-purple/15"
             />
           </div>
         </td>

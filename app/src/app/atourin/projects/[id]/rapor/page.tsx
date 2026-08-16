@@ -17,6 +17,7 @@ export default async function RaporIndexPage({
     listProjectRapor(params.id),
     getProject(params.id),
   ]);
+  const hasBatch = rows.some((r) => r.batch_name);
 
   return (
     <div className="space-y-6">
@@ -44,6 +45,14 @@ export default async function RaporIndexPage({
           >
             Rapor per Desa →
           </Link>
+          {hasBatch && (
+            <Link
+              href={`/atourin/projects/${params.id}/rapor/cetak-batch`}
+              className="font-bold text-atr-purple-600 hover:text-atr-purple"
+            >
+              Cetak Rapor per Gelombang →
+            </Link>
+          )}
         </div>
       </header>
 
