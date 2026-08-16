@@ -3,7 +3,15 @@
 import { useState, useTransition, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { Plus, Loader2, Trash2, Pencil, ImagePlus, X, Check } from "lucide-react";
+import {
+  Plus,
+  Loader2,
+  Trash2,
+  Pencil,
+  ImagePlus,
+  X,
+  Check,
+} from "lucide-react";
 import { compressIfImage } from "@/lib/image-compress";
 import {
   addLogbookEntry,
@@ -25,8 +33,18 @@ export type PersonnelAssignment = {
 
 const HARI = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"];
 const BULAN = [
-  "Januari", "Februari", "Maret", "April", "Mei", "Juni",
-  "Juli", "Agustus", "September", "Oktober", "November", "Desember",
+  "Januari",
+  "Februari",
+  "Maret",
+  "April",
+  "Mei",
+  "Juni",
+  "Juli",
+  "Agustus",
+  "September",
+  "Oktober",
+  "November",
+  "Desember",
 ];
 
 function formatTanggal(iso: string): string {
@@ -40,7 +58,8 @@ async function fileToBase64(file: File): Promise<string> {
   const buf = await file.arrayBuffer();
   const bytes = new Uint8Array(buf);
   let binary = "";
-  for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
+  for (let i = 0; i < bytes.length; i++)
+    binary += String.fromCharCode(bytes[i]);
   return btoa(binary);
 }
 
@@ -153,7 +172,9 @@ function AssignmentPanel({ assignment }: { assignment: PersonnelAssignment }) {
         </p>
         {(assignment.work_start || assignment.work_end) && (
           <p className="mt-0.5 text-xs text-atr-fg-muted">
-            Masa kerja: {assignment.work_start ? formatTanggal(assignment.work_start) : "?"} sampai{" "}
+            Masa kerja:{" "}
+            {assignment.work_start ? formatTanggal(assignment.work_start) : "?"}{" "}
+            sampai{" "}
             {assignment.work_end ? formatTanggal(assignment.work_end) : "?"}
           </p>
         )}
@@ -280,13 +301,7 @@ function AssignmentPanel({ assignment }: { assignment: PersonnelAssignment }) {
 }
 
 // Thumbnail preview untuk file yang dipilih (sebelum diunggah).
-function FilePreview({
-  file,
-  onRemove,
-}: {
-  file: File;
-  onRemove: () => void;
-}) {
+function FilePreview({ file, onRemove }: { file: File; onRemove: () => void }) {
   const [url, setUrl] = useState<string | null>(null);
   useEffect(() => {
     const objectUrl = URL.createObjectURL(file);
@@ -310,6 +325,7 @@ function FilePreview({
         type="button"
         onClick={onRemove}
         className="absolute -right-1.5 -top-1.5 rounded-full bg-red-500 p-0.5 text-white opacity-0 group-hover:opacity-100"
+        aria-label="Hapus"
         title="Hapus"
       >
         <X className="h-3 w-3" />
@@ -394,6 +410,7 @@ function EntryRow({ entry }: { entry: LogbookEntry }) {
                 onClick={saveEdit}
                 disabled={pending}
                 className="rounded p-1.5 text-green-600 hover:bg-green-50"
+                aria-label="Simpan"
                 title="Simpan"
               >
                 <Check className="h-4 w-4" />
@@ -404,6 +421,7 @@ function EntryRow({ entry }: { entry: LogbookEntry }) {
                   setDraft(entry.agenda);
                 }}
                 className="rounded p-1.5 text-atr-fg-muted hover:bg-atr-outline/20"
+                aria-label="Batal"
                 title="Batal"
               >
                 <X className="h-4 w-4" />
@@ -414,6 +432,7 @@ function EntryRow({ entry }: { entry: LogbookEntry }) {
               <button
                 onClick={() => setEditing(true)}
                 className="rounded p-1.5 text-atr-fg-muted hover:bg-atr-outline/20"
+                aria-label="Edit"
                 title="Edit"
               >
                 <Pencil className="h-4 w-4" />
@@ -422,6 +441,7 @@ function EntryRow({ entry }: { entry: LogbookEntry }) {
                 onClick={del}
                 disabled={pending}
                 className="rounded p-1.5 text-red-500 hover:bg-red-50"
+                aria-label="Hapus"
                 title="Hapus"
               >
                 <Trash2 className="h-4 w-4" />
@@ -450,6 +470,7 @@ function EntryRow({ entry }: { entry: LogbookEntry }) {
             <button
               onClick={() => removeMedia(m.id)}
               className="absolute -right-1.5 -top-1.5 rounded-full bg-red-500 p-0.5 text-white opacity-0 group-hover:opacity-100"
+              aria-label="Hapus gambar"
               title="Hapus gambar"
             >
               <X className="h-3 w-3" />

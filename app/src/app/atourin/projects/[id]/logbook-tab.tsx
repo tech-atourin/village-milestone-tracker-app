@@ -23,8 +23,18 @@ import type { PersonnelRow, LogbookEntry } from "@/server/queries/personnel";
 
 const HARI = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"];
 const BULAN = [
-  "Januari", "Februari", "Maret", "April", "Mei", "Juni",
-  "Juli", "Agustus", "September", "Oktober", "November", "Desember",
+  "Januari",
+  "Februari",
+  "Maret",
+  "April",
+  "Mei",
+  "Juni",
+  "Juli",
+  "Agustus",
+  "September",
+  "Oktober",
+  "November",
+  "Desember",
 ];
 function formatTanggal(iso: string): string {
   const [y, m, d] = iso.split("-").map(Number);
@@ -357,7 +367,9 @@ function BulkImportForm({
         value={text}
         onChange={(e) => setText(e.target.value)}
         rows={6}
-        placeholder={"Budi Santoso, budi@contoh.com, Fasilitator, 08123456789, 2026-07-01, 2026-09-30\nSiti Aminah, siti@contoh.com, Admin, , 2026-07-01, 2026-08-31"}
+        placeholder={
+          "Budi Santoso, budi@contoh.com, Fasilitator, 08123456789, 2026-07-01, 2026-09-30\nSiti Aminah, siti@contoh.com, Admin, , 2026-07-01, 2026-08-31"
+        }
         className="w-full rounded-lg border border-atr-outline px-3 py-2 font-mono text-xs"
       />
       {error && <p className="text-sm text-red-600">{error}</p>}
@@ -447,7 +459,11 @@ function PersonnelTableRow({
   }
 
   function remove() {
-    if (!confirm(`Keluarkan ${row.full_name} dari project? Log book-nya ikut terhapus.`))
+    if (
+      !confirm(
+        `Keluarkan ${row.full_name} dari project? Log book-nya ikut terhapus.`,
+      )
+    )
       return;
     startTransition(async () => {
       await removePersonnel({ id: row.id, project_id: projectId });
@@ -532,6 +548,7 @@ function PersonnelTableRow({
           <button
             onClick={() => setEditing(true)}
             className="rounded p-1.5 text-atr-fg-muted hover:bg-atr-bg-soft"
+            aria-label="Edit"
             title="Edit"
           >
             <Pencil className="h-4 w-4" />
@@ -540,6 +557,7 @@ function PersonnelTableRow({
             onClick={remove}
             disabled={pending}
             className="rounded p-1.5 text-red-500 hover:bg-red-50"
+            aria-label="Keluarkan"
             title="Keluarkan"
           >
             <Trash2 className="h-4 w-4" />

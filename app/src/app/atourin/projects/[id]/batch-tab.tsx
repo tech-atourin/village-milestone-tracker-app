@@ -3,7 +3,11 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Plus, Loader2, Pencil, Trash2, Users } from "lucide-react";
-import { saveBatch, deleteBatch, assignPesertaBatch } from "@/server/actions/batches";
+import {
+  saveBatch,
+  deleteBatch,
+  assignPesertaBatch,
+} from "@/server/actions/batches";
 import type { BatchRow } from "@/server/queries/batches";
 
 export type BatchPeserta = {
@@ -14,8 +18,18 @@ export type BatchPeserta = {
 };
 
 const BULAN = [
-  "Jan", "Feb", "Mar", "Apr", "Mei", "Jun",
-  "Jul", "Agu", "Sep", "Okt", "Nov", "Des",
+  "Jan",
+  "Feb",
+  "Mar",
+  "Apr",
+  "Mei",
+  "Jun",
+  "Jul",
+  "Agu",
+  "Sep",
+  "Okt",
+  "Nov",
+  "Des",
 ];
 function fmt(iso: string | null): string {
   if (!iso) return "-";
@@ -69,7 +83,8 @@ export function BatchTab({
 
       {batches.length === 0 ? (
         <div className="rounded-xl border border-dashed border-atr-outline bg-white p-8 text-center text-atr-fg-muted">
-          Belum ada batch. Tambahkan batch/gelombang untuk mengelompokkan peserta.
+          Belum ada batch. Tambahkan batch/gelombang untuk mengelompokkan
+          peserta.
         </div>
       ) : (
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -87,6 +102,7 @@ export function BatchTab({
                       setShowForm(false);
                     }}
                     className="rounded p-1 text-atr-fg-muted hover:bg-atr-bg-soft"
+                    aria-label="Edit"
                     title="Edit"
                   >
                     <Pencil className="h-3.5 w-3.5" />
@@ -254,7 +270,12 @@ function DeleteBatchButton({
   return (
     <button
       onClick={() => {
-        if (!confirm("Hapus batch ini? Peserta di batch ini akan jadi tanpa batch.")) return;
+        if (
+          !confirm(
+            "Hapus batch ini? Peserta di batch ini akan jadi tanpa batch.",
+          )
+        )
+          return;
         startTransition(async () => {
           await deleteBatch({ id: batchId, project_id: projectId });
           router.refresh();
@@ -262,6 +283,7 @@ function DeleteBatchButton({
       }}
       disabled={pending}
       className="rounded p-1 text-red-500 hover:bg-red-50"
+      aria-label="Hapus"
       title="Hapus"
     >
       {pending ? (
@@ -311,7 +333,9 @@ function PesertaBatchRow({
         )}
       </div>
       <div className="flex items-center gap-2">
-        {pending && <Loader2 className="h-3.5 w-3.5 animate-spin text-atr-fg-muted" />}
+        {pending && (
+          <Loader2 className="h-3.5 w-3.5 animate-spin text-atr-fg-muted" />
+        )}
         <select
           value={value}
           onChange={(e) => change(e.target.value)}
