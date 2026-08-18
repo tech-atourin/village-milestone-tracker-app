@@ -1,6 +1,6 @@
 import "server-only";
 
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createAdminClient } from "@/lib/supabase/server";
 
 export type DesaRow = {
   id: string;
@@ -58,8 +58,9 @@ export type ProjectDesaRow = {
 
 export async function listProjectDesa(
   projectId: string,
+  opts?: { asAdmin?: boolean },
 ): Promise<ProjectDesaRow[]> {
-  const supabase = createClient();
+  const supabase = opts?.asAdmin ? createAdminClient() : createClient();
   const { data, error } = await supabase
     .from("project_desa")
     .select(

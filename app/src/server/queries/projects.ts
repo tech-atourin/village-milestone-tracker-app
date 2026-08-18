@@ -51,8 +51,13 @@ export type ProjectDetail = ProjectListRow & {
   member_count: number;
 };
 
-export async function getProject(id: string): Promise<ProjectDetail | null> {
-  const supabase = createClient();
+export async function getProject(
+  id: string,
+  opts?: { asAdmin?: boolean },
+): Promise<ProjectDetail | null> {
+  // asAdmin: dipakai scope tanpa RLS read di tabel projects (mis. fasilitator/
+  // personil). Akses tetap dijaga oleh pemanggil (cek keanggotaan personil).
+  const supabase = opts?.asAdmin ? createAdminClient() : createClient();
   const { data: project, error } = await supabase
     .from("projects")
     .select(

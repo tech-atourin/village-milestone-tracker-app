@@ -260,7 +260,7 @@ export function TopikTab({
         {topik.map((t, idx) => (
           <details
             key={t.id}
-            open={idx === 0}
+            open
             className="group rounded-2xl border border-atr-outline bg-white shadow-atr-1"
           >
             <summary className="flex cursor-pointer items-center justify-between gap-3 p-5 [&::-webkit-details-marker]:hidden">

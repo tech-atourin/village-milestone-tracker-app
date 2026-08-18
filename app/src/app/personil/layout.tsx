@@ -4,6 +4,7 @@ import { MobileBottomNav } from "@/components/mobile-bottom-nav";
 import { requireRole } from "@/lib/auth/rbac";
 
 const NAV_ITEMS: SidebarItem[] = [
+  { href: "/personil/projects", label: "Project", icon: "Folder" },
   { href: "/personil/logbook", label: "Log Book", icon: "NotebookPen" },
 ];
 

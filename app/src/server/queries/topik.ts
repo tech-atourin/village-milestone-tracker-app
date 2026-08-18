@@ -1,6 +1,6 @@
 import "server-only";
 
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createAdminClient } from "@/lib/supabase/server";
 
 export type ProjectTopikRow = {
   id: string;
@@ -12,8 +12,9 @@ export type ProjectTopikRow = {
 
 export async function listProjectTopik(
   projectId: string,
+  opts?: { asAdmin?: boolean },
 ): Promise<ProjectTopikRow[]> {
-  const supabase = createClient();
+  const supabase = opts?.asAdmin ? createAdminClient() : createClient();
   const { data: topik } = await supabase
     .from("project_topik")
     .select("id, name, description, sort_order")
@@ -57,9 +58,10 @@ export type ProjectTopikWithItems = ProjectTopikRow & {
 
 export async function listProjectTopikWithItems(
   projectId: string,
+  opts?: { asAdmin?: boolean },
 ): Promise<ProjectTopikWithItems[]> {
-  const supabase = createClient();
-  const topik = await listProjectTopik(projectId);
+  const supabase = opts?.asAdmin ? createAdminClient() : createClient();
+  const topik = await listProjectTopik(projectId, opts);
   if (topik.length === 0) return [];
   const { data: items } = await supabase
     .from("project_checklist_item")

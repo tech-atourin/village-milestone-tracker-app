@@ -136,6 +136,92 @@ export async function getMyPersonnel(): Promise<
 }
 
 // =====================================================
+// Semua project tempat user login terdaftar sebagai personil/fasilitator
+// (tanpa filter modul Log Book) - dipakai untuk menu Project fasilitator
+// yang menampilkan detail lengkap project secara transparan.
+// =====================================================
+export async function getMyPersonnelProjects(): Promise<
+  {
+    project_id: string;
+    project_name: string;
+    position: string;
+    status: string;
+    program_type: string;
+    period_start: string | null;
+    period_end: string | null;
+  }[]
+> {
+  const supabase = createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return [];
+
+  const { data } = await supabase
+    .from("project_personnel")
+    .select("project_id, position, created_at")
+    .eq("user_id", user.id)
+    .order("created_at", { ascending: true });
+
+  const rows = data ?? [];
+  const projectIds = Array.from(new Set(rows.map((r) => r.project_id as string)));
+  if (projectIds.length === 0) return [];
+
+  const admin = createAdminClient();
+  const { data: projs } = await admin
+    .from("projects")
+    .select("id, name, status, program_type, period_start, period_end")
+    .in("id", projectIds);
+  const byId = new Map(
+    (projs ?? []).map((p) => [p.id as string, p]),
+  );
+  // Satu baris per project (posisi pertama), jaga urutan assignment.
+  const seen = new Set<string>();
+  const out: Array<{
+    project_id: string;
+    project_name: string;
+    position: string;
+    status: string;
+    program_type: string;
+    period_start: string | null;
+    period_end: string | null;
+  }> = [];
+  for (const r of rows) {
+    const pid = r.project_id as string;
+    if (seen.has(pid)) continue;
+    const p = byId.get(pid);
+    if (!p) continue;
+    seen.add(pid);
+    out.push({
+      project_id: pid,
+      project_name: (p.name as string) ?? "Project",
+      position: r.position as string,
+      status: (p.status as string) ?? "active",
+      program_type: (p.program_type as string) ?? "desa_based",
+      period_start: (p.period_start as string | null) ?? null,
+      period_end: (p.period_end as string | null) ?? null,
+    });
+  }
+  return out;
+}
+
+// Cek apakah user login terdaftar sebagai personil di project tsb (akses).
+export async function isPersonnelOnProject(projectId: string): Promise<boolean> {
+  const supabase = createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return false;
+  const { data } = await supabase
+    .from("project_personnel")
+    .select("id")
+    .eq("user_id", user.id)
+    .eq("project_id", projectId)
+    .limit(1);
+  return (data ?? []).length > 0;
+}
+
+// =====================================================
 // Entri log book untuk satu personil, urut tanggal.
 // asAdmin=true pakai service role (admin melihat) - kalau
 // tidak, pakai RLS client (personil melihat miliknya).

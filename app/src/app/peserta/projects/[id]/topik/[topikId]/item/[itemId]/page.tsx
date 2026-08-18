@@ -73,7 +73,11 @@ export default async function PesertaItemDetailPage({
     ? await listEvidenceForChecklist(data.progress.id)
     : [];
 
-  const paths = evidence.map((e) => e.evidence.file_url);
+  // Bukti tipe 'link' menyimpan URL langsung di file_url; hanya path storage
+  // (non-link) yang perlu ditandatangani.
+  const paths = evidence
+    .filter((e) => e.evidence.file_type !== "link")
+    .map((e) => e.evidence.file_url);
   const urlMap = paths.length ? await signEvidenceUrls(paths) : new Map();
 
   return (
@@ -131,7 +135,10 @@ export default async function PesertaItemDetailPage({
           file_type: e.evidence.file_type,
           caption: e.evidence.caption,
           uploaded_at: e.evidence.uploaded_at,
-          signed_url: urlMap.get(e.evidence.file_url) ?? null,
+          signed_url:
+            e.evidence.file_type === "link"
+              ? e.evidence.file_url
+              : urlMap.get(e.evidence.file_url) ?? null,
         }))}
       />
     </div>

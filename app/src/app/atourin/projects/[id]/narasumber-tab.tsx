@@ -42,7 +42,10 @@ export function NarasumberTab({
   projectId: string;
   assignments: NarasumberAssignment[];
   candidates: UserListRow[];
-  narasumberDetailBase: "/atourin/narasumber" | "/mitra/narasumber";
+  narasumberDetailBase:
+    | "/atourin/narasumber"
+    | "/mitra/narasumber"
+    | "/personil/narasumber";
   projectDesa: ProjectDesaOption[];
 }) {
   const router = useRouter();
@@ -323,7 +326,7 @@ export function NarasumberTab({
                 <div className="min-w-0 flex-1">
                   <Link
                     href={`${narasumberDetailBase}/${a.user.id}?from=${encodeURIComponent(
-                      `${narasumberDetailBase === "/atourin/narasumber" ? "/atourin" : "/mitra"}/projects/${projectId}?tab=narasumber`,
+                      `${narasumberDetailBase.replace("/narasumber", "")}/projects/${projectId}?tab=narasumber`,
                     )}`}
                     className="inline-flex items-center gap-1 text-sm font-bold text-atr-fg hover:text-atr-purple-600"
                   >

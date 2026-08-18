@@ -16,8 +16,13 @@ import {
   Circle,
   ExternalLink,
   Trash2,
+  Link2,
 } from "lucide-react";
-import { uploadEvidence, deleteEvidence } from "@/server/actions/evidence";
+import {
+  uploadEvidence,
+  deleteEvidence,
+  submitEvidenceLink,
+} from "@/server/actions/evidence";
 import { submitChecklistItem } from "@/server/actions/checklist";
 import { queueMutation } from "@/lib/offline/queue";
 import { compressIfImage } from "@/lib/image-compress";
@@ -60,6 +65,7 @@ function fileIcon(type: string) {
   if (type === "image") return ImageIcon;
   if (type === "video") return Video;
   if (type === "audio") return Music;
+  if (type === "link") return Link2;
   return FileText;
 }
 
@@ -92,6 +98,8 @@ export function ItemDetailForm({
   } | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [queuedNotice, setQueuedNotice] = useState<string | null>(null);
+  const [mode, setMode] = useState<"file" | "link">("file");
+  const [linkUrl, setLinkUrl] = useState("");
 
   const status = existingProgress?.status ?? "not_started";
   const statusCfg = STATUS_BAR[status];
@@ -224,6 +232,61 @@ export function ItemDetailForm({
     });
   }
 
+  function submitLink() {
+    const url = linkUrl.trim();
+    if (!url) {
+      setError("Masukkan tautan terlebih dahulu.");
+      return;
+    }
+    if (!/^https?:\/\//i.test(url)) {
+      setError("Tautan harus diawali http:// atau https://");
+      return;
+    }
+    setError(null);
+    setQueuedNotice(null);
+    startTransition(async () => {
+      // Pastikan progress row ada supaya tautan bisa ditandai ke checklist.
+      let cpId = existingProgress?.id ?? null;
+      if (!cpId) {
+        const r = await submitChecklistItem({
+          project_desa_id: projectDesaId,
+          project_topik_id: projectTopikId,
+          project_checklist_item_id: checklistItemId,
+        });
+        if (r.error) {
+          setError(r.error);
+          return;
+        }
+        cpId = r.checklist_progress_id ?? null;
+      }
+      if (!cpId) {
+        setError("Gagal inisialisasi progress row");
+        return;
+      }
+      const res = await submitEvidenceLink({
+        project_desa_id: projectDesaId,
+        checklist_progress_id: cpId,
+        url,
+        caption: caption.trim() || null,
+      });
+      if (res.error) {
+        setError(res.error);
+        return;
+      }
+      // Auto-resubmit bila peserta menambah bukti pada item yang ditolak.
+      if (existingProgress?.status === "rejected") {
+        await submitChecklistItem({
+          project_desa_id: projectDesaId,
+          project_topik_id: projectTopikId,
+          project_checklist_item_id: checklistItemId,
+        });
+      }
+      setLinkUrl("");
+      setCaption("");
+      router.refresh();
+    });
+  }
+
   function removeEvidence(ev: Evidence) {
     if (
       !confirm(
@@ -352,6 +415,35 @@ export function ItemDetailForm({
         <h2 className="text-sm font-bold uppercase tracking-wide text-atr-fg-muted">
           Tambah bukti pendukung baru
         </h2>
+
+        {/* Pilih cara kirim bukti: upload file atau tautan/URL */}
+        <div className="inline-flex rounded-lg border border-atr-outline bg-white p-0.5">
+          <button
+            type="button"
+            onClick={() => setMode("file")}
+            className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-bold transition ${
+              mode === "file"
+                ? "bg-atr-purple text-white"
+                : "text-atr-fg-muted hover:bg-atr-bg-soft"
+            }`}
+          >
+            <Upload className="h-3.5 w-3.5" />
+            Upload File
+          </button>
+          <button
+            type="button"
+            onClick={() => setMode("link")}
+            className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-bold transition ${
+              mode === "link"
+                ? "bg-atr-purple text-white"
+                : "text-atr-fg-muted hover:bg-atr-bg-soft"
+            }`}
+          >
+            <Link2 className="h-3.5 w-3.5" />
+            Kirim Tautan
+          </button>
+        </div>
+
         <label className="flex flex-col gap-1.5">
           <span className="text-xs font-bold text-atr-fg">
             Caption (opsional)
@@ -365,34 +457,70 @@ export function ItemDetailForm({
           />
         </label>
 
-        <label className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-atr-outline bg-white px-6 py-8 text-center transition hover:border-atr-purple/40 hover:bg-atr-purple-50/40">
-          {pending ? (
-            <Loader2 className="h-8 w-8 animate-spin text-atr-purple" />
-          ) : (
-            <Upload className="h-8 w-8 text-atr-fg-muted" />
-          )}
-          <span className="text-sm font-bold text-atr-fg">
-            {pending && progress
-              ? `Mengupload ${progress.current}/${progress.total}…`
-              : "Klik atau drag file ke sini"}
-          </span>
-          <span className="text-xs text-atr-fg-muted">
-            JPG / PNG / PDF / MP4 · multi-file · maks 50 MB / file · foto
-            otomatis dikompres
-          </span>
-          <input
-            type="file"
-            accept="image/*,application/pdf,video/mp4,video/quicktime,audio/mpeg,.doc,.docx"
-            multiple
-            disabled={pending}
-            onChange={(e) => {
-              const files = e.target.files;
-              if (files && files.length > 0) handleFiles(files);
-              e.target.value = "";
-            }}
-            className="hidden"
-          />
-        </label>
+        {mode === "file" ? (
+          <label className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-atr-outline bg-white px-6 py-8 text-center transition hover:border-atr-purple/40 hover:bg-atr-purple-50/40">
+            {pending ? (
+              <Loader2 className="h-8 w-8 animate-spin text-atr-purple" />
+            ) : (
+              <Upload className="h-8 w-8 text-atr-fg-muted" />
+            )}
+            <span className="text-sm font-bold text-atr-fg">
+              {pending && progress
+                ? `Mengupload ${progress.current}/${progress.total}…`
+                : "Klik atau drag file ke sini"}
+            </span>
+            <span className="text-xs text-atr-fg-muted">
+              JPG / PNG / PDF / MP4 · multi-file · maks 50 MB / file · foto
+              otomatis dikompres
+            </span>
+            <input
+              type="file"
+              accept="image/*,application/pdf,video/mp4,video/quicktime,audio/mpeg,.doc,.docx"
+              multiple
+              disabled={pending}
+              onChange={(e) => {
+                const files = e.target.files;
+                if (files && files.length > 0) handleFiles(files);
+                e.target.value = "";
+              }}
+              className="hidden"
+            />
+          </label>
+        ) : (
+          <div className="space-y-2">
+            <label className="flex flex-col gap-1.5">
+              <span className="text-xs font-bold text-atr-fg">
+                Tautan bukti (Google Drive, YouTube, dsb.)
+              </span>
+              <input
+                type="url"
+                inputMode="url"
+                value={linkUrl}
+                onChange={(e) => setLinkUrl(e.target.value)}
+                placeholder="https://..."
+                disabled={pending}
+                className="h-10 w-full rounded-lg border border-atr-outline bg-white px-3 text-sm outline-none transition focus:border-atr-purple focus:ring-2 focus:ring-atr-purple/15"
+              />
+            </label>
+            <p className="text-xs text-atr-fg-muted">
+              Pastikan tautan bisa diakses reviewer (atur izin ke &quot;siapa
+              saja yang punya link&quot;).
+            </p>
+            <button
+              type="button"
+              onClick={submitLink}
+              disabled={pending}
+              className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-atr-purple px-4 text-sm font-bold text-white transition hover:bg-atr-purple-600 disabled:opacity-50"
+            >
+              {pending ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Link2 className="h-4 w-4" />
+              )}
+              Simpan Tautan
+            </button>
+          </div>
+        )}
 
         {error && (
           <div className="rounded-lg border border-atr-red/30 bg-atr-red/10 p-3 text-xs text-atr-red">

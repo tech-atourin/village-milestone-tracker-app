@@ -52,6 +52,7 @@ export default async function PesertaTrainingPage({
   const checkinIds = await getMyCheckinTopikIds(params.projectId, user.id);
   const { project, membership, topik, materi_scores, sessions } = data;
   const isOnline = membership.attendance_mode === "online";
+  const showRencanaAksi = isModuleOn(project.enabled_modules, "rencana_aksi");
 
   // Provision unit pribadi peserta (reuse mesin desa) supaya checklist,
   // upload bukti, dan rencana aksi punya tempat. Idempotent.
@@ -144,124 +145,7 @@ export default async function PesertaTrainingPage({
         </div>
       )}
 
-      {/* Check-in kehadiran - prominent, di atas supaya mudah ditemukan */}
-      {topik.length > 0 && (
-        <section className="rounded-2xl border-2 border-atr-purple/30 bg-atr-purple-50/40 p-5 shadow-atr-1">
-          <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-            <h2 className="inline-flex items-center gap-1.5 text-sm font-bold text-atr-fg">
-              <MapPin className="h-4 w-4 text-atr-purple" />
-              Check-in Kehadiran
-            </h2>
-            <span className="rounded-full border border-atr-purple/30 bg-white px-2.5 py-0.5 text-[11px] font-bold text-atr-purple-700">
-              {checkinIds.size}/{topik.length} topik
-            </span>
-          </div>
-          <p className="mb-3 text-xs text-atr-fg-muted">
-            Tekan tombol check-in di tiap topik saat Anda hadir mengikutinya.
-          </p>
-          <ul className="space-y-2">
-            {topik.map((t) => (
-              <li
-                key={t.id}
-                className="flex items-center justify-between gap-3 rounded-xl border border-atr-outline bg-white p-3"
-              >
-                <span className="min-w-0 text-sm font-bold text-atr-fg">
-                  {t.sort_order}. {t.name}
-                </span>
-                <TopikCheckinButton
-                  projectId={project.id}
-                  topikId={t.id}
-                  checkedIn={checkinIds.has(t.id)}
-                  open={t.checkin_open}
-                />
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
-
-      {/* Aksi peserta: rencana aksi + kumpulan bukti (unit pribadi peserta) */}
-      {projectDesaId && (
-        <div className="grid gap-3 sm:grid-cols-2">
-          <Link
-            href={`/peserta/projects/${projectDesaId}/rencana-aksi`}
-            className="flex items-center gap-3 rounded-2xl border border-atr-outline bg-white p-4 shadow-atr-1 transition hover:bg-atr-bg-soft"
-          >
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-atr-purple-50 text-atr-purple">
-              <Target className="h-5 w-5" />
-            </div>
-            <div className="min-w-0 flex-1">
-              <div className="text-sm font-bold text-atr-fg">Rencana Aksi</div>
-              <div className="text-xs text-atr-fg-muted">
-                Susun rencana tindak lanjut setelah pelatihan.
-              </div>
-            </div>
-            <ChevronRight className="h-4 w-4 shrink-0 text-atr-fg-muted" />
-          </Link>
-          <Link
-            href={`/peserta/projects/${projectDesaId}/evidence`}
-            className="flex items-center gap-3 rounded-2xl border border-atr-outline bg-white p-4 shadow-atr-1 transition hover:bg-atr-bg-soft"
-          >
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-atr-yellow/20 text-atr-fg">
-              <FolderOpen className="h-5 w-5" />
-            </div>
-            <div className="min-w-0 flex-1">
-              <div className="text-sm font-bold text-atr-fg">
-                Kumpulan Bukti
-              </div>
-              <div className="text-xs text-atr-fg-muted">
-                Semua dokumen/tugas yang Anda unggah.
-              </div>
-            </div>
-            <ChevronRight className="h-4 w-4 shrink-0 text-atr-fg-muted" />
-          </Link>
-        </div>
-      )}
-
-      {/* Materi & Tautan khusus project ini (modul Materi). */}
-      {isModuleOn(project.enabled_modules, "materi") && resources.length > 0 && (
-        <section className="rounded-2xl border border-atr-outline bg-white p-5 shadow-atr-1">
-          <h2 className="mb-3 inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wide text-atr-fg-muted">
-            <FolderOpen className="h-3.5 w-3.5" />
-            Materi &amp; Tautan
-          </h2>
-          <ul className="space-y-2">
-            {resources.map((r) => (
-              <PesertaResourceItem key={r.id} r={r} />
-            ))}
-          </ul>
-        </section>
-      )}
-
-      {/* Nilai akhir + skor tes. Rincian bobot penilaian tidak ditampilkan. */}
-      <section className="rounded-2xl border border-atr-outline bg-white p-5 shadow-atr-1">
-        <div className="text-center">
-          <h2 className="text-xs font-bold uppercase tracking-wide text-atr-fg-muted">
-            Nilai Akhir
-          </h2>
-          {finalScore != null ? (
-            <>
-              <div className="mt-1 text-4xl font-bold text-atr-purple-700">
-                {Number(finalScore).toFixed(2)}
-              </div>
-              <div className="mt-1 inline-flex rounded-full bg-atr-purple-50 px-3 py-1 text-xs font-bold text-atr-purple-700">
-                {predikat(Number(finalScore))}
-              </div>
-            </>
-          ) : (
-            <p className="mt-2 text-sm text-atr-fg-muted">
-              Belum tersedia. Nilai akhir muncul setelah penyelenggara selesai
-              menilai.
-            </p>
-          )}
-        </div>
-        <div className="mt-4 grid grid-cols-2 gap-3 border-t border-atr-outline pt-4">
-          <ScoreBox label="Pre-test" value={preAvg} />
-          <ScoreBox label="Post-test" value={postAvg} highlight />
-        </div>
-      </section>
-
-      {/* Modul / topik: klik untuk isi checklist + unggah bukti per modul */}
+      {/* Modul Pelatihan - paling atas supaya langsung terlihat peserta */}
       <section className="rounded-2xl border border-atr-outline bg-white p-5 shadow-atr-1">
         <h2 className="mb-1 inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wide text-atr-fg-muted">
           <BookOpen className="h-3.5 w-3.5" />
@@ -352,6 +236,125 @@ export default async function PesertaTrainingPage({
             })}
           </ul>
         )}
+      </section>
+
+      {/* Check-in kehadiran - prominent, di atas supaya mudah ditemukan */}
+      {topik.length > 0 && (
+        <section className="rounded-2xl border-2 border-atr-purple/30 bg-atr-purple-50/40 p-5 shadow-atr-1">
+          <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+            <h2 className="inline-flex items-center gap-1.5 text-sm font-bold text-atr-fg">
+              <MapPin className="h-4 w-4 text-atr-purple" />
+              Check-in Kehadiran
+            </h2>
+            <span className="rounded-full border border-atr-purple/30 bg-white px-2.5 py-0.5 text-[11px] font-bold text-atr-purple-700">
+              {checkinIds.size}/{topik.length} topik
+            </span>
+          </div>
+          <p className="mb-3 text-xs text-atr-fg-muted">
+            Tekan tombol check-in di tiap topik saat Anda hadir mengikutinya.
+          </p>
+          <ul className="space-y-2">
+            {topik.map((t) => (
+              <li
+                key={t.id}
+                className="flex items-center justify-between gap-3 rounded-xl border border-atr-outline bg-white p-3"
+              >
+                <span className="min-w-0 text-sm font-bold text-atr-fg">
+                  {t.sort_order}. {t.name}
+                </span>
+                <TopikCheckinButton
+                  projectId={project.id}
+                  topikId={t.id}
+                  checkedIn={checkinIds.has(t.id)}
+                  open={t.checkin_open}
+                />
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      {/* Aksi peserta: rencana aksi (opsional per modul) + kumpulan bukti */}
+      {projectDesaId && (
+        <div className={`grid gap-3 ${showRencanaAksi ? "sm:grid-cols-2" : ""}`}>
+          {showRencanaAksi && (
+          <Link
+            href={`/peserta/projects/${projectDesaId}/rencana-aksi`}
+            className="flex items-center gap-3 rounded-2xl border border-atr-outline bg-white p-4 shadow-atr-1 transition hover:bg-atr-bg-soft"
+          >
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-atr-purple-50 text-atr-purple">
+              <Target className="h-5 w-5" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="text-sm font-bold text-atr-fg">Rencana Aksi</div>
+              <div className="text-xs text-atr-fg-muted">
+                Susun rencana tindak lanjut setelah pelatihan.
+              </div>
+            </div>
+            <ChevronRight className="h-4 w-4 shrink-0 text-atr-fg-muted" />
+          </Link>
+          )}
+          <Link
+            href={`/peserta/projects/${projectDesaId}/evidence`}
+            className="flex items-center gap-3 rounded-2xl border border-atr-outline bg-white p-4 shadow-atr-1 transition hover:bg-atr-bg-soft"
+          >
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-atr-yellow/20 text-atr-fg">
+              <FolderOpen className="h-5 w-5" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="text-sm font-bold text-atr-fg">
+                Kumpulan Bukti
+              </div>
+              <div className="text-xs text-atr-fg-muted">
+                Semua dokumen/tugas yang Anda unggah.
+              </div>
+            </div>
+            <ChevronRight className="h-4 w-4 shrink-0 text-atr-fg-muted" />
+          </Link>
+        </div>
+      )}
+
+      {/* Materi & Tautan khusus project ini (modul Materi). */}
+      {isModuleOn(project.enabled_modules, "materi") && resources.length > 0 && (
+        <section className="rounded-2xl border border-atr-outline bg-white p-5 shadow-atr-1">
+          <h2 className="mb-3 inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wide text-atr-fg-muted">
+            <FolderOpen className="h-3.5 w-3.5" />
+            Materi &amp; Tautan
+          </h2>
+          <ul className="space-y-2">
+            {resources.map((r) => (
+              <PesertaResourceItem key={r.id} r={r} />
+            ))}
+          </ul>
+        </section>
+      )}
+
+      {/* Nilai akhir + skor tes. Rincian bobot penilaian tidak ditampilkan. */}
+      <section className="rounded-2xl border border-atr-outline bg-white p-5 shadow-atr-1">
+        <div className="text-center">
+          <h2 className="text-xs font-bold uppercase tracking-wide text-atr-fg-muted">
+            Nilai Akhir
+          </h2>
+          {finalScore != null ? (
+            <>
+              <div className="mt-1 text-4xl font-bold text-atr-purple-700">
+                {Number(finalScore).toFixed(2)}
+              </div>
+              <div className="mt-1 inline-flex rounded-full bg-atr-purple-50 px-3 py-1 text-xs font-bold text-atr-purple-700">
+                {predikat(Number(finalScore))}
+              </div>
+            </>
+          ) : (
+            <p className="mt-2 text-sm text-atr-fg-muted">
+              Belum tersedia. Nilai akhir muncul setelah penyelenggara selesai
+              menilai.
+            </p>
+          )}
+        </div>
+        <div className="mt-4 grid grid-cols-2 gap-3 border-t border-atr-outline pt-4">
+          <ScoreBox label="Pre-test" value={preAvg} />
+          <ScoreBox label="Post-test" value={postAvg} highlight />
+        </div>
       </section>
 
       {/* Sesi pendampingan (offline only) */}

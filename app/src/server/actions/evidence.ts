@@ -114,6 +114,70 @@ export async function uploadEvidence(input: UploadEvidenceInput) {
 }
 
 // =====================================================
+// Submit a LINK/URL as evidence (alternatif upload file).
+// Menyimpan baris evidence_files dengan file_type 'link' dan file_url berisi
+// URL eksternal (bukan path storage). Tidak ada upload ke storage.
+// =====================================================
+const linkSchema = z.object({
+  project_desa_id: z.string().uuid(),
+  checklist_progress_id: z.string().uuid().optional().nullable(),
+  url: z
+    .string()
+    .trim()
+    .url("URL tidak valid")
+    .max(2000)
+    .refine((u) => /^https?:\/\//i.test(u), {
+      message: "URL harus diawali http:// atau https://",
+    }),
+  caption: z.string().max(500).optional().nullable(),
+});
+
+export type SubmitEvidenceLinkInput = z.input<typeof linkSchema>;
+
+export async function submitEvidenceLink(input: SubmitEvidenceLinkInput) {
+  const user = await getCurrentUser();
+  if (!user) return { error: "Tidak terautentikasi" };
+
+  const parsed = linkSchema.safeParse(input);
+  if (!parsed.success) {
+    return {
+      error: parsed.error.errors[0]?.message ?? "Input tidak valid",
+    };
+  }
+
+  const supabase = createClient();
+  const { data: ev, error: insertErr } = await supabase
+    .from("evidence_files")
+    .insert({
+      project_desa_id: parsed.data.project_desa_id,
+      uploaded_by: user.id,
+      file_url: parsed.data.url, // URL eksternal, bukan path storage
+      file_type: "link",
+      original_filename: parsed.data.url,
+      caption: parsed.data.caption ?? null,
+    })
+    .select("id")
+    .single();
+  if (insertErr || !ev) {
+    console.error("evidence_files (link) insert:", insertErr);
+    return { error: insertErr?.message ?? "Gagal simpan tautan" };
+  }
+  const evidenceId = (ev as { id: string }).id;
+
+  if (parsed.data.checklist_progress_id) {
+    await supabase.from("evidence_tags").insert({
+      evidence_id: evidenceId,
+      tag_type: "checklist_progress",
+      tag_target_id: parsed.data.checklist_progress_id,
+      tagged_by: user.id,
+    });
+  }
+
+  revalidatePath(`/peserta/projects/${parsed.data.project_desa_id}`);
+  return { ok: true, evidence_id: evidenceId };
+}
+
+// =====================================================
 // Delete an evidence file (uploader or superadmin only).
 // Removes evidence_tags, the storage object, and the row.
 // =====================================================
@@ -137,7 +201,7 @@ export async function deleteEvidence(input: z.input<typeof deleteSchema>) {
   // Fetch the row to verify ownership and get the storage path.
   const { data: ev, error: fetchErr } = await supabase
     .from("evidence_files")
-    .select("id, file_url, uploaded_by, project_desa_id")
+    .select("id, file_url, file_type, uploaded_by, project_desa_id")
     .eq("id", parsed.data.evidence_id)
     .maybeSingle();
   if (fetchErr || !ev) return { error: "Evidence tidak ditemukan" };
@@ -145,6 +209,7 @@ export async function deleteEvidence(input: z.input<typeof deleteSchema>) {
   const row = ev as {
     id: string;
     file_url: string;
+    file_type: string;
     uploaded_by: string;
     project_desa_id: string | null;
   };
@@ -155,9 +220,10 @@ export async function deleteEvidence(input: z.input<typeof deleteSchema>) {
     return { error: "Hanya pengunggah yang bisa menghapus evidence ini" };
   }
 
-  // Remove tags first (FK), then storage object, then the row.
+  // Remove tags first (FK), then storage object, then the row. Bukti tipe
+  // 'link' tidak punya objek storage (file_url berisi URL), jadi lewati.
   await supabase.from("evidence_tags").delete().eq("evidence_id", row.id);
-  if (row.file_url) {
+  if (row.file_url && row.file_type !== "link") {
     await supabase.storage.from("vmt-evidence").remove([row.file_url]);
   }
   const { error: delErr } = await supabase
