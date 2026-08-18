@@ -9,16 +9,24 @@ export async function EvidenceTab({
   projectId,
   filterTopikId,
   filterDesaId,
+  readOnly = false,
 }: {
   projectId: string;
   filterTopikId?: string;
   filterDesaId?: string;
+  readOnly?: boolean;
 }) {
   const [queue, files, user] = await Promise.all([
     listReviewQueue(projectId, "submitted"),
     listProjectEvidenceDirectory(projectId),
     getCurrentUser(),
   ]);
+
+  // Role read-only (mis. fasilitator): tampilkan direktori bukti saja,
+  // tanpa antrean review (approve/reject).
+  if (readOnly) {
+    return <EvidenceDirectory files={files} />;
+  }
 
   return (
     <EvidenceTabModes

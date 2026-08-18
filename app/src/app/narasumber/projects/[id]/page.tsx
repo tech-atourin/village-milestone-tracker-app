@@ -224,6 +224,7 @@ async function PesertaTabLoader({ projectId }: { projectId: string }) {
       candidates={candidates}
       desa={desa}
       raporBasePath="/narasumber"
+      readOnly
     />
   );
 }

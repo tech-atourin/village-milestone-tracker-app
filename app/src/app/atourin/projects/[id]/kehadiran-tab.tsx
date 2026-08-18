@@ -2,7 +2,13 @@ import { getProjectCheckinMatrix } from "@/server/queries/checkin";
 import { CheckinWindowControls } from "./checkin-window-controls";
 import { KehadiranMatrix } from "./kehadiran-matrix";
 
-export async function KehadiranTab({ projectId }: { projectId: string }) {
+export async function KehadiranTab({
+  projectId,
+  readOnly = false,
+}: {
+  projectId: string;
+  readOnly?: boolean;
+}) {
   const { topik, rows, total_topik } = await getProjectCheckinMatrix(projectId);
 
   return (
@@ -15,7 +21,7 @@ export async function KehadiranTab({ projectId }: { projectId: string }) {
         </p>
       </div>
 
-      {topik.length > 0 && (
+      {topik.length > 0 && !readOnly && (
         <CheckinWindowControls projectId={projectId} topik={topik} />
       )}
 

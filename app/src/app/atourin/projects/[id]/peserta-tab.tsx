@@ -30,6 +30,7 @@ export function PesertaTab({
   desa,
   raporBasePath = "/atourin",
   programType = "desa_based",
+  readOnly = false,
 }: {
   projectId: string;
   members: ProjectMemberRow[];
@@ -37,6 +38,10 @@ export function PesertaTab({
   desa: ProjectDesaRow[];
   raporBasePath?: string;
   programType?: "desa_based" | "pelaku_pariwisata";
+  // Sembunyikan kontrol tambah/hapus untuk role yang hanya melihat
+  // (mis. fasilitator/narasumber). Server action tetap menolak sebagai
+  // lapisan kedua.
+  readOnly?: boolean;
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -124,20 +129,22 @@ export function PesertaTab({
             {activeMembers.length} peserta aktif
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          <PesertaBulkImportButton
-            projectId={projectId}
-            batchNames={batchNames}
-          />
-          <button
-            type="button"
-            onClick={() => setShowAdd((s) => !s)}
-            className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-atr-purple px-3 text-sm font-bold text-white transition hover:bg-atr-purple-600"
-          >
-            <Plus className="h-4 w-4" />
-            Tambah Peserta
-          </button>
-        </div>
+        {!readOnly && (
+          <div className="flex items-center gap-2">
+            <PesertaBulkImportButton
+              projectId={projectId}
+              batchNames={batchNames}
+            />
+            <button
+              type="button"
+              onClick={() => setShowAdd((s) => !s)}
+              className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-atr-purple px-3 text-sm font-bold text-white transition hover:bg-atr-purple-600"
+            >
+              <Plus className="h-4 w-4" />
+              Tambah Peserta
+            </button>
+          </div>
+        )}
       </div>
 
       <div className="rounded-lg border border-atr-purple/30 bg-atr-purple-50/50 px-3.5 py-2.5 text-xs text-atr-fg">
@@ -323,6 +330,7 @@ export function PesertaTab({
           removingId={removingId}
           raporBasePath={raporBasePath}
           programType={programType}
+          readOnly={readOnly}
         />
       )}
     </div>
@@ -339,6 +347,7 @@ function MembersTable({
   removingId,
   raporBasePath = "/atourin",
   programType = "desa_based",
+  readOnly = false,
 }: {
   projectId: string;
   members: ProjectMemberRow[];
@@ -346,6 +355,7 @@ function MembersTable({
   removingId: string | null;
   raporBasePath?: string;
   programType?: "desa_based" | "pelaku_pariwisata";
+  readOnly?: boolean;
 }) {
   const rows = members.map((m) => ({
     ...m,
@@ -497,19 +507,21 @@ function MembersTable({
             <GraduationCap className="h-3 w-3" />
             Rapor
           </Link>
-          <button
-            type="button"
-            onClick={() => onRemove(row.original.id)}
-            disabled={removingId === row.original.id}
-            className="inline-flex h-7 items-center gap-1 rounded-md border border-atr-outline bg-white px-2 text-xs font-bold text-atr-fg-muted transition hover:border-atr-red/30 hover:text-atr-red disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            {removingId === row.original.id ? (
-              <Loader2 className="h-3 w-3 animate-spin" />
-            ) : (
-              <X className="h-3 w-3" />
-            )}
-            Hapus
-          </button>
+          {!readOnly && (
+            <button
+              type="button"
+              onClick={() => onRemove(row.original.id)}
+              disabled={removingId === row.original.id}
+              className="inline-flex h-7 items-center gap-1 rounded-md border border-atr-outline bg-white px-2 text-xs font-bold text-atr-fg-muted transition hover:border-atr-red/30 hover:text-atr-red disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {removingId === row.original.id ? (
+                <Loader2 className="h-3 w-3 animate-spin" />
+              ) : (
+                <X className="h-3 w-3" />
+              )}
+              Hapus
+            </button>
+          )}
         </div>
       ),
     },

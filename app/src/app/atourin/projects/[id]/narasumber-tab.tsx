@@ -38,6 +38,7 @@ export function NarasumberTab({
   candidates,
   narasumberDetailBase,
   projectDesa,
+  readOnly = false,
 }: {
   projectId: string;
   assignments: NarasumberAssignment[];
@@ -47,6 +48,8 @@ export function NarasumberTab({
     | "/mitra/narasumber"
     | "/personil/narasumber";
   projectDesa: ProjectDesaOption[];
+  // Sembunyikan kontrol tambah/hapus/kelola untuk role yang hanya melihat.
+  readOnly?: boolean;
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -151,14 +154,16 @@ export function NarasumberTab({
             {assignments.length} narasumber terdaftar
           </p>
         </div>
-        <button
-          type="button"
-          onClick={() => setShowAdd((s) => !s)}
-          className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-atr-purple px-3 text-sm font-bold text-white transition hover:bg-atr-purple-600"
-        >
-          <Plus className="h-4 w-4" />
-          Tambah Narasumber
-        </button>
+        {!readOnly && (
+          <button
+            type="button"
+            onClick={() => setShowAdd((s) => !s)}
+            className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-atr-purple px-3 text-sm font-bold text-white transition hover:bg-atr-purple-600"
+          >
+            <Plus className="h-4 w-4" />
+            Tambah Narasumber
+          </button>
+        )}
       </div>
 
       {showAdd && (
@@ -337,7 +342,7 @@ export function NarasumberTab({
                     {a.user.email ?? "-"}
                   </div>
                 </div>
-                {a.membership_id && (
+                {a.membership_id && !readOnly && (
                   <button
                     type="button"
                     onClick={() => remove(a.membership_id!)}
@@ -396,13 +401,15 @@ export function NarasumberTab({
                     )}
                   </div>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => setEditing(a)}
-                  className="inline-flex h-7 shrink-0 items-center rounded-md border border-atr-outline bg-white px-2 text-[11px] font-bold text-atr-fg hover:bg-atr-bg-soft"
-                >
-                  Pilih Desa
-                </button>
+                {!readOnly && (
+                  <button
+                    type="button"
+                    onClick={() => setEditing(a)}
+                    className="inline-flex h-7 shrink-0 items-center rounded-md border border-atr-outline bg-white px-2 text-[11px] font-bold text-atr-fg hover:bg-atr-bg-soft"
+                  >
+                    Pilih Desa
+                  </button>
+                )}
               </div>
             </article>
           ))}

@@ -144,15 +144,20 @@ export default async function PersonilProjectDetailPage({
       {activeTab === "narasumber" && (
         <NarasumberTabLoader projectId={project.id} />
       )}
-      {activeTab === "kehadiran" && <KehadiranTab projectId={project.id} />}
+      {activeTab === "kehadiran" && (
+        <KehadiranTab projectId={project.id} readOnly />
+      )}
       {activeTab === "evidence" && (
         <EvidenceTab
           projectId={project.id}
           filterTopikId={searchParams.topik}
           filterDesaId={searchParams.desa}
+          readOnly
         />
       )}
-      {activeTab === "materi" && <MateriTab projectId={project.id} />}
+      {activeTab === "materi" && (
+        <MateriTab projectId={project.id} readOnly />
+      )}
     </div>
   );
 }
@@ -190,6 +195,7 @@ async function PesertaTabLoader({
       desa={desa}
       raporBasePath="/personil"
       programType={programType}
+      readOnly
     />
   );
 }
@@ -214,6 +220,7 @@ async function NarasumberTabLoader({ projectId }: { projectId: string }) {
       candidates={[]}
       narasumberDetailBase="/personil/narasumber"
       projectDesa={projectDesa}
+      readOnly
     />
   );
 }

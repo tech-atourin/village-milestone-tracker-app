@@ -59,9 +59,11 @@ function fmtSize(bytes: number | null): string {
 export function MateriManager({
   projectId,
   items,
+  readOnly = false,
 }: {
   projectId: string;
   items: ProjectResource[];
+  readOnly?: boolean;
 }) {
   const router = useRouter();
   const [mode, setMode] = useState<null | "link" | "file">(null);
@@ -78,30 +80,32 @@ export function MateriManager({
             video/rekaman zoom sebaiknya ditambahkan sebagai Tautan.
           </p>
         </div>
-        <div className="flex gap-2">
-          <button
-            type="button"
-            onClick={() => {
-              setEditing(null);
-              setMode("link");
-            }}
-            className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-atr-outline bg-white px-3 text-sm font-bold text-atr-fg transition hover:bg-atr-bg-soft"
-          >
-            <Link2 className="h-4 w-4" />
-            Tambah Tautan
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              setEditing(null);
-              setMode("file");
-            }}
-            className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-atr-purple px-3 text-sm font-bold text-white transition hover:bg-atr-purple-600"
-          >
-            <Upload className="h-4 w-4" />
-            Upload File
-          </button>
-        </div>
+        {!readOnly && (
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                setEditing(null);
+                setMode("link");
+              }}
+              className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-atr-outline bg-white px-3 text-sm font-bold text-atr-fg transition hover:bg-atr-bg-soft"
+            >
+              <Link2 className="h-4 w-4" />
+              Tambah Tautan
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setEditing(null);
+                setMode("file");
+              }}
+              className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-atr-purple px-3 text-sm font-bold text-white transition hover:bg-atr-purple-600"
+            >
+              <Upload className="h-4 w-4" />
+              Upload File
+            </button>
+          </div>
+        )}
       </div>
 
       {(mode || editing) && (
@@ -131,6 +135,7 @@ export function MateriManager({
             <ResourceRow
               key={r.id}
               r={r}
+              readOnly={readOnly}
               onEdit={() => {
                 setMode(null);
                 setEditing(r);
@@ -148,10 +153,12 @@ function ResourceRow({
   r,
   onEdit,
   onChanged,
+  readOnly = false,
 }: {
   r: ProjectResource;
   onEdit: () => void;
   onChanged: () => void;
+  readOnly?: boolean;
 }) {
   const [, startTransition] = useTransition();
   // Kunci busy per aksi, biar hanya tombol yang diklik yang spin/disabled.
@@ -226,6 +233,8 @@ function ResourceRow({
               <Download className="h-4 w-4" />
             )}
           </button>
+          {!readOnly && (
+          <>
           <button
             type="button"
             onClick={() => {
@@ -278,6 +287,8 @@ function ResourceRow({
           >
             <Trash2 className="h-4 w-4" />
           </button>
+          </>
+          )}
         </div>
       </div>
     </li>
