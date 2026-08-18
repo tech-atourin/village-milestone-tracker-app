@@ -3,7 +3,37 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { createAdminClient, createClient } from "@/lib/supabase/server";
-import { getCurrentUser } from "@/lib/auth/rbac";
+import {
+  getCurrentUser,
+  canAccessProject,
+  canManageProject,
+  type SessionUser,
+} from "@/lib/auth/rbac";
+
+// Boleh edit rencana aksi sebuah project: superadmin, mitra_admin pemilik,
+// atau peserta/narasumber yang jadi anggota aktif project tsb. Mencegah user
+// project A mengubah/menghapus rencana aksi project B (update/delete hanya
+// menerima id baris).
+async function canEditPlanForProject(
+  projectId: string,
+  user: SessionUser,
+): Promise<boolean> {
+  if (user.global_role === "superadmin") return true;
+  if (user.global_role === "mitra_admin") return canManageProject(projectId);
+  if (user.global_role === "peserta" || user.global_role === "narasumber")
+    return canAccessProject(user.id, projectId);
+  return false;
+}
+
+async function planProjectId(id: string): Promise<string | null> {
+  const admin = createAdminClient();
+  const { data } = await admin
+    .from("desa_action_plans")
+    .select("project_id")
+    .eq("id", id)
+    .maybeSingle();
+  return (data as { project_id: string } | null)?.project_id ?? null;
+}
 
 // Rencana Aksi is owned by the pelaksana (peserta) + pendamping (narasumber).
 // Admin roles (superadmin/mitra_admin) can only view; blocking at the server
@@ -44,6 +74,8 @@ export async function createActionPlan(input: z.input<typeof createSchema>) {
     };
   const parsed = createSchema.safeParse(input);
   if (!parsed.success) return { error: "Input tidak valid" };
+  if (!(await canEditPlanForProject(parsed.data.project_id, user)))
+    return { error: "Anda bukan anggota project ini." };
   const supabase = createClient();
   const { error } = await supabase
     .from("desa_action_plans")
@@ -77,6 +109,10 @@ export async function updateActionPlan(input: z.input<typeof updateSchema>) {
   const parsed = updateSchema.safeParse(input);
   if (!parsed.success) return { error: "Input tidak valid" };
   const { id, ...rest } = parsed.data;
+  const pid = await planProjectId(id);
+  if (!pid) return { error: "Rencana aksi tidak ditemukan" };
+  if (!(await canEditPlanForProject(pid, user)))
+    return { error: "Anda tidak diizinkan mengubah rencana aksi ini." };
   const supabase = createClient();
   const { error } = await supabase
     .from("desa_action_plans")
@@ -92,6 +128,10 @@ export async function deleteActionPlan(id: string) {
   if (!user) return { error: "Tidak terautentikasi" };
   if (!EDITOR_ROLES.has(user.global_role))
     return { error: "Anda tidak diizinkan menghapus rencana aksi." };
+  const pid = await planProjectId(id);
+  if (!pid) return { error: "Rencana aksi tidak ditemukan" };
+  if (!(await canEditPlanForProject(pid, user)))
+    return { error: "Anda tidak diizinkan menghapus rencana aksi ini." };
   // Use admin client so RLS doesn't silently swallow the delete for
   // superadmin/mitra contexts where the row's owner is a peserta/narasumber.
   const supabase = createAdminClient();

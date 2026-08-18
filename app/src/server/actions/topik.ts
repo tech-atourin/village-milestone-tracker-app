@@ -3,7 +3,28 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
-import { requireRole } from "@/lib/auth/rbac";
+import { requireRole, getCurrentUser } from "@/lib/auth/rbac";
+
+// Boleh kelola topik/checklist: superadmin, atau mitra_admin pemilik project
+// (organisasi project == organisasi mitra). Mengembalikan boolean supaya
+// pemanggil membalas {error} inline, bukan redirect ke /forbidden.
+async function canManageProjectTopik(projectId: string): Promise<boolean> {
+  const user = await getCurrentUser();
+  if (!user) return false;
+  if (user.global_role === "superadmin") return true;
+  if (user.global_role === "mitra_admin") {
+    const admin = createAdminClient();
+    const { data } = await admin
+      .from("projects")
+      .select("organization_id")
+      .eq("id", projectId)
+      .maybeSingle();
+    const orgId = (data as { organization_id: string | null } | null)
+      ?.organization_id;
+    return !!orgId && orgId === user.organization_id;
+  }
+  return false;
+}
 
 // =====================================================
 // Topik CRUD
@@ -15,9 +36,10 @@ const addTopikSchema = z.object({
 });
 
 export async function addTopik(input: z.input<typeof addTopikSchema>) {
-  await requireRole("superadmin");
   const parsed = addTopikSchema.safeParse(input);
   if (!parsed.success) return { error: "Input tidak valid" };
+  if (!(await canManageProjectTopik(parsed.data.project_id)))
+    return { error: "Tidak diizinkan mengelola topik project ini." };
   // Superadmin-guarded. project_topik & project_checklist_item tidak punya
   // policy write untuk RLS client, jadi pakai admin client (guard peran di atas).
   const supabase = createAdminClient();
@@ -52,9 +74,10 @@ const renameTopikSchema = z.object({
 });
 
 export async function renameTopik(input: z.input<typeof renameTopikSchema>) {
-  await requireRole("superadmin");
   const parsed = renameTopikSchema.safeParse(input);
   if (!parsed.success) return { error: "Input tidak valid" };
+  if (!(await canManageProjectTopik(parsed.data.project_id)))
+    return { error: "Tidak diizinkan mengelola topik project ini." };
   // Superadmin-guarded. project_topik & project_checklist_item tidak punya
   // policy write untuk RLS client, jadi pakai admin client (guard peran di atas).
   const supabase = createAdminClient();
@@ -76,9 +99,10 @@ const deleteTopikSchema = z.object({
 });
 
 export async function deleteTopik(input: z.input<typeof deleteTopikSchema>) {
-  await requireRole("superadmin");
   const parsed = deleteTopikSchema.safeParse(input);
   if (!parsed.success) return { error: "Input tidak valid" };
+  if (!(await canManageProjectTopik(parsed.data.project_id)))
+    return { error: "Tidak diizinkan mengelola topik project ini." };
   // Superadmin-guarded. project_topik & project_checklist_item tidak punya
   // policy write untuk RLS client, jadi pakai admin client (guard peran di atas).
   const supabase = createAdminClient();
@@ -104,9 +128,10 @@ const addItemSchema = z.object({
 });
 
 export async function addChecklistItem(input: z.input<typeof addItemSchema>) {
-  await requireRole("superadmin");
   const parsed = addItemSchema.safeParse(input);
   if (!parsed.success) return { error: "Input tidak valid" };
+  if (!(await canManageProjectTopik(parsed.data.project_id)))
+    return { error: "Tidak diizinkan mengelola topik project ini." };
   // Superadmin-guarded. project_topik & project_checklist_item tidak punya
   // policy write untuk RLS client, jadi pakai admin client (guard peran di atas).
   const supabase = createAdminClient();
@@ -142,9 +167,10 @@ const updateItemSchema = z.object({
 export async function updateChecklistItem(
   input: z.input<typeof updateItemSchema>,
 ) {
-  await requireRole("superadmin");
   const parsed = updateItemSchema.safeParse(input);
   if (!parsed.success) return { error: "Input tidak valid" };
+  if (!(await canManageProjectTopik(parsed.data.project_id)))
+    return { error: "Tidak diizinkan mengelola topik project ini." };
   // Superadmin-guarded. project_topik & project_checklist_item tidak punya
   // policy write untuk RLS client, jadi pakai admin client (guard peran di atas).
   const supabase = createAdminClient();
@@ -169,9 +195,10 @@ const deleteItemSchema = z.object({
 export async function deleteChecklistItem(
   input: z.input<typeof deleteItemSchema>,
 ) {
-  await requireRole("superadmin");
   const parsed = deleteItemSchema.safeParse(input);
   if (!parsed.success) return { error: "Input tidak valid" };
+  if (!(await canManageProjectTopik(parsed.data.project_id)))
+    return { error: "Tidak diizinkan mengelola topik project ini." };
   // Superadmin-guarded. project_topik & project_checklist_item tidak punya
   // policy write untuk RLS client, jadi pakai admin client (guard peran di atas).
   const supabase = createAdminClient();

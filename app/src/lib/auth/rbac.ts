@@ -1,7 +1,7 @@
 import "server-only";
 
 import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createAdminClient } from "@/lib/supabase/server";
 import type { GlobalRole } from "@/types/supabase";
 
 export type SessionUser = {
@@ -102,4 +102,28 @@ export async function canAccessProject(
     .eq("status", "active")
     .maybeSingle();
   return !!data;
+}
+
+// =====================================================
+// canManageProject - boleh kelola isi project (topik, peserta, materi,
+// gform, dll): superadmin, atau mitra_admin pemilik project (organisasi
+// project == organisasi mitra). Dipakai server action supaya membalas
+// {error} inline, bukan redirect ke /forbidden.
+// =====================================================
+export async function canManageProject(projectId: string): Promise<boolean> {
+  const user = await getCurrentUser();
+  if (!user) return false;
+  if (user.global_role === "superadmin") return true;
+  if (user.global_role === "mitra_admin") {
+    const admin = createAdminClient();
+    const { data } = await admin
+      .from("projects")
+      .select("organization_id")
+      .eq("id", projectId)
+      .maybeSingle();
+    const orgId = (data as { organization_id: string | null } | null)
+      ?.organization_id;
+    return !!orgId && orgId === user.organization_id;
+  }
+  return false;
 }

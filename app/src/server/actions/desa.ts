@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
-import { requireRole } from "@/lib/auth/rbac";
+import { requireRole, canManageProject } from "@/lib/auth/rbac";
 
 const createDesaSchema = z.object({
   name: z.string().min(2).max(200),
@@ -16,7 +16,8 @@ const createDesaSchema = z.object({
 export type CreateDesaInput = z.input<typeof createDesaSchema>;
 
 export async function createDesaAction(input: CreateDesaInput) {
-  await requireRole("superadmin");
+  // Desa master boleh dibuat superadmin maupun mitra_admin (dipakai di /mitra/desa).
+  await requireRole("superadmin", "mitra_admin");
   const parsed = createDesaSchema.safeParse(input);
   if (!parsed.success) {
     return { error: "Input tidak valid", fieldErrors: parsed.error.flatten().fieldErrors };
@@ -49,11 +50,12 @@ const attachDesaSchema = z.object({
 export type AttachDesaInput = z.input<typeof attachDesaSchema>;
 
 export async function attachDesaToProject(input: AttachDesaInput) {
-  await requireRole("superadmin");
   const parsed = attachDesaSchema.safeParse(input);
   if (!parsed.success) {
     return { error: "Input tidak valid" };
   }
+  if (!(await canManageProject(parsed.data.project_id)))
+    return { error: "Tidak diizinkan mengelola desa project ini." };
   const supabase = createClient();
   const { data, error } = await supabase.rpc("attach_desa_to_project", {
     p_project_id: parsed.data.project_id,

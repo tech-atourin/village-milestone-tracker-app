@@ -349,7 +349,9 @@ export async function importHubDesaToMaster(
   | { ok: true; vmt_desa_id: string; already_existed: boolean }
   | { error: string }
 > {
-  await requireRole("superadmin");
+  // Import desa dari Hub ke master boleh superadmin & mitra_admin (dipakai di
+  // /mitra/desa, sejajar dengan importHubDesaToProject).
+  await requireRole("superadmin", "mitra_admin");
   const parsed = importMasterSchema.safeParse(input);
   if (!parsed.success) return { error: "Input tidak valid" };
 

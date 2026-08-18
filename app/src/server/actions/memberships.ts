@@ -2,8 +2,8 @@
 
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-import { createClient, createAdminClient } from "@/lib/supabase/server";
-import { requireRole, getCurrentUser } from "@/lib/auth/rbac";
+import { createAdminClient } from "@/lib/supabase/server";
+import { getCurrentUser, canManageProject } from "@/lib/auth/rbac";
 
 const addMemberSchema = z.object({
   project_id: z.string().uuid(),
@@ -17,12 +17,15 @@ const addMemberSchema = z.object({
 export type AddMemberInput = z.input<typeof addMemberSchema>;
 
 export async function addProjectMember(input: AddMemberInput) {
-  await requireRole("superadmin");
   const parsed = addMemberSchema.safeParse(input);
   if (!parsed.success) {
     return { error: "Input tidak valid" };
   }
-  const supabase = createClient();
+  // Superadmin, atau mitra_admin pemilik project. project_memberships tak punya
+  // policy write RLS untuk mitra, jadi insert lewat admin client.
+  if (!(await canManageProject(parsed.data.project_id)))
+    return { error: "Tidak diizinkan mengelola peserta project ini." };
+  const supabase = createAdminClient();
   const { error } = await supabase.from("project_memberships").insert({
     project_id: parsed.data.project_id,
     user_id: parsed.data.user_id,

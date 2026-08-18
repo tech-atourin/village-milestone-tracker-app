@@ -2,8 +2,8 @@
 
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-import { createClient } from "@/lib/supabase/server";
-import { requireRole } from "@/lib/auth/rbac";
+import { createAdminClient } from "@/lib/supabase/server";
+import { canManageProject } from "@/lib/auth/rbac";
 import { syncGformLocal } from "@/lib/gform/local-sync";
 
 const addSchema = z.object({
@@ -16,17 +16,29 @@ const addSchema = z.object({
 });
 
 export async function addProjectGform(input: z.input<typeof addSchema>) {
-  await requireRole("superadmin");
   const parsed = addSchema.safeParse(input);
   if (!parsed.success) return { error: "Input tidak valid" };
-  const supabase = createClient();
+  if (!(await canManageProject(parsed.data.project_id)))
+    return { error: "Tidak diizinkan mengelola GForm project ini." };
+  const supabase = createAdminClient();
   const { error } = await supabase.from("project_gforms").insert(parsed.data);
   if (error) return { error: error.message };
   revalidatePath(`/atourin/projects/${parsed.data.project_id}`);
+  revalidatePath(`/mitra/projects/${parsed.data.project_id}`);
   return { ok: true };
 }
 
 export async function triggerGformSync(projectGformId: string) {
-  await requireRole("superadmin");
+  // Resolve project dulu untuk cek kepemilikan (superadmin / mitra pemilik).
+  const admin = createAdminClient();
+  const { data } = await admin
+    .from("project_gforms")
+    .select("project_id")
+    .eq("id", projectGformId)
+    .maybeSingle();
+  const projectId = (data as { project_id: string } | null)?.project_id;
+  if (!projectId) return { error: "GForm tidak ditemukan" };
+  if (!(await canManageProject(projectId)))
+    return { error: "Tidak diizinkan menyinkronkan GForm project ini." };
   return syncGformLocal(projectGformId);
 }

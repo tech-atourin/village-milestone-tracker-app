@@ -108,13 +108,17 @@ export function GformsPanel({
     startTransition(async () => {
       try {
         const r = await triggerGformSync(gformId);
-        setSyncReport({
-          gformId,
-          matched: r.matched,
-          unmatched: r.unmatched,
-          errors: r.errors,
-        });
-        router.refresh();
+        if ("error" in r) {
+          setError(r.error);
+        } else {
+          setSyncReport({
+            gformId,
+            matched: r.matched,
+            unmatched: r.unmatched,
+            errors: r.errors,
+          });
+          router.refresh();
+        }
       } finally {
         setSyncingId(null);
       }
