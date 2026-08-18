@@ -424,7 +424,7 @@ async function NarasumberTabLoader({ projectId }: { projectId: string }) {
 
 async function TopikTabLoader({ projectId }: { projectId: string }) {
   const [topik, templates] = await Promise.all([
-    listProjectTopikWithItems(projectId),
+    listProjectTopikWithItems(projectId, { asAdmin: true }),
     listTemplates(),
   ]);
   return (
@@ -600,7 +600,7 @@ async function KuisTabLoader({
 }) {
   const [quizzes, topik] = await Promise.all([
     listProjectQuizzes(projectId),
-    listProjectTopikWithItems(projectId),
+    listProjectTopikWithItems(projectId, { asAdmin: true }),
   ]);
   const topikOptions = topik.map((t) => ({ id: t.id, name: t.name }));
   return (

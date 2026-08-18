@@ -145,7 +145,47 @@ export default async function PesertaTrainingPage({
         </div>
       )}
 
-      {/* Modul Pelatihan - paling atas supaya langsung terlihat peserta */}
+      {/* Aksi peserta: kumpulan bukti (+ rencana aksi opsional) - paling atas */}
+      {projectDesaId && (
+        <div className={`grid gap-3 ${showRencanaAksi ? "sm:grid-cols-2" : ""}`}>
+          <Link
+            href={`/peserta/projects/${projectDesaId}/evidence`}
+            className="flex items-center gap-3 rounded-2xl border border-atr-outline bg-white p-4 shadow-atr-1 transition hover:bg-atr-bg-soft"
+          >
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-atr-yellow/20 text-atr-fg">
+              <FolderOpen className="h-5 w-5" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="text-sm font-bold text-atr-fg">
+                Kumpulan Bukti
+              </div>
+              <div className="text-xs text-atr-fg-muted">
+                Semua dokumen/tugas yang Anda unggah.
+              </div>
+            </div>
+            <ChevronRight className="h-4 w-4 shrink-0 text-atr-fg-muted" />
+          </Link>
+          {showRencanaAksi && (
+            <Link
+              href={`/peserta/projects/${projectDesaId}/rencana-aksi`}
+              className="flex items-center gap-3 rounded-2xl border border-atr-outline bg-white p-4 shadow-atr-1 transition hover:bg-atr-bg-soft"
+            >
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-atr-purple-50 text-atr-purple">
+                <Target className="h-5 w-5" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="text-sm font-bold text-atr-fg">Rencana Aksi</div>
+                <div className="text-xs text-atr-fg-muted">
+                  Susun rencana tindak lanjut setelah pelatihan.
+                </div>
+              </div>
+              <ChevronRight className="h-4 w-4 shrink-0 text-atr-fg-muted" />
+            </Link>
+          )}
+        </div>
+      )}
+
+      {/* Modul Pelatihan */}
       <section className="rounded-2xl border border-atr-outline bg-white p-5 shadow-atr-1">
         <h2 className="mb-1 inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wide text-atr-fg-muted">
           <BookOpen className="h-3.5 w-3.5" />
@@ -274,45 +314,6 @@ export default async function PesertaTrainingPage({
         </section>
       )}
 
-      {/* Aksi peserta: rencana aksi (opsional per modul) + kumpulan bukti */}
-      {projectDesaId && (
-        <div className={`grid gap-3 ${showRencanaAksi ? "sm:grid-cols-2" : ""}`}>
-          {showRencanaAksi && (
-          <Link
-            href={`/peserta/projects/${projectDesaId}/rencana-aksi`}
-            className="flex items-center gap-3 rounded-2xl border border-atr-outline bg-white p-4 shadow-atr-1 transition hover:bg-atr-bg-soft"
-          >
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-atr-purple-50 text-atr-purple">
-              <Target className="h-5 w-5" />
-            </div>
-            <div className="min-w-0 flex-1">
-              <div className="text-sm font-bold text-atr-fg">Rencana Aksi</div>
-              <div className="text-xs text-atr-fg-muted">
-                Susun rencana tindak lanjut setelah pelatihan.
-              </div>
-            </div>
-            <ChevronRight className="h-4 w-4 shrink-0 text-atr-fg-muted" />
-          </Link>
-          )}
-          <Link
-            href={`/peserta/projects/${projectDesaId}/evidence`}
-            className="flex items-center gap-3 rounded-2xl border border-atr-outline bg-white p-4 shadow-atr-1 transition hover:bg-atr-bg-soft"
-          >
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-atr-yellow/20 text-atr-fg">
-              <FolderOpen className="h-5 w-5" />
-            </div>
-            <div className="min-w-0 flex-1">
-              <div className="text-sm font-bold text-atr-fg">
-                Kumpulan Bukti
-              </div>
-              <div className="text-xs text-atr-fg-muted">
-                Semua dokumen/tugas yang Anda unggah.
-              </div>
-            </div>
-            <ChevronRight className="h-4 w-4 shrink-0 text-atr-fg-muted" />
-          </Link>
-        </div>
-      )}
 
       {/* Materi & Tautan khusus project ini (modul Materi). */}
       {isModuleOn(project.enabled_modules, "materi") && resources.length > 0 && (

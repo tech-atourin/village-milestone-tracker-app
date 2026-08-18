@@ -167,6 +167,16 @@ export async function projectReviewers(
     .eq("status", "active");
   for (const r of (nars ?? []) as Array<{ user_id: string }>) ids.push(r.user_id);
 
+  // Fasilitator (personil) yang ditugaskan di project - ikut dapat notifikasi
+  // bukti diserahkan supaya transparan dengan mitra.
+  const { data: personil } = await admin
+    .from("project_personnel")
+    .select("user_id")
+    .eq("project_id", projectId);
+  for (const r of (personil ?? []) as Array<{ user_id: string | null }>) {
+    if (r.user_id) ids.push(r.user_id);
+  }
+
   return Array.from(new Set(ids));
 }
 
