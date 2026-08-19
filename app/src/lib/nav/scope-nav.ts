@@ -5,7 +5,8 @@ export type ScopeRole =
   | "mitra_admin"
   | "narasumber"
   | "peserta"
-  | "desa_wisata";
+  | "desa_wisata"
+  | "personil";
 
 export type ScopeConfig = {
   label: string;
@@ -67,6 +68,14 @@ export const SCOPE_NAV: Record<ScopeRole, ScopeConfig> = {
       { href: "/desa/riwayat", label: "Riwayat Program", icon: "History" },
       { href: "/desa/profil", label: "Profil Desa", icon: "MapPin" },
       { href: "/desa/pengelola", label: "Profil Pengelola", icon: "Building2" },
+    ],
+  },
+  personil: {
+    label: "Personil",
+    roleLabel: "Personil",
+    items: [
+      { href: "/personil/projects", label: "Project", icon: "Folder" },
+      { href: "/personil/logbook", label: "Log Book", icon: "NotebookPen" },
     ],
   },
 };

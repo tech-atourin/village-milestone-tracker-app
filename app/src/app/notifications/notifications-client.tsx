@@ -49,11 +49,14 @@ function fmtRelative(iso: string): string {
 
 type Filter = "all" | "unread";
 
-function scopeFor(role: string): "atourin" | "mitra" | "narasumber" | "peserta" | "desa" {
+function scopeFor(
+  role: string,
+): "atourin" | "mitra" | "narasumber" | "peserta" | "desa" | "personil" {
   if (role === "superadmin") return "atourin";
   if (role === "mitra_admin") return "mitra";
   if (role === "narasumber") return "narasumber";
   if (role === "desa_wisata") return "desa";
+  if (role === "personil") return "personil";
   return "peserta";
 }
 
@@ -79,7 +82,10 @@ function linkFor(
       // Narasumber: dedicated /review page; atourin/mitra: tab=evidence
       if (projectId && scope === "narasumber")
         return `/narasumber/projects/${projectId}/review`;
-      if (projectId && (scope === "atourin" || scope === "mitra"))
+      if (
+        projectId &&
+        (scope === "atourin" || scope === "mitra" || scope === "personil")
+      )
         return `/${scope}/projects/${projectId}?tab=evidence`;
       return projectId ? `/${scope}/projects/${projectId}` : null;
     case "checklist_approved":
@@ -103,7 +109,10 @@ function linkFor(
       if (projectId && scope === "peserta") return pesertaProjectHref;
       if (projectId && scope === "narasumber")
         return `/narasumber/projects/${projectId}/review`;
-      if (projectId && (scope === "atourin" || scope === "mitra"))
+      if (
+        projectId &&
+        (scope === "atourin" || scope === "mitra" || scope === "personil")
+      )
         return `/${scope}/projects/${projectId}?tab=evidence`;
       // V1 assessment comment → klasifikasi review / desa self-assessment
       if (scope === "desa") return "/desa/self-assessment";
