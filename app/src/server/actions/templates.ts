@@ -16,7 +16,9 @@ import { requireRole } from "@/lib/auth/rbac";
 
 const checklistItemSchema = z.object({
   id: z.string().uuid().optional().nullable(),
-  title: z.string().min(2).max(200),
+  // Samakan dengan checklist item project (500). Judul KPI/penugasan bisa
+  // panjang; kolom DB bertipe text tanpa batas.
+  title: z.string().min(2).max(500),
   description: z.string().max(2000).optional().nullable(),
   reference_url: z.string().url().optional().nullable().or(z.literal("")),
   required: z.boolean().default(true),
@@ -28,6 +30,38 @@ const topikSchema = z.object({
   description: z.string().max(1000).optional().nullable(),
   items: z.array(checklistItemSchema).default([]),
 });
+
+// Ubah error zod jadi pesan Indonesia yang menunjuk lokasi (topik/item) supaya
+// tidak muncul "topik.5.items.0.title" yang membingungkan.
+function humanizeTemplateIssue(issue: z.ZodIssue): string {
+  const p = issue.path;
+  const fieldLabel: Record<string, string> = {
+    name: "Nama",
+    description: "Deskripsi",
+    title: "Judul item",
+    reference_url: "Reference URL",
+    required: "Wajib",
+  };
+  const detail = (): string => {
+    if (issue.code === "too_big" && issue.type === "string")
+      return `terlalu panjang (maksimal ${issue.maximum} karakter)`;
+    if (issue.code === "too_small" && issue.type === "string")
+      return `terlalu pendek (minimal ${issue.minimum} karakter)`;
+    if (issue.code === "invalid_string") return "format tidak valid";
+    return issue.message;
+  };
+  if (p[0] === "topik" && typeof p[1] === "number") {
+    const topikNo = `Topik ${p[1] + 1}`;
+    if (p[2] === "items" && typeof p[3] === "number") {
+      const f = fieldLabel[String(p[4])] ?? String(p[4] ?? "");
+      return `${topikNo}, item ${p[3] + 1} (${f}): ${detail()}`;
+    }
+    const f = fieldLabel[String(p[2])] ?? String(p[2] ?? "");
+    return `${topikNo}${f ? ` (${f})` : ""}: ${detail()}`;
+  }
+  const f = fieldLabel[String(p[0])] ?? (p.join(".") || "Field");
+  return `${f}: ${detail()}`;
+}
 
 const upsertTemplateSchema = z.object({
   id: z.string().uuid().optional().nullable(),
@@ -52,10 +86,7 @@ export async function upsertTemplate(
   const user = await requireRole("superadmin");
   const parsed = upsertTemplateSchema.safeParse(input);
   if (!parsed.success) {
-    const issue = parsed.error.issues[0];
-    return {
-      error: `Input tidak valid: ${issue.path.join(".") || "field"} - ${issue.message}`,
-    };
+    return { error: humanizeTemplateIssue(parsed.error.issues[0]) };
   }
   const body = parsed.data;
   const admin = createAdminClient();
