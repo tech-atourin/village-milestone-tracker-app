@@ -31,6 +31,8 @@ export function PesertaTab({
   raporBasePath = "/atourin",
   programType = "desa_based",
   readOnly = false,
+  showMemberDetail = true,
+  showMemberRapor = true,
 }: {
   projectId: string;
   members: ProjectMemberRow[];
@@ -42,6 +44,10 @@ export function PesertaTab({
   // (mis. fasilitator/narasumber). Server action tetap menolak sebagai
   // lapisan kedua.
   readOnly?: boolean;
+  // Tombol Detail (users/[id]) & Rapor hanya tersedia di scope yang punya
+  // route-nya. Scope tanpa route (mis. personil) mematikan ini agar tidak 404.
+  showMemberDetail?: boolean;
+  showMemberRapor?: boolean;
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -331,6 +337,8 @@ export function PesertaTab({
           raporBasePath={raporBasePath}
           programType={programType}
           readOnly={readOnly}
+          showMemberDetail={showMemberDetail}
+          showMemberRapor={showMemberRapor}
         />
       )}
     </div>
@@ -348,6 +356,8 @@ function MembersTable({
   raporBasePath = "/atourin",
   programType = "desa_based",
   readOnly = false,
+  showMemberDetail = true,
+  showMemberRapor = true,
 }: {
   projectId: string;
   members: ProjectMemberRow[];
@@ -356,6 +366,8 @@ function MembersTable({
   raporBasePath?: string;
   programType?: "desa_based" | "pelaku_pariwisata";
   readOnly?: boolean;
+  showMemberDetail?: boolean;
+  showMemberRapor?: boolean;
 }) {
   const rows = members.map((m) => ({
     ...m,
@@ -491,22 +503,26 @@ function MembersTable({
       enableSorting: false,
       cell: ({ row }) => (
         <div className="flex justify-end gap-1.5">
-          <Link
-            href={`${raporBasePath}/users/${row.original.user.id}`}
-            className="inline-flex h-7 items-center gap-1 rounded-md border border-atr-outline bg-white px-2 text-xs font-bold text-atr-fg transition hover:bg-atr-bg-soft"
-            title="Lihat detail data peserta"
-          >
-            <IdCard className="h-3 w-3" />
-            Detail
-          </Link>
-          <Link
-            href={`${raporBasePath}/projects/${projectId}/rapor/${row.original.user.id}`}
-            className="inline-flex h-7 items-center gap-1 rounded-md border border-atr-purple/40 bg-atr-purple-50 px-2 text-xs font-bold text-atr-purple-600 transition hover:bg-atr-purple-light/40"
-            title="Lihat rapor peserta (printable)"
-          >
-            <GraduationCap className="h-3 w-3" />
-            Rapor
-          </Link>
+          {showMemberDetail && (
+            <Link
+              href={`${raporBasePath}/users/${row.original.user.id}`}
+              className="inline-flex h-7 items-center gap-1 rounded-md border border-atr-outline bg-white px-2 text-xs font-bold text-atr-fg transition hover:bg-atr-bg-soft"
+              title="Lihat detail data peserta"
+            >
+              <IdCard className="h-3 w-3" />
+              Detail
+            </Link>
+          )}
+          {showMemberRapor && (
+            <Link
+              href={`${raporBasePath}/projects/${projectId}/rapor/${row.original.user.id}`}
+              className="inline-flex h-7 items-center gap-1 rounded-md border border-atr-purple/40 bg-atr-purple-50 px-2 text-xs font-bold text-atr-purple-600 transition hover:bg-atr-purple-light/40"
+              title="Lihat rapor peserta (printable)"
+            >
+              <GraduationCap className="h-3 w-3" />
+              Rapor
+            </Link>
+          )}
           {!readOnly && (
             <button
               type="button"
