@@ -170,8 +170,11 @@ function avg(nums: Array<number | null | undefined>): number | null {
 export function RaporView({
   data,
   scope = "atourin",
+  backHref,
 }: {
-  scope?: "atourin" | "mitra" | "narasumber";
+  scope?: "atourin" | "mitra" | "narasumber" | "personil";
+  // Override tautan "Kembali" (scope tanpa halaman daftar rapor, mis. personil).
+  backHref?: string;
   data: {
     checkin_attendance?: number | null;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -241,7 +244,7 @@ export function RaporView({
 
       <div className="no-print mb-6 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-atr-outline bg-atr-bg-soft p-3 text-xs text-atr-fg-muted">
         <a
-          href={`/${scope}/projects/${project.id}/rapor`}
+          href={backHref ?? `/${scope}/projects/${project.id}/rapor`}
           className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-atr-outline bg-white px-3 text-xs font-bold text-atr-fg transition hover:bg-atr-bg-soft"
         >
           ← Kembali

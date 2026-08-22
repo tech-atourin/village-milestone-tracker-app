@@ -196,8 +196,6 @@ async function PesertaTabLoader({
       raporBasePath="/personil"
       programType={programType}
       readOnly
-      showMemberDetail={false}
-      showMemberRapor={false}
     />
   );
 }
